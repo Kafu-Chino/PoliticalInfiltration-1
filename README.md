@@ -2,7 +2,7 @@
 国家242项目ZZST代码，版权所有，翻版必究
 
 # 启动
-- python manage.py runserver -h IP:PORT
+- python manage.py runserver IP:PORT
 
 # 迁移数据库
 - python manage.py makemigrations
