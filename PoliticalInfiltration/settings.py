@@ -36,7 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_swagger',
-    'Index',
+    'Mainevent',
 
 ]
 
@@ -75,12 +75,12 @@ WSGI_APPLICATION = 'PoliticalInfiltration.wsgi.application'
 
 DATABASES = {
     'default': {
-        # 'ENGINE': 'django.db.backends.mysql',   # 数据库引擎
-        # 'NAME': 'zzst',         # 你要存储数据的库名，事先要创建之
-        # 'USER': 'root',         # 数据库用户名
-        # 'PASSWORD': 'mysql3306',     # 密码
-        # 'HOST': '219.224.134.214',    # 主机
-        # 'PORT': '3306',         # 数据库使用的端口
+        'ENGINE': 'django.db.backends.mysql',   # 数据库引擎
+        'NAME': 'PoliticalInfiltration',         # 你要存储数据的库名，事先要创建之
+        'USER': 'root',         # 数据库用户名
+        'PASSWORD': 'mysql3306',     # 密码
+        'HOST': '219.224.134.214',    # 主机
+        'PORT': '3306',         # 数据库使用的端口
     }
 }
 
