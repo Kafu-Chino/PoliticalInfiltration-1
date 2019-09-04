@@ -74,7 +74,7 @@ class Task(models.Model):
     task_type = models.IntegerField()
     into_type = models.IntegerField()
     status = models.IntegerField()
-    e_id = models.CharField(max_length=30, blank=True, null=True)
+    e_id = models.CharField(max_length=100, blank=True, null=True)
     uid = models.CharField(max_length=30, blank=True, null=True)
     root_uid = models.CharField(max_length=30, blank=True, null=True)
     mid = models.CharField(max_length=30, blank=True, null=True)
