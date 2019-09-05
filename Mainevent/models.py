@@ -12,6 +12,8 @@ class Event(models.Model):
     end_date = models.DateField(blank=True, null=True)
     content = models.CharField(max_length=400)
     uid = models.CharField(max_length=30, blank=True, null=True)
+    information = models.ManyToManyField('Information')
+    figure = models.ManyToManyField('Figure')
     class Meta():
         db_table = 'Event'
 
@@ -23,7 +25,6 @@ class Figure(models.Model):
     tweets_num = models.IntegerField(blank=True, null=True)
     authentication = models.CharField(max_length=50, blank=True, null=True)
     address = models.CharField(max_length=50, blank=True, null=True)
-    event = models.ManyToManyField('Event')
     class Meta():
         db_table = 'Figure'
 
@@ -44,7 +45,6 @@ class Information(models.Model):
     root_mid = models.CharField(max_length=30)
     source = models.CharField(max_length=20)
     i_level = models.IntegerField()
-    event = models.ManyToManyField('Event')
     class Meta():
         db_table = 'Information'
 
