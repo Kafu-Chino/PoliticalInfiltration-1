@@ -12,6 +12,7 @@ class Event(models.Model):
     end_date = models.DateField(blank=True, null=True)
     content = models.CharField(max_length=400)
     uid = models.CharField(max_length=30, blank=True, null=True)
+    status = models.IntegerField(default=1)
     information = models.ManyToManyField('Information')
     figure = models.ManyToManyField('Figure')
     class Meta():
