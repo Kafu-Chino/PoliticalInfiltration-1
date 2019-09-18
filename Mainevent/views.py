@@ -10,7 +10,13 @@ class Test(APIView):
         return HttpResponse('Hello world')
 
     def post(self, request):
-        """修改"""
+        """修改
+        参数:
+            a 用户id
+            b 性别
+        返回:
+            {"name":"asd"}
+        """
         pass
 
     def put(self, request):
