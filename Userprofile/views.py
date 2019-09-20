@@ -20,3 +20,4 @@ class Test(APIView):
     def delete(self, request):
         """DELETE方法的功能说明写在这里"""
         return HttpResponse('这是测试的DELETE方法')
+
