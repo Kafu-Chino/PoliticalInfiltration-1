@@ -67,6 +67,7 @@ class Hot_post(models.Model):
     source = models.CharField(max_length=20)
     store_timestamp = models.BigIntegerField()
     store_date = models.DateField()
+    similar_event = models.CharField(max_length=400,blank=True,null=True)
     class Meta():
         db_table = 'Hot_post'
 
