@@ -9,4 +9,3 @@ urlpatterns = [
     path('push/',datain.add_from_push),
     path('show/',show_task.show),
 ]
->>>>>>> nimengli:url configuration
