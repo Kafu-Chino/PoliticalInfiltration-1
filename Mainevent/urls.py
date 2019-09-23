@@ -8,5 +8,4 @@ urlpatterns = [
     path('push/',views.AddFromPush.as_view()),
     path('show/',views.Show.as_view()),
 ]
-
-
+# >>>>>>> nimengli:url configuration
