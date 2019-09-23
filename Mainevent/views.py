@@ -80,7 +80,7 @@ class AddFromPush(APIView):
     """业务员选择推出热贴入库，输入mid(微博id)，rmid(相关事件id），keywords_dict(关键词），输出状态码和提示：400 状态错误，201写入成功"""
     def get(self, request):
         """业务员选择推出热贴入库，输入mid(微博id)，rmid(相关事件id），keywords_dict(关键词），输出状态码和提示：400 状态错误，201写入成功
-           当业务员点击事件入库但没有点击相关事件时，按钮返回该热帖的ID、关键词和相关事件ID,字段名分别为mid，keywords_dict(字符串、列表、数组格式均可）、rmid，所返回rmid为空
+           当业务员点击事件入库但没有点击相关事件时，按钮返回该热帖的ID、关键词和相关事件ID,字段名分别为mid，keywords_dict(字符串格式：关键词1,关键词2,关键词3...各关键词中间用英文逗号分隔开）、rmid，所返回rmid为空
            当业务员选中了相关事件并点击按钮进行事件入库时，返回按钮返回该热帖的ID、关键词和相关事件ID,字段名分别为mid，keywords_dict(字符串、列表、数组格式均可）、rmid"""
         event_id = request.GET.get('mid')  # 从推送得到微博ID
         relative_id = request.GET.get("rmid")  # 若作为相关事件入库，获取相关事件的ID，目前设定只有一个相关事件
