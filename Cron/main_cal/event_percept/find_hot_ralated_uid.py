@@ -1,16 +1,7 @@
-from elasticsearch import Elasticsearch
-import redis
+import sys
+sys.path.append('../../')
+from Config.base import *
 import time
-
-
-ES_HOST = '219.224.134.214'
-ES_PORT = 9211
-
-REDIS_HOST = '219.224.134.214'
-REDIS_PORT = 6666
-
-es = Elasticsearch(hosts=[{'host': ES_HOST, 'port': ES_PORT}], timeout=10)
-r = redis.Redis(connection_pool=redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=0))
 
 
 a=time.time()
@@ -19,7 +10,7 @@ a=time.time()
 def find_hotmid():
     #找到热帖id
     list_hot = []
-    for i in r.zrevrangebyscore(name='Originalmid_hot',min=1000,max=100000000):
+    for i in redis_ep.zrevrangebyscore(name='Originalmid_hot',min=1000,max=100000000):
         i = str(i,encoding='utf-8')
         list_hot.append(i)
     print(time.time()-a)
@@ -49,11 +40,11 @@ def search_es(query_body):
 
 def save_hotmid(list_hot):
     #将热帖id存入redis
-    with r.pipeline(transaction=False) as p:
+    with redis_ep.pipeline(transaction=False) as p:
         for mid in list_hot:
             p.sadd('hot_post',mid)
         p.execute()
-    print(r.scard('hot_post'))
+    print(redis_ep.scard('hot_post'))
 
 
 def save_hotuid(list_hot):
@@ -70,8 +61,8 @@ def save_hotuid(list_hot):
     for list2 in search_es(query_body1):
         for line in list2:
             hot_uid.append(line['uid'])
-    r.sadd('hot_uid', *list(set(hot_uid)))
-    print(r.scard('hot_uid'))
+    redis_ep.sadd('hot_uid', *list(set(hot_uid)))
+    print(redis_ep.scard('hot_uid'))
 
 
 def save_relateduid(list_hot):
@@ -90,8 +81,8 @@ def save_relateduid(list_hot):
             for line in list1:
                 list_uid.append(line['uid'])
             # print(len(list_uid))
-            r.sadd(mid, *list(set(list_uid)))
-        print(r.scard(mid))
+            redis_ep.sadd(mid, *list(set(list_uid)))
+        print(redis_ep.scard(mid))
 
 
 def main():
