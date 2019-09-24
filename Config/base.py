@@ -1,11 +1,19 @@
-from elasticsearch import Elasticsearch
-import redis
-
+# 流数据ES数据库
 ES_HOST = '219.224.134.214'
 ES_PORT = 9211
 
+# REDIS数据库
 REDIS_HOST = '219.224.134.214'
 REDIS_PORT = 6666
 
-es = Elasticsearch(hosts=[{'host': ES_HOST, 'port': ES_PORT}], timeout=1000)
-redis_ep = redis.Redis(connection_pool=redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=0))
+# 主MySQL数据库
+DB_HOST = '219.224.134.214'
+DB_PORT = 3306
+DB_USER = 'root'
+DB_PASSWORD = 'mysql3306'
+DB_CHARSET = 'utf8'
+# DB_DEFAULT_DB = 'portrait'
+# DB_DEFAULT_DB = 'itfin'
+DB_MIN_CACHED=3
+DB_MAX_CACHED=10
+DB_MAX_CONNECYIONS=30

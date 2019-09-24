@@ -22,5 +22,6 @@ from rest_framework import permissions
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('Mainevent/', include('Mainevent.urls')),
+    path('Userprofile/', include('Userprofile.urls')),
     path(r'docs/', get_swagger_view(title='ApiDocs')),
 ]

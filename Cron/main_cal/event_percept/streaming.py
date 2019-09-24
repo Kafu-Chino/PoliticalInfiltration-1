@@ -1,19 +1,9 @@
-from elasticsearch import Elasticsearch
+import  sys
+sys.path.append('../../')
+from Config.base import *
 import multiprocessing
 import random
-import redis
 import time
-
-
-ES_HOST = '219.224.134.214'
-ES_PORT = 9211
-
-REDIS_HOST = '219.224.134.214'
-REDIS_PORT = 6666
-
-es = Elasticsearch(hosts=[{'host': ES_HOST, 'port': ES_PORT}], timeout=10)
-r = redis.Redis(connection_pool=redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=0))
-# r=redis.StrictRedis(host='localhost',port=6379)
 
 start_time=time.time()
 
@@ -51,7 +41,7 @@ def save(dic):
 
     if dic['message_type'] == 1:
         #原创微博加入集合
-        p = r.pipeline()
+        p = redis_ep.pipeline()
         p.sadd('Original_mid',dic['mid'])
         p.zadd(name='Originalmid_hot',mapping={dic['mid']:0})
         p.set(name=(dic['mid'] + 'comment'), value=0)
@@ -60,16 +50,16 @@ def save(dic):
         print(dic['mid'])
     elif dic['message_type'] == 2:
         # 转发微博按照root_mid增加midcomment数
-        if r.sismember(name='Original_mid',value= dic['root_mid']):
-            r.set(name=(dic['root_mid'] + 'comment'),value=int(r.get(dic['root_mid'] + 'comment')) + 1)
-            r.zincrby(name='Originalmid_hot',value=dic['root_mid'],amount=1)
-            print(r.get(name=dic['root_mid'] + 'comment'))
+        if redis_ep.sismember(name='Original_mid',value= dic['root_mid']):
+            redis_ep.set(name=(dic['root_mid'] + 'comment'),value=int(redis_ep.get(dic['root_mid'] + 'comment')) + 1)
+            redis_ep.zincrby(name='Originalmid_hot',value=dic['root_mid'],amount=1)
+            print(redis_ep.get(name=dic['root_mid'] + 'comment'))
     elif dic['message_type'] == 3:
         # 评论微博按照root_mid增加midretweeted数
-        if r.sismember('Original_mid', dic['root_mid']):
-            r.set(name = (dic['root_mid'] + 'retweeted'),value= int(r.get(dic['root_mid'] + 'retweeted')) + 1)
-            r.zincrby(name='Originalmid_hot', value=dic['root_mid'], amount=1)
-            print(r.get(name=dic['root_mid'] + 'retweeted'))
+        if redis_ep.sismember('Original_mid', dic['root_mid']):
+            redis_ep.set(name = (dic['root_mid'] + 'retweeted'),value= int(r.get(dic['root_mid'] + 'retweeted')) + 1)
+            redis_ep.zincrby(name='Originalmid_hot', value=dic['root_mid'], amount=1)
+            print(redis_ep.get(name=dic['root_mid'] + 'retweeted'))
 
 
 
