@@ -10,6 +10,8 @@ import time,datetime
 from rest_framework.views import APIView
 from rest_framework.schemas import ManualSchema
 
+from Mainevent.models import Hot_post
+
 class Test(APIView):
     """测试页面"""
 '''    def get(self, request):
@@ -113,3 +115,38 @@ class Show(APIView):
         json_data = serializers.serialize("json",result)
         results = json.loads(json_data)
         return JsonResponse(results,safe=False)
+
+
+class push_Hotpost(APIView):
+    """页面响应,从数据库取热帖展示"""
+    def get(self):
+        hot_posts = Hot_post.objects.all().values_list()  # 取出所有列，QuerySet类型
+        hot_posts = list(hot_posts)  # [(data),(data)]
+        # 元组(data):
+        # (h_id, uid, root_uid, mid, comment, retweeted, text, keywords_dict, timestamp, date, ip, geo, message_type, root_mid, source, store_timestamp, store_date, similar_event)
+        # 例如:
+        # ('h_1', 'user_1', 'user_1', 'm_1', 0, 0, '测试热帖库信息', 't1,t2,t3,t4,t5', 1567923180, datetime.date(2019, 9, 8), '127.0.0.1', '北京市', 1, 'm_1', '微博', 1567925639, datetime.date(2019, 9, 8), None)
+        hot_post_display = []
+        for item in hot_posts:
+            a_post = {}
+            a_post["h_id"] = item[0]
+            a_post["uid"] = item[1]
+            a_post["root_uid"] = item[2]
+            a_post["mid"] = item[3]
+            a_post["comment"] = item[4]
+            a_post["retweeted"] = item[5]
+            a_post["text"] = item[6]
+            a_post["keywords_dict"] = item[7]
+            a_post["timestamp"] = item[8]
+            a_post["date"] = item[9].strftime('%Y-%m-%d')
+            a_post["ip"] = item[10]
+            a_post["geo"] = item[11]
+            a_post["message_type"] = item[12]
+            a_post["root_mid"] = item[13]
+            a_post["source"] = item[14]
+            a_post["store_timestamp"] = item[15]
+            a_post["store_date"] = item[16].strftime('%Y-%m-%d')
+            a_post["similar_event"] = item[17]
+            hot_post_display.append(a_post)
+        results = json.dumps(hot_post_display)
+        return JsonResponse(results, safe=False)  # json [{data},{data}]
