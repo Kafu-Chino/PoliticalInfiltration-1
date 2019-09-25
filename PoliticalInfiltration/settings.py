@@ -82,6 +82,7 @@ DATABASES = {
         'PASSWORD': 'mysql3306',     # 密码
         'HOST': '219.224.134.214',    # 主机
         'PORT': '3306',         # 数据库使用的端口
+        'OPTIONS': {'charset': 'utf8mb4'},  # 用utf8mb4编码在MySQL中存储4字节字符
     }
 }
 
