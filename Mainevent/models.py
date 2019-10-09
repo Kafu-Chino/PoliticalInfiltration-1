@@ -13,6 +13,7 @@ class Event(models.Model):
     content = models.CharField(max_length=400)
     uid = models.CharField(max_length=30, blank=True, null=True)
     status = models.IntegerField(default=1)
+    if_manul = models.IntegerField(default=0)
     information = models.ManyToManyField('Information')
     figure = models.ManyToManyField('Figure')
     class Meta():
