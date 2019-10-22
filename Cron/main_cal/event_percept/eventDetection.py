@@ -1,11 +1,6 @@
 # -- coding:utf-8 --
-from elasticsearch import Elasticsearch
-import pymysql  # MySQL
-import redis
-
 import jieba
 import jieba.analyse
-
 import difflib
 import time, datetime
 
@@ -18,17 +13,14 @@ import django
 django.setup()  # 启动django
 from Mainevent.models import Event
 from Mainevent.models import Hot_post
+from Config import base  # 调用Config文件夹下的base.py
 
 
 # 连接redis数据库
-REDIS_HOST = '219.224.134.214'
-REDIS_PORT = 6666
-redis_ep = redis.Redis(connection_pool=redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=0))
+redis_ep = base.redis_ep
 
 # 连接ES数据库
-ES_HOST = '219.224.134.214'
-ES_PORT = 9211
-es = Elasticsearch(hosts=[{'host': ES_HOST, 'port': ES_PORT}], timeout=1000)
+es = base.es
 
 
 # 1.取redis set内的数据
@@ -119,15 +111,11 @@ def find_post_in_ES(hot_post_list):
     for item in hot_post_list:
         mid_list.append(item["mid"])  # 未入库热帖的mid list = [a, b]
     # 查询出mid= a 或 b 的所有数据
-    query_body = {
-        "query": {
-            "terms": {
-                "mid": mid_list
-            }
-        }
+    doc = {
+        "ids": mid_list
     }
-    rs = es.search(index="weibo_all", body=query_body, size=len(mid_list))
-    return rs  # rs = {hits:{hits:[{"_source":{data}},{}]}}
+    rs = es.mget(index="weibo_all", body=doc)  # rs = {'docs':[{"_source":{data}},{}]}
+    return rs['docs']  # [{"_source":{data}},{}]
 
 
 def get_result_list(es_result, post_list):
@@ -141,7 +129,7 @@ def get_result_list(es_result, post_list):
                 item['_source']["comment"] = post["comment"]
                 item['_source']["retweeted"] = post["retweeted"]
                 final_result.append(item['_source'])  # item是个字典,ES的每条数据
-    print("从ES数据流获取新热帖的相关信息，操作完成")
+    print("从ES数据流获取新热帖的相关信息，组合热帖完整数据字段操作完成")
     return final_result  # [{data},{}]
     #{data} = {"uid":1, "timestamp", "comment", "root_uid", "text", "mid",
     # "ip", "keywords_dict", "message_type", "retweeted", "root_mid", ...}
@@ -155,37 +143,50 @@ def hotpost_get_keyword(hot_post):
     # 参数为文本，重要性从高到低返回关键词的数量，是否同时返回每个关键词的权重,词性过滤仅提取地名 名词 动名词 动词
     keywords_list = jieba.analyse.textrank(text, topK=20, withWeight=False,
                                            allowPOS=('ns', 'n', 'vn', 'v'))
-    print("关键词分词完成")
     return keywords_list  # list ['地址', '下载']
 
 
-def get_hotpost_related_event(hot_post, query_table="Event"):
-# 单热帖关键词调出query_table库中的相似事件
+def get_hotpost_related_event(hot_post_list, query_table="Event", precision=0.7):
+# 热帖关键词调出query_table库中的相似事件，默认相似度0.7
 # hot_post_list = [{data},{}]
 # hot_post = {data}
-    # 1.调出热帖关键词
-    keywords_dict = hot_post["keywords_dict"]  # 取keywords_dict列  models.
-    # 2.调出相关事件
-    similar_event = Event.objects.all().values_list("e_id","event_name")  # QuerySet类型
-    similar_event_list = list(similar_event)  # list [(1,2), (元组)]
-    similar_event = dict(similar_event_list)  # dic {1: 2, 3: 'jiqw', 2: 1372}
-    print(hot_post["mid"],"的相似事件计算完毕")
-    return similar_event
+    # 一次性取出所有event
+    all_event = Event.objects.all().values_list("e_id", "keywords_dict")  # QuerySet类型
+    all_event_list = list(all_event)  # list [(1,2), (元组)]
+    # 找相似
+    similar_event = {}
+    keywords_dict = {}
+    for hot_post in hot_post_list:
+        hot_post_keyword = ",".join(hotpost_get_keyword(hot_post))
+        find_event = []
+        for one_tuple in all_event_list:
+            # 字符串相似度,返回数字0.69
+            str_precision = difflib.SequenceMatcher(None, hot_post_keyword, one_tuple[1]).quick_ratio()
+            # 匹配精度的阈值
+            if str_precision > precision:
+                find_event.append(one_tuple[0])
+        keywords_dict[hot_post["mid"]] = hot_post_keyword  # 热帖关键词存储
+        similar_event[hot_post["mid"]] = ",".join(find_event)  # 热帖相似事件存储
+    print(len(similar_event), "条相似事件计算完毕,关键词计算完毕")
+    return (similar_event, keywords_dict)   # {"mid":"str,str",}
 
 
 def insert_into_db(final_result, come_from="weibo_"):
 # 插入热帖的全部信息, 热帖列表入库
 # [{data},{}]
+    # 批量计算相似事件
+    (similar_event_dict, keywords_dict) = get_hotpost_related_event(final_result)
+    # 事件入库
     querysetlist = []
     pipe = redis_ep.pipeline()  # 批量存入redis数据
     for data in final_result:
         data["h_id"] = come_from + data["mid"]  # 主键
-        data["date"] = datetime.datetime.utcfromtimestamp(data["timestamps"]).strftime("%Y-%m-%d")  # 时间戳转为datetime, 再转为这样的存储格式
+        data["date"] = datetime.datetime.utcfromtimestamp(data["timestamp"]).strftime("%Y-%m-%d")  # 时间戳转为datetime, 再转为这样的存储格式
         data["source"] = come_from  # 来源
         data["store_timestamp"] = int(time.time())  # 获取当前时间戳
         data["store_date"] = datetime.datetime.now().strftime("%Y-%m-%d")  # 获取当前日期
-        data["keywords_dict"] = ",".join(hotpost_get_keyword(data))  # 热帖关键词获取
-        data["similar_event"] = get_hotpost_related_event(data, "Event")  #相似事件
+        data["keywords_dict"] = keywords_dict[data["mid"]]  # 热帖关键词获取
+        data["similar_event"] = similar_event_dict[data["mid"]]  #相似事件
         one_post = Hot_post(
             h_id=data["h_id"],
             uid=data["uid"],
@@ -195,7 +196,7 @@ def insert_into_db(final_result, come_from="weibo_"):
             retweeted=data["retweeted"],
             text=data["text"],
             keywords_dict=data["keywords_dict"],
-            timestamp=data["timestamps"],
+            timestamp=data["timestamp"],
             date=data["date"],
             ip=0,  # ES和redis都没有值
             geo=data["geo"],
@@ -215,7 +216,8 @@ def insert_into_db(final_result, come_from="weibo_"):
     print("新热帖写入数据库完毕，redis更新在库集合完毕")
 
 
-if __name__ == '__main__':
+def main():
+# 主函数调用
     time_start = time.time()
     print("程序开始\n")
 
@@ -233,10 +235,14 @@ if __name__ == '__main__':
     # 得到热帖相关数据
     if len(New_post_list) != 0:
         rs = find_post_in_ES(New_post_list)
-        final_result = get_result_list(rs['hits']['hits'], New_post_list)  # 得到完整数据列表[{data},{}]
-        print("从ES获取%d条新贴的相关数据信息完毕，执行写入数据库操作..." % len(final_result))
+        final_result = get_result_list(rs, New_post_list)  # 得到完整数据列表[{data},{}]
+        print("执行%d条新贴相关数据写入数据库操作..." % len(final_result))
         # 插入数据库
         insert_into_db(final_result, come_from="weibo_")
     print("本次redis读写操作完成\n")
 
     print("程序结束,Finish cost seconds:", time.time()-time_start)
+
+
+if __name__ == '__main__':
+    main()
