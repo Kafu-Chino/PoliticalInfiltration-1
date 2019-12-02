@@ -21,12 +21,21 @@ class Event(models.Model):
 
 class Figure(models.Model):
     f_id = models.CharField(max_length=30, primary_key=True)
-    gender = models.NullBooleanField()#True:male，Fales：female,Null：empty
-    follow_num = models.IntegerField(blank=True, null=True)
-    fans_num = models.IntegerField(blank=True, null=True)
-    tweets_num = models.IntegerField(blank=True, null=True)
+    uid = models.CharField(max_length=30,blank=True, null=True)
+    nick_name = models.CharField(max_length=50, blank=True, null=True)
+    create_at = models.FloatField(blank=True, null=True)
+    user_birth = models.DateField(blank=True, null=True)
+    political = models.CharField(max_length=30,blank=True, null=True)
+    domian = models.CharField(max_length=30,blank=True, null=True)
+    description= models.TextField(max_length=200,blank=True, null=True)
+    sex = models.NullBooleanField() #True:male，Fales：female,Null：empty
+    friendsnum = models.IntegerField(blank=True, null=True)
+    fansnum = models.IntegerField(blank=True, null=True)
+    statusnum = models.IntegerField(blank=True, null=True)
     authentication = models.CharField(max_length=50, blank=True, null=True)
+    isreal = models.NullBooleanField() #True:real name authenticated，Fales：no real name authentication,Null：empty
     address = models.CharField(max_length=50, blank=True, null=True)
+    user_location = models.CharField(max_length=100, blank=True, null=True)
     class Meta():
         db_table = 'Figure'
 
