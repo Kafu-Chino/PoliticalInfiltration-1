@@ -16,28 +16,32 @@ class Event(models.Model):
     if_manul = models.IntegerField(default=0)
     information = models.ManyToManyField('Information')
     figure = models.ManyToManyField('Figure')
+
     class Meta():
         db_table = 'Event'
 
+
 class Figure(models.Model):
     f_id = models.CharField(max_length=30, primary_key=True)
-    uid = models.CharField(max_length=30,blank=True, null=True)
+    uid = models.CharField(max_length=30, blank=True, null=True)
     nick_name = models.CharField(max_length=50, blank=True, null=True)
     create_at = models.FloatField(blank=True, null=True)
-    user_birth = models.DateField(blank=True, null=True)
-    political = models.CharField(max_length=30,blank=True, null=True)
-    domian = models.CharField(max_length=30,blank=True, null=True)
-    description= models.TextField(max_length=200,blank=True, null=True)
-    sex = models.NullBooleanField() #True:male，Fales：female,Null：empty
+    user_birth = models.DateField(auto_now=False, auto_now_add=False, blank=True, null=True)
+    political = models.CharField(max_length=30, blank=True, null=True)
+    domain = models.CharField(max_length=30, blank=True, null=True)
+    description = models.TextField(max_length=200, blank=True, null=True)
+    sex = models.NullBooleanField()  # True:male，Fales：female,Null：empty
     friendsnum = models.IntegerField(blank=True, null=True)
     fansnum = models.IntegerField(blank=True, null=True)
     statusnum = models.IntegerField(blank=True, null=True)
     authentication = models.CharField(max_length=50, blank=True, null=True)
-    isreal = models.NullBooleanField() #True:real name authenticated，Fales：no real name authentication,Null：empty
+    isreal = models.NullBooleanField()  # True:real name authenticated，Fales：no real name authentication,Null：empty
     address = models.CharField(max_length=50, blank=True, null=True)
     user_location = models.CharField(max_length=100, blank=True, null=True)
+
     class Meta():
         db_table = 'Figure'
+
 
 class Information(models.Model):
     i_id = models.CharField(max_length=30, primary_key=True)
@@ -50,14 +54,17 @@ class Information(models.Model):
     keywords_dict = models.CharField(max_length=100)
     timestamp = models.BigIntegerField()
     date = models.DateField()
-    ip = models.CharField(max_length=20)
+    send_ip = models.CharField(max_length=20)
     geo = models.CharField(max_length=50)
     message_type = models.IntegerField()
     root_mid = models.CharField(max_length=30)
     source = models.CharField(max_length=20)
     i_level = models.IntegerField()
+    hazard_index = models.FloatField(blank=True, null=True)
+
     class Meta():
         db_table = 'Information'
+
 
 class Hot_post(models.Model):
     h_id = models.CharField(max_length=30, primary_key=True)
@@ -70,16 +77,18 @@ class Hot_post(models.Model):
     keywords_dict = models.CharField(max_length=100)
     timestamp = models.BigIntegerField()
     date = models.DateField()
-    ip = models.CharField(max_length=20)
+    send_ip = models.CharField(max_length=20)
     geo = models.CharField(max_length=50)
     message_type = models.IntegerField()
     root_mid = models.CharField(max_length=30)
     source = models.CharField(max_length=20)
     store_timestamp = models.BigIntegerField()
     store_date = models.DateField()
-    similar_event = models.CharField(max_length=400,blank=True,null=True)
+    similar_event = models.CharField(max_length=400, blank=True, null=True)
+
     class Meta():
         db_table = 'Hot_post'
+
 
 class Task(models.Model):
     t_id = models.CharField(max_length=30, primary_key=True)
@@ -96,12 +105,39 @@ class Task(models.Model):
     keywords_dict = models.CharField(max_length=100)
     timestamp = models.BigIntegerField(blank=True, null=True)
     date = models.DateField(blank=True, null=True)
-    ip = models.CharField(max_length=20, blank=True, null=True)
+    send_ip = models.CharField(max_length=20, blank=True, null=True)
     geo = models.CharField(max_length=50, blank=True, null=True)
     message_type = models.IntegerField(blank=True, null=True)
     root_mid = models.CharField(max_length=30, blank=True, null=True)
     source = models.CharField(max_length=20)
     into_timestamp = models.BigIntegerField()
     into_date = models.DateField()
+
     class Meta():
         db_table = 'Task'
+
+
+class UserActivity(models.Model):
+    ua_id = models.CharField(max_length=50, primary_key=True)
+    uid = models.CharField(max_length=30, blank=True, null=True)
+    statusnum = models.IntegerField(blank=True, null=True)
+    timestamp = models.BigIntegerField(blank=True, null=True)
+    send_ip = models.CharField(max_length=30, blank=True, null=True)
+    geo = models.CharField(max_length=50, blank=True, null=True)
+    store_date = models.DateField(blank=True, null=True)
+
+    class Meta():
+        db_table = 'UserActivity'
+
+
+class UserBehavior(models.Model):
+    ub_id = models.CharField(max_length=50, primary_key=True)
+    uid = models.CharField(max_length=30, blank=True, null=True)
+    originalnum = models.IntegerField(blank=True, null=True)
+    commentnum = models.IntegerField(blank=True, null=True)
+    retweetnum = models.IntegerField(blank=True, null=True)
+    timestamp = models.BigIntegerField(blank=True, null=True)
+    store_date = models.DateField(blank=True, null=True)
+
+    class Meta():
+        db_table = 'UserBehavior'
