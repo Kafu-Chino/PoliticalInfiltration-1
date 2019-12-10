@@ -7,6 +7,7 @@ import json
 import time, datetime
 from collections import defaultdict
 
+from Userprofile.models import *
 from Mainevent.models import *
 
 from rest_framework.views import APIView
@@ -38,10 +39,9 @@ class BasicInfo(APIView):
 
     def get(self, request):
         """获取uid，返回用户详情"""
-        f_id = request.GET.get('uid')
-        # result = Figure.objects.filter(f_id="1041560960").first()
-        result = Figure.objects.filter(f_id=f_id).first()
         res_dict = {}
+        f_id = request.GET.get('uid')
+        result = Figure.objects.filter(f_id=f_id).first()
         res_dict["uid"] = result.uid
         res_dict["nick_name"] = result.nick_name
         res_dict["age"] = datetime.date.today().year - result.user_birth.year
@@ -64,7 +64,6 @@ class BasicInfo(APIView):
         res_dict["fansnum"] = result.fansnum
         res_dict["user_location"] = result.user_location if result.user_location else "无"
         res_dict["description"] = result.description if len(result.description) != 0 else "无"
-        # print(res_dict)
         return JsonResponse(res_dict)
 
     def post(self, request):
@@ -82,10 +81,6 @@ class User_Behavior(APIView):
         """
         uid = request.GET.get('uid')
         n_type = request.GET.get('n_type')
-        # uid = "1041560960"
-        # n_type = "日"
-        # n_type = "周"
-        # n_type = "月"
         res_dict = {}
         # 每日活动特征，从当前日期往前推7天展示 原创微博数、评论数、转发数
         if n_type == "日":
@@ -120,7 +115,6 @@ class User_Behavior(APIView):
                     originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"), retweetnum_s=Sum("retweetnum"))
                 if list(result.values())[0]:
                     res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i]) - 24 * 60 * 60))] = result
-        # print(res_dict)
         return JsonResponse(res_dict)
 
 
@@ -129,7 +123,7 @@ class User_Activity(APIView):
 
     def get(self, request):
         """
-        获取uid，返回用户地域特征详情，包括根据地理位置、IP地址每日、每周活跃程度排序，
+        获取uid，返回用户地域特征详情，包括根据地理位置、IP地址每日、每周活跃程度降序排序，
         数据格式{
                     "geo_day_result":[{"geo1":geo_name,"statusnum":30},{}],
                     "geo_week_result":[{"geo1":geo_name,"statusnum":30},{}],
@@ -139,7 +133,6 @@ class User_Activity(APIView):
                 }
         """
         uid = request.GET.get('uid')
-        # uid = "1563323381"
         res_dict = {}
         week_date = (datetime.datetime.now() + datetime.timedelta(days=-7)).timestamp()
         day_date = (datetime.datetime.now() + datetime.timedelta(days=-1)).timestamp()
@@ -196,14 +189,12 @@ class Association(APIView):
         """
         res_dict = defaultdict(list)
         uid = request.GET.get('uid')
-        # uid = "1563323381"
         res_event = Figure.objects.filter(f_id=uid).first().event_set.all()
         for e in res_event:
             res_dict["event"].append({"event_name": e.event_name, "keywords": e.keywords_dict})
         res_information = Information.objects.filter(uid=uid)
         for i in res_information:
             res_dict["information"].append({"text": i.text, "hazard_index": i.hazard_index})
-        # print(res_dict)
         return JsonResponse(res_dict)
 
 
