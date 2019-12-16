@@ -2,10 +2,8 @@ import sys
 import os
 import time
 import datetime
-import random
 from elasticsearch.helpers import scan
 from collections import defaultdict
-from pandas import DataFrame
 
 sys.path.append("../../")
 os.environ['DJANGO_SETTINGS_MODULE'] = 'PoliticalInfiltration.settings'
@@ -13,6 +11,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'PoliticalInfiltration.settings'
 from Config.db_utils import es, pi_cur, conn
 
 cursor = pi_cur()
+
 
 # 通过人物库里的uid_list查询流数据，获取微博信息，返回数据格式{uid1:[{},{}],uid2:[{},{}]}，优先选用search方法
 def get_items_from_uidList_scan(uid_list):
@@ -90,6 +89,7 @@ def sql_select(cursor, table_name, field_name="*"):
     cursor.execute(sql)
     return cursor.fetchall()
 
+
 # 每天定时从人物库获取uid_list，并通过查询流数据获取用户微博信息
 def get_data_dict(cursor, table_name, field_name="*"):
     uid_list = set()
@@ -97,7 +97,17 @@ def get_data_dict(cursor, table_name, field_name="*"):
     for uid_dict in uids:
         uid_list.update(list(uid_dict.values()))
     return get_items_from_uidList(list(uid_list))
-    
+
+
+# 每天定时从人物库获取uid_list
+def get_uid_list(cursor, table_name, field_name="*"):
+    uid_list = set()
+    uids = sql_select(cursor, table_name, field_name)
+    for uid_dict in uids:
+        uid_list.update(list(uid_dict.values()))
+    return list(uid_list)
+
+
 # 向mysql数据库一次存入多条数据，数据输入为data_dict 格式{id1:{item1},id2:{item2},}
 def sql_insert_many(cursor, table_name, primary_key, data_dict):
     columns = []
