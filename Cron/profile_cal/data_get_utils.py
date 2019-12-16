@@ -50,6 +50,7 @@ def get_items_from_uidList_scan(uid_list):
 
 def get_items_from_uidList(uid_list):
     end_time = int(time.mktime(datetime.date.today().timetuple()))
+    #end_time = 1565658944
     start_time = end_time - 24 * 60 * 60
     data_dict = defaultdict(list)
 
@@ -72,6 +73,7 @@ def get_items_from_uidList(uid_list):
             }
         },
         "size": 200000000
+        #"size": 10000
     }
 
     r = es.search(index="weibo_all", body=query_body)["hits"]["hits"]

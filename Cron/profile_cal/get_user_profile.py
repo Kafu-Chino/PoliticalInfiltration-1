@@ -8,6 +8,7 @@ from elasticsearch.helpers import scan
 from collections import defaultdict
 from pandas import DataFrame
 
+
 sys.path.append("../../")
 os.environ['DJANGO_SETTINGS_MODULE'] = 'PoliticalInfiltration.settings'
 
@@ -119,6 +120,7 @@ def get_items_from_uidList(uid_list):
     return data_dict
 
 
+
 # mysql查询操作，返回数据格式为单条记录的字典组成的列表
 def sql_select(cursor, table_name, field_name="*"):
     sql = 'select %s from %s' % (field_name, table_name)
@@ -132,7 +134,9 @@ def get_data_dict(cursor, table_name, field_name="*"):
     uids = sql_select(cursor, table_name, field_name)
     for uid_dict in uids:
         uid_list.update(list(uid_dict.values()))
-    return get_items_from_uidList(list(uid_list))
+    #return get_items_from_uidList(list(uid_list))
+    return uid_list
+
 
 
 # 通过获取到的用户微博信息，统计用户地域特征、活动特征，并存入mysql数据库
@@ -209,6 +213,7 @@ def sql_insert_many(cursor, table_name, primary_key, data_dict):
         conn.commit()
     else:
         print("failed")
+
 
 
 if __name__ == '__main__':

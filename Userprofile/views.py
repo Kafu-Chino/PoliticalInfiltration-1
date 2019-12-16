@@ -219,3 +219,33 @@ def insertData(e_name, *figure_names):
     e = Event(e_id=str(int(time.time())), event_name=e_name, begin_timestamp=10110000, begin_date=datetime.date.today())
     e.save()
     e.figure.add(*cour_name)
+
+
+class Show_topic(APIView):
+    def get(self,request):
+        uid = request.GET.get("uid")
+        result = Topic.objects.filter(uid = uid).values(topics)
+        if result.exists():
+            json_data = serializers.serialize("json",result)
+            results = json.loads(json_data)
+            return JsonResponse(results,safe=False)
+    
+class Show_contact(APIView):
+    def get(self,request):
+        uid = request.GET.get("uid")
+        start_time = request.GET.get("time1")
+        end_time = request.GET.get("time2")
+        result1 = SocialContact.objects.filter(target = uid,start_time<date<end_time).values('source').annotate(c=Count('uid')).values("source","c")
+        result2 = SocialContact.objects.filter(source = uid,start_time<date<end_time).values('target').annotate(c=Count('uid')).values("target","c")
+        if result1.exists() or result2.exists():
+            
+            json_data = serializers.serialize("json",result1)
+            if json_data['c']>=5:
+                results = json.loads(json_data)
+                return JsonResponse(results,safe=False)
+        '''
+        if result2.exists():
+            json_data = serializers.serialize("json",result2)
+            results = json.loads(json_data)
+            return JsonResponse(results,safe=False)
+        '''

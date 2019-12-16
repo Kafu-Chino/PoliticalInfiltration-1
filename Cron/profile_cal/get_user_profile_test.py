@@ -194,9 +194,23 @@ def get_items_from_uidList(uid_list):
 
 
 if __name__ == '__main__':
+    '''
     with open("user_list_union_sus.txt", "r", encoding="utf-8") as f:
         uid_list = [line.strip("\n") for line in f.readlines()]
+    '''
+    field = {}
+    text_dict=defaultdict(list)
+    uid_list=["5241560394","6598780267"]
     data_dict = get_items_from_uidList(uid_list)
+    print(data_dict)
+    for k,v in data_dict.items():
+        print(k)
+        for item in v:
+            #print(item["text"])
+            text_dict[k].append(item["text"])
+    print(text_dict)
+    
+    '''
     len1 = 0
     for k in data_dict:
         len1 += len(data_dict[k])
@@ -207,3 +221,4 @@ if __name__ == '__main__':
         len2 += len(data_dict_new[k])
     print(len2)
     # sql_insert(cursor, "Figure", data_dict)
+    '''
