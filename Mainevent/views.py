@@ -14,22 +14,22 @@ from Mainevent.models import Hot_post
 
 class Test(APIView):
     """测试页面"""
-'''    def get(self, request):
+    def get(self, request):
         """获取用户信息"""
         # do something
-        return HttpResponse('Hello world')
+        return HttpResponse('欢迎来到Mainevent测试页面！')
 
-    def post(self, request):
-        """获取用户信息"""
-        pass
+    # def post(self, request):
+    #     """获取用户信息"""
+    #     pass
 
-    def put(self, request):
-        """更新用户信息"""
-        pass
+    # def put(self, request):
+    #     """更新用户信息"""
+    #     pass
 
-    def delete(self, request):
-        """删除用户信息"""
-        pass'''
+    # def delete(self, request):
+    #     """删除用户信息"""
+    #     pass
 
 
 class AddByInput(APIView):
@@ -150,3 +150,11 @@ class push_Hotpost(APIView):
             hot_post_display.append(a_post)
         results = json.dumps(hot_post_display)
         return JsonResponse(results, safe=False)  # json [{data},{data}]
+
+class Person_show(APIView):
+    """用户主表展示"""
+    def get(self, request):
+        """获取用户信息"""
+        return HttpResponse('欢迎来到Mainevent测试页面！')
+
+    
