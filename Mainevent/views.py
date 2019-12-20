@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
-from django.http import JsonResponse, HttpResponse
-from django.core import serializers
-from django.db.models import Q
-from Mainevent.models import Task
 import json
 import time,datetime
 
-
+from django.http import JsonResponse, HttpResponse
+from django.core import serializers
+from django.db.models import Q
 from rest_framework.views import APIView
 from rest_framework.schemas import ManualSchema
 
-from Mainevent.models import Hot_post
+from Config.time_utils import *
+from Mainevent.models import Hot_post, Figure, Task, Event, Information
 
 class Test(APIView):
     """测试页面"""
@@ -154,7 +153,50 @@ class push_Hotpost(APIView):
 class Person_show(APIView):
     """用户主表展示"""
     def get(self, request):
-        """获取用户信息"""
-        return HttpResponse('欢迎来到Mainevent测试页面！')
+        """
+        用户展示大表信息
+        输入：
+        pagenum：当前页码数（以1起始）
+        pagelimit：每页显示个数
+        输出：
+        uid：用户id
+        nick_name：人物昵称
+        create_at：注册时间
+        user_location：注册地点
+        fansnum：粉丝数
+        friendsnum：关注数
+        information_num：发布敏感信息数
+        events_name：相关渗透事件
+        """
+        page_num = int(request.GET.get('pagenum', 1)) - 1
+        page_limit = int(request.GET.get('pagelimit', 10))
+        persons = Figure.objects.all()[page_num * page_limit : (page_num + 1) * page_limit]
+        results = []
 
-    
+        # 批量得到用户相关信息统计
+        persons_uid = [p.uid for p in persons]
+        informations = Information.objects.filter(uid__in=persons_uid)
+        information_count = {uid:0 for uid in persons_uid}
+        for i in informations:
+            information_count[i.uid] += 1
+
+        # 批量得到用户相关事件统计
+        events = Event.objects.filter(figure__uid__in=persons_uid).values_list("event_name", "figure__uid")
+        events_name = {uid:[] for uid in persons_uid}
+        for e in events:
+            event_name, uid = e
+            events_name[uid].append(event_name)
+
+        for person in persons:
+            dic = {
+                "uid":person.uid,
+                "nick_name":person.nick_name,
+                "create_at":ts2date(int(person.create_at)),
+                "user_location":person.user_location,
+                "fansnum":person.fansnum,
+                "friendsnum":person.friendsnum,
+                "information_num":information_count[person.uid],
+                "events_name":events_name[person.uid]
+            }
+            results.append(dic)
+        return JsonResponse(results, safe=False)

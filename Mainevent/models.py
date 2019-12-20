@@ -2,25 +2,6 @@ from django.db import models
 
 
 # Create your models here.
-class Event(models.Model):
-    e_id = models.CharField(max_length=30, primary_key=True)
-    event_name = models.CharField(max_length=50)
-    keywords_dict = models.CharField(max_length=100)
-    begin_timestamp = models.BigIntegerField()
-    begin_date = models.DateField()
-    end_timestamp = models.BigIntegerField(blank=True, null=True)
-    end_date = models.DateField(blank=True, null=True)
-    content = models.CharField(max_length=400)
-    uid = models.CharField(max_length=30, blank=True, null=True)
-    status = models.IntegerField(default=1)
-    if_manul = models.IntegerField(default=0)
-    information = models.ManyToManyField('Information')
-    figure = models.ManyToManyField('Figure')
-
-    class Meta():
-        db_table = 'Event'
-
-
 class Figure(models.Model):
     f_id = models.CharField(max_length=30, primary_key=True)
     uid = models.CharField(max_length=30, blank=True, null=True)
@@ -65,6 +46,23 @@ class Information(models.Model):
     class Meta():
         db_table = 'Information'
 
+class Event(models.Model):
+    e_id = models.CharField(max_length=30, primary_key=True)
+    event_name = models.CharField(max_length=50)
+    keywords_dict = models.CharField(max_length=100)
+    begin_timestamp = models.BigIntegerField()
+    begin_date = models.DateField()
+    end_timestamp = models.BigIntegerField(blank=True, null=True)
+    end_date = models.DateField(blank=True, null=True)
+    content = models.CharField(max_length=400)
+    uid = models.CharField(max_length=30, blank=True, null=True)
+    status = models.IntegerField(default=1)
+    if_manul = models.IntegerField(default=0)
+    information = models.ManyToManyField(Information, related_name="event")
+    figure = models.ManyToManyField(Figure, related_name="event")
+
+    class Meta():
+        db_table = 'Event'
 
 class Hot_post(models.Model):
     h_id = models.CharField(max_length=30, primary_key=True)

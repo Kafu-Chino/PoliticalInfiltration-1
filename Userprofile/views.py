@@ -18,19 +18,19 @@ class Test(APIView):
 
     def get(self, request):
         """GET方法的功能说明写在这里"""
-        return HttpResponse('这是测试的GET方法')
+        return HttpResponse('欢迎来到Userprofile测试页面！')
 
-    def post(self, request):
-        """POST方法的功能说明写在这里"""
-        return HttpResponse('这是测试的POST方法')
+    # def post(self, request):
+    #     """POST方法的功能说明写在这里"""
+    #     return HttpResponse('这是测试的POST方法')
 
-    def put(self, request):
-        """PUT方法的功能说明写在这里"""
-        return HttpResponse('这是测试的PUT方法')
+    # def put(self, request):
+    #     """PUT方法的功能说明写在这里"""
+    #     return HttpResponse('这是测试的PUT方法')
 
-    def delete(self, request):
-        """DELETE方法的功能说明写在这里"""
-        return HttpResponse('这是测试的DELETE方法')
+    # def delete(self, request):
+    #     """DELETE方法的功能说明写在这里"""
+    #     return HttpResponse('这是测试的DELETE方法')
 
 
 class BasicInfo(APIView):
