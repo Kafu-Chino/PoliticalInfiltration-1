@@ -12,7 +12,7 @@ from Config.db_utils import es, pi_cur, conn
 cursor = pi_cur()
 
 DOMAIN_LIST=['abroadadmin','abroadmedia','business','folkorg','grassroot','activer',\
-                'homeadmin','homemedia','lawyer','mediaworker','politician','university']
+              'homeadmin','homemedia','lawyer','mediaworker','politician','university']
 
 
 #得到领域的代表词及其权重tfidf
@@ -47,12 +47,14 @@ def get_p(train_dict,test_dict):
 
 
 def get_user_domain(word_dict):
-    doamin_dict = domain_tfidf()
+    domain_dict = domain_tfidf()
     user_domain={}
+    thedate = datetime.date.today()
     domain_p = get_p(domain_dict,word_dict)
     for k in word_dict.keys():
         domain_json = json.dumps(domain_p[k])
         user_domain["%s_%s" % (str(int(time.time())), k)]={"uid": k,
                                                            "timestamp": int(time.time()),
-                                                           "domains":domain_json}
+                                                           "domains":domain_json,
+                                                           "store_date":thedate}
     sql_insert_many(cursor, "UserDomain", "ud_id", user_domain)

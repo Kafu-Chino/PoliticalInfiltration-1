@@ -51,6 +51,7 @@ def get_p(train_dict,test_dict):
 #输入为结巴分词后的字典{uid:词列表}
 def get_user_topic(word_dict):
     topic_dict=topic_tfidf()
+    thedate = datetime.date.today()
     #print(topic_dict)
     user_topic={}
     topic_p= get_p(topic_dict,word_dict)
@@ -58,7 +59,8 @@ def get_user_topic(word_dict):
         topic_json = json.dumps(topic_p[k])
         user_topic["%s_%s" % (str(int(time.time())), k)]={"uid": k,
                                                           "timestamp": int(time.time()),
-                                                          "topics":topic_json}
+                                                          "topics":topic_json,
+                                                          "store_date":thedate}
     sql_insert_many(cursor, "UserTopic", "ut_id", user_topic)
     #return category_dict
 

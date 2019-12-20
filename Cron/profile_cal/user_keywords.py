@@ -2,9 +2,11 @@
 import sys
 import os
 import json
+import re
+import time,datetime
 from collections import defaultdict
 from textrank4zh import TextRank4Keyword, TextRank4Sentence
-from data_process_utilis import wordcount
+from data_process_utils import wordcount
 from data_get_utils import sql_insert_many
 from Config.db_utils import es, pi_cur, conn
 
@@ -12,7 +14,8 @@ cursor = pi_cur()
 
 #从敏感词列表中读取敏感词及其程度 得到{词：敏感程度}
 def sensitive_word():
-    for b in open(os.path.join(ABS_PATH, 'sensitive_words.txt'), 'r'):
+    sensitive_words_weight={}
+    for b in open('sensitive_words.txt', 'r'):
         word = b.strip().split('\t')[0]
         weight =  b.strip().split('\t')[1]
         sensitive_words_weight[word] =  weight
@@ -25,13 +28,15 @@ def get_p(train_dict,test_dict):
     p_dict=defaultdict(list)
     for k,v in test_dict.items():
         test_word = set(v.keys())
-        for i,j in train_dict.items():
-            train_word = set(j.keys())
-            c_set = test_word & train_word
+        train_word = set(train_dict.keys())
+        #for i,j in train_dict.items():
+            #train_word = set(j.keys())
+        c_set = test_word & train_word
             #print(c_set)
+        for n in c_set:
             p=0
-            p = sum([float(j[n][0]*v[n]) for n in c_set])
-            result_p[i]=p
+            p = float(train_dict[n]*v[n]) 
+            result_p[n]=p
         result_p = dict(sorted(result_p.items(),key = lambda x:x[1], reverse = True))
         p_dict[k]=result_p
     return p_dict
@@ -44,8 +49,10 @@ def get_user_keywords(text_list,word_dict, keywords_num=5):
     keywords = []
     hastag_dict=defaultdict(list)
     hastag = []
+    user_kw={}
     keywords_dict=defaultdict(list)
     text_all=""
+    thedate = datetime.date.today()
     tr4w = TextRank4Keyword()
     for k,v in text_list.items():
         if isinstance(v, str):
@@ -70,6 +77,7 @@ def get_user_keywords(text_list,word_dict, keywords_num=5):
                                                         "timestamp": int(time.time()),
                                                         "keywords":keyword_json,
                                                         "hastags":hastag_json,
-                                                        "sensitive_words":stw_json}
-    sql_insert_many(cursor, "UserKeyword", "ukw_id", user_kw)
+                                                        "sensitive_words":stw_json,
+                                                        "store_date":thedate}
+    sql_insert_many(cursor, "UserKeyWord", "ukw_id", user_kw)
     #return keywords_dict,hastag_dict

@@ -2,7 +2,6 @@ from django.db import models
 from django_mysql.models import JSONField
 
 # Create your models here.
-<<<<<<< HEAD
 class UserTopic(models.Model):
     ut_id = models.CharField(max_length=50, primary_key=True)
     uid = models.CharField(max_length=30)
@@ -24,6 +23,7 @@ class UserDomain(models.Model):
 
 class UserSocialContact(models.Model):
     uc_id = models.CharField(max_length=100, primary_key=True)
+    uid = models.CharField(max_length=30)
     target = models.CharField(max_length=30)
     target_name = models.CharField(max_length=50)
     source = models.CharField(max_length=30)
@@ -45,7 +45,6 @@ class UserKeyWord(models.Model):
     store_date = models.DateField(blank=True, null=True)
     class Meta():
         db_table = 'UserKeyWord'
-=======
 
 
 class UserActivity(models.Model):
@@ -72,4 +71,4 @@ class UserBehavior(models.Model):
 
     class Meta():
         db_table = 'UserBehavior'
->>>>>>> 0e92c819681879bf12b831b065cc5bcc4dc1ab6b
+
