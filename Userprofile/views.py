@@ -1,12 +1,11 @@
-# -*- coding: utf-8 -*-
-
 from django.http import JsonResponse, HttpResponse
 from django.core import serializers
 from django.db.models import Q, Sum
 import json
+import numpy as np
 import time, datetime
 from collections import defaultdict
-
+from django.db.models.aggregates import Count
 from Userprofile.models import *
 from Mainevent.models import *
 
@@ -210,3 +209,95 @@ def insertData(e_name, *figure_names):
     e = Event(e_id=str(int(time.time())), event_name=e_name, begin_timestamp=10110000, begin_date=datetime.date.today())
     e.save()
     e.figure.add(*cour_name)
+
+
+class Show_topic(APIView):
+    def get(self,request):
+        re = []
+        uid = request.GET.get("uid")
+        start_time = request.GET.get("time1")
+        end_time = request.GET.get("time2")
+        result = UserTopic.objects.filter(uid = uid)  #, store_date__range=(start_time,end_time)
+        #return HttpResponse(typeof(result))
+        if result.exists():
+            json_data = serializers.serialize("json",result)
+            results = json.loads(json_data)
+            #return JsonResponse(results,safe=False)
+            #'''
+            count = np.zeros(19)
+            for i in results:
+                #return JsonResponse(i,safe=False)
+                i["fields"]["topics"]["art"] += count[0]
+                count[0] = i["fields"]["topics"]["art"]
+                i["fields"]["topics"]["computer"]+= count[1]
+                count[1] = i["fields"]["topics"]["computer"]
+                i["fields"]["topics"]["economic"] += count[2]
+                count[2] = i["fields"]["topics"]["economic"]
+                i["fields"]["topics"]["education"] += count[3]
+                count[3] = i["fields"]["topics"]["education"]
+                i["fields"]["topics"]["environment"] += count[4]
+                count[4] = i["fields"]["topics"]["environment"]
+                i["fields"]["topics"]["medicine"] += count[5]
+                count[5] = i["fields"]["topics"]["medicine"]
+                i["fields"]["topics"]["military"] += count[6]
+                count[6] = i["fields"]["topics"]["military"]
+                i["fields"]["topics"]["politics"] += count[7]
+                count[7] = i["fields"]["topics"]["politics"]
+                i["fields"]["topics"]["sports"] += count[8]
+                count[8] = i["fields"]["topics"]["sports"]
+                i["fields"]["topics"]["traffic"] += count[9]
+                count[9] = i["fields"]["topics"]["traffic"]
+                i["fields"]["topics"]["life"] += count[10]
+                count[10] = i["fields"]["topics"]["life"]
+                i["fields"]["topics"]["anti-corruption"] += count[11]
+                count[11] = i["fields"]["topics"]["anti-corruption"]
+                i["fields"]["topics"]["employment"] += count[12]
+                count[12] = i["fields"]["topics"]["employment"]
+                i["fields"]["topics"]["fear-of-violence"] += count[13]
+                count[13] = i["fields"]["topics"]["fear-of-violence"]
+                i["fields"]["topics"]["house"] += count[14]
+                count[14] = i["fields"]["topics"]["house"]
+                i["fields"]["topics"]["law"] += count[15]
+                count[15] = i["fields"]["topics"]["law"]
+                i["fields"]["topics"]["peace"] += count[16]
+                count[16] = i["fields"]["topics"]["peace"]
+                i["fields"]["topics"]["religion"] += count[17]
+                count[17] = i["fields"]["topics"]["religion"]
+                i["fields"]["topics"]["social-security"] += count[18]
+                count[18] = i["fields"]["topics"]["social-security"]
+                re.append(i["fields"]["topics"])
+            re = sorted(re[len(results)-1].items(),key=lambda x:x[1],reverse=True)[:5]
+            #result = sorted(result[0], reverse = True)
+            #return HttpResponse(re)
+            
+            return JsonResponse(re,safe=False)
+        else:
+            return JsonResponse({"status":400, "error": "未找到该用户信息"},safe=False,json_dumps_params={'ensure_ascii':False}) 
+
+class Show_contact(APIView):
+    def get(self,request):
+        user_source=defaultdict(list)
+        #user_target=defaultdict(list)
+        uid = request.GET.get("uid")
+        start_time = request.GET.get("time1")
+        end_time = request.GET.get("time2")
+        result1 = UserSocialContact.objects.filter(target = uid, store_date__range=(start_time,end_time))\
+                   .values('source').annotate(c=Count('uid')).filter(c__gte=5)
+        result2 = UserSocialContact.objects.filter(source = uid, store_date__range=(start_time,end_time))\
+                   .values('target').annotate(c=Count('uid')).filter(c__gte=5)
+        if result1.exists():
+            for re in result1:
+                test = Figure.objects.filter(uid=re['source'])
+                if test.exists():
+                    user_source["in"].append({'uid':re['uid'],'insource':re['source']})
+                else:
+                    user_source["out"].append({'uid':re['uid'],'outsource':re['source']})
+            #json_source = serializers.serialize("json",in_)
+            #results1 = json.loads(json_source)
+            return JsonResponse(user_source,safe=False)
+        if result2.exists():
+            json_target = serializers.serialize("json",result2)
+            results2 = json.loads(json_target)
+            return JsonResponse(results2,safe=False)
+        else:
+            return JsonResponse({"status":400, "error": "未找到符合条件的用户"},safe=False,json_dumps_params={'ensure_ascii':False})
