@@ -72,3 +72,18 @@ class UserBehavior(models.Model):
     class Meta():
         db_table = 'UserBehavior'
 
+
+class Influence(models.Model):
+    mid = models.CharField(max_length=30, primary_key=True)
+    uid = models.CharField(max_length=30)
+    comment = models.IntegerField()
+    retweeted = models.IntegerField()
+    original_retweeted_time_num = models.IntegerField()
+    original_comment_time_num = models.IntegerField()
+    original_retweeted_average_num = models.IntegerField()
+    original_comment_average_num = models.IntegerField()
+    timestamp = models.BigIntegerField()
+    date = models.DateField()
+    class Meta():
+        db_table = 'Influence'
+
