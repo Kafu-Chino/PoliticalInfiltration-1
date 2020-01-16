@@ -10,8 +10,8 @@
 
 import csv
 from data_get_utils import sql_insert_many
-from ../../Config.db_utils import pi_cur, conn
-from ../../Config.time_utils import today, nowts
+from Config.db_utils import pi_cur, conn
+from Config.time_utils import today, nowts
 from decimal import *
 
 cursor = pi_cur()
@@ -93,9 +93,5 @@ def get_user_political(word_dict):
         val.append((j, i))
     # 执行sql语句
     n = cursor.executemany(sql, val)
-    m = len(val)
-    if n == m:
-        print("insert %d success" % m)
-        conn.commit()
-    else:
-        print("failed")
+    print("update %d success" % m)
+    conn.commit()
