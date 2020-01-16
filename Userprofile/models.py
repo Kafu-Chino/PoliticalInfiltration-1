@@ -87,6 +87,7 @@ class Influence(models.Model):
     class Meta():
         db_table = 'Influence'
 
+
 class WordCount(models.Model):
     uwc_id = models.CharField(max_length=50, primary_key=True)
     uid = models.CharField(max_length=30)
@@ -95,3 +96,17 @@ class WordCount(models.Model):
     store_date = models.DateField(blank=True, null=True)
     class Meta():
         db_table = 'WordCount'
+
+
+class UserSentiment(models.Model):
+    us_id = models.CharField(max_length=50, primary_key=True)
+    uid = models.CharField(max_length=30, blank=True, null=True)
+    timestamp = models.BigIntegerField(blank=True, null=True)
+    negtive = models.IntegerField(blank=True, null=True)
+    nuetral = models.IntegerField(blank=True, null=True)
+    positive = models.IntegerField(blank=True, null=True)
+    store_date = models.DateField(blank=True, null=True)
+
+    class Meta():
+        db_table = 'UserSentiment'
+

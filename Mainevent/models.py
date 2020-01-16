@@ -41,6 +41,7 @@ class Information(models.Model):
     root_mid = models.CharField(max_length=30)
     source = models.CharField(max_length=20)
     i_level = models.IntegerField()
+    status = models.IntegerField(default=1)
     hazard_index = models.FloatField(blank=True, null=True)
 
     class Meta():
