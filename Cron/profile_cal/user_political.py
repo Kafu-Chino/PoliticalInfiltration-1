@@ -93,5 +93,5 @@ def get_user_political(word_dict):
         val.append((j, i))
     # 执行sql语句
     n = cursor.executemany(sql, val)
-    print("update %d success" % m)
+    print("update %d success" % n)
     conn.commit()
