@@ -87,3 +87,11 @@ class Influence(models.Model):
     class Meta():
         db_table = 'Influence'
 
+class WordCount(models.Model):
+    uwc_id = models.CharField(max_length=50, primary_key=True)
+    uid = models.CharField(max_length=30)
+    wordcount = JSONField()
+    timestamp = models.BigIntegerField()
+    store_date = models.DateField(blank=True, null=True)
+    class Meta():
+        db_table = 'WordCount'
