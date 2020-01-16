@@ -24,11 +24,11 @@ def triple_classifier(weibo, weibo_dic, l_m):
     X = [get_vector(i, weibo_dic) for i in weibo]
     new_label = []
     for i in l_m.predict_proba(X):
-        if i[1] < 0.3:
+        if i[1] < 0.2:
             new_label.append('0')
         elif i[1] > 0.7:
             new_label.append('2')
         else:
             new_label.append('1')
 
-    print(new_label)
+    return new_label
