@@ -9,8 +9,8 @@
 """
 
 from data_get_utils import sql_insert_many
-from ../../Config.db_utils import pi_cur
-from ../../Config.time_utils import today, nowts
+from Config.db_utils import pi_cur
+from Config.time_utils import today, nowts
 import pickle
 import joblib
 from sentiment_classifier import triple_classifier
@@ -38,12 +38,12 @@ def cal_user_emotion(word_dict):
         if sum_r :#此天有微博数据
             sentiment = triple_classifier(weibo_list, weibo_dic, l_m)
             c = Counter(sentiment).most_common()
-            c = sorted(c, key=lambda item: item[0])
-            sentiment_dict['timestamp'] = nowts
+            c = dict(c)
+            sentiment_dict['timestamp'] = nowts()
             sentiment_dict['uid'] = uid
-            sentiment_dict['negtive'] = c[0][1]
-            sentiment_dict['nuetral'] = c[1][1]
-            sentiment_dict['positive'] = c[2][1]
+            sentiment_dict['negtive'] = c.get('0', 0)
+            sentiment_dict['nuetral'] = c.get('1', 0)
+            sentiment_dict['positive'] = c.get('2', 0)
             sentiment_dict['store_date'] = thedate
             user_sentiment_dict['%s_%s'% (str(sentiment_dict['timestamp']), uid)] = sentiment_dict
         else:
