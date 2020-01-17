@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'drf_yasg',
     'Mainevent',
     'Userprofile',
+    'Usermanager',
+    'Informationspread',
 ]
 
 MIDDLEWARE = [

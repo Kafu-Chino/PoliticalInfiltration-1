@@ -3,27 +3,27 @@
 ### 标记好这个统计函数的输入与输出，以便于代码查看
 
 
-import sys
-import os
 import time
 import datetime
 from pandas import DataFrame
-
-sys.path.append("../../")
-os.environ['DJANGO_SETTINGS_MODULE'] = 'PoliticalInfiltration.settings'
+from Mainevent.models import *
 
 
-# 获取单个用户的活动特征，输入数据格式为{uid1:[{},{}],uid2:[{},{}]},返回格式{timestamp_uid:{},timestamp_uid2:{}}
+# 获取单个用户的活动特征，输入数据格式为{uid1:[{},{}],uid2:[{},{}]},返回格式{timestamp_uid1:{},timestamp_uid2:{}}
 def get_msg_type_aggs(data_dict):
+    end_time = int(time.time())
+    start_time = end_time - 24 * 60 * 60
     user_behavior_dict = {}
     for uid in data_dict:
         mid_dict_list = data_dict[uid]
         df = DataFrame(mid_dict_list)
         behavior_dict = get_msg_aggs(df)
-        behavior_dict["timestamp"] = int(time.time())
+        sensitivenum = Information.objects.filter(uid=uid, timestamp__gte=start_time, timestamp__lt=end_time).count()
+        behavior_dict["sensitivenum"] = sensitivenum
+        behavior_dict["timestamp"] = end_time
         behavior_dict["uid"] = uid
         behavior_dict["store_date"] = datetime.date.today()
-        user_behavior_dict["%s_%s" % (str(behavior_dict["timestamp"]), uid)] = behavior_dict
+        user_behavior_dict["%s_%s" % (str(end_time), uid)] = behavior_dict
 
     return user_behavior_dict
 

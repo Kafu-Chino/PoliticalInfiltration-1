@@ -7,8 +7,9 @@ class UserActivity(models.Model):
     ua_id = models.CharField(max_length=50, primary_key=True)
     uid = models.CharField(max_length=30, blank=True, null=True)
     statusnum = models.IntegerField(blank=True, null=True)
+    sensitivenum = models.IntegerField(blank=True, null=True)
     timestamp = models.BigIntegerField(blank=True, null=True)
-    send_ip = models.CharField(max_length=30, blank=True, null=True)
+    send_ip = models.CharField(max_length=1000, blank=True, null=True)
     geo = models.CharField(max_length=50, blank=True, null=True)
     store_date = models.DateField(blank=True, null=True)
 
@@ -22,6 +23,7 @@ class UserBehavior(models.Model):
     originalnum = models.IntegerField(blank=True, null=True)
     commentnum = models.IntegerField(blank=True, null=True)
     retweetnum = models.IntegerField(blank=True, null=True)
+    sensitivenum = models.IntegerField(blank=True, null=True)
     timestamp = models.BigIntegerField(blank=True, null=True)
     store_date = models.DateField(blank=True, null=True)
 
