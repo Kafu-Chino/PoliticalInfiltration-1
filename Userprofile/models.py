@@ -110,3 +110,28 @@ class UserSentiment(models.Model):
     class Meta():
         db_table = 'UserSentiment'
 
+
+class UserInfluence(models.Model):
+    uid = models.CharField(max_length=30, blank=True,primary_key=True)
+    timestamp = models.BigIntegerField(blank=True, null=True)
+    influence = models.IntegerField(blank=True, null=True)
+    importance = models.IntegerField(blank=True, null=True)
+    activity = models.IntegerField(blank=True, null=True)
+    sensitity = models.IntegerField(blank=True, null=True)
+    store_date = models.DateField(blank=True, null=True)
+
+    class Meta():
+        db_table = 'UserInfluence'
+
+class NewUserInfluence(models.Model):
+    uid_ts = models.CharField(max_length=40, primary_key=True)
+    uid = models.CharField(max_length=30, blank=True)
+    timestamp = models.BigIntegerField(blank=True, null=True)
+    influence = models.IntegerField(blank=True, null=True)
+    importance = models.IntegerField(blank=True, null=True)
+    activity = models.IntegerField(blank=True, null=True)
+    sensitity = models.IntegerField(blank=True, null=True)
+    store_date = models.DateField(blank=True, null=True)
+
+    class Meta():
+        db_table = 'NewUserInfluence'
