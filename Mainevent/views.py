@@ -1,34 +1,35 @@
 # -*- coding: utf-8 -*-
-import json
-import time,datetime
-
 from django.http import JsonResponse, HttpResponse
 from django.core import serializers
 from django.db.models import Q
+from Mainevent.models import Task
+import json
+import time,datetime
+
+
 from rest_framework.views import APIView
 from rest_framework.schemas import ManualSchema
 
-from Config.time_utils import *
-from Mainevent.models import Hot_post, Figure, Task, Event, Information
+from Mainevent.models import Hot_post
 
 class Test(APIView):
     """测试页面"""
-    def get(self, request):
+'''    def get(self, request):
         """获取用户信息"""
         # do something
-        return HttpResponse('欢迎来到Mainevent测试页面！')
+        return HttpResponse('Hello world')
 
-    # def post(self, request):
-    #     """获取用户信息"""
-    #     pass
+    def post(self, request):
+        """获取用户信息"""
+        pass
 
-    # def put(self, request):
-    #     """更新用户信息"""
-    #     pass
+    def put(self, request):
+        """更新用户信息"""
+        pass
 
-    # def delete(self, request):
-    #     """删除用户信息"""
-    #     pass
+    def delete(self, request):
+        """删除用户信息"""
+        pass'''
 
 
 class AddByInput(APIView):
@@ -149,6 +150,7 @@ class push_Hotpost(APIView):
             hot_post_display.append(a_post)
         results = json.dumps(hot_post_display)
         return JsonResponse(results, safe=False)  # json [{data},{data}]
+
 
 class Person_show(APIView):
     """用户主表展示"""

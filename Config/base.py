@@ -14,6 +14,12 @@ DB_PASSWORD = 'mysql3306'
 DB_CHARSET = 'utf8mb4'
 # DB_DEFAULT_DB = 'portrait'
 # DB_DEFAULT_DB = 'itfin'
-DB_MIN_CACHED=3
-DB_MAX_CACHED=10
-DB_MAX_CONNECYIONS=30
+DB_MIN_CACHED = 3
+DB_MAX_CACHED = 10
+DB_MAX_CONNECYIONS = 30
+
+
+# 计算信息传播态势阈值参数
+count_threshold = 300
+reduce_threshold = 0.5
+political_dict = {"right": "右倾", "left": "左倾", "mid": "中立"}
