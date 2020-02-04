@@ -215,19 +215,38 @@ class Association(APIView):
         return JsonResponse(res_dict)
 
 
-class Show_topic(APIView):
+
+
+def insertData(e_name, *figure_names):
+    cour_name = []
+
+    for f in figure_names:
+        try:
+            figure = Figure.objects.get(uid=f)
+        except Figure.DoesNotExist:
+            figure = Figure.objects.create(uid=f)
+        cour_name.append(figure)
+    e = Event(e_id=str(int(time.time())), event_name=e_name, begin_timestamp=10110000, begin_date=datetime.date.today())
+    e.save()
+    e.figure.add(*cour_name)
+
+
+class Show_prefer(APIView):
     def get(self,request):
-        re = []
+        re = defaultdict(list)
+        re2 = defaultdict(list)
+        prefer = defaultdict(dict)
         uid = request.GET.get("uid")
-        start_time = request.GET.get("time1")
-        end_time = request.GET.get("time2")
-        result = UserTopic.objects.filter(uid = uid)  #, store_date__range=(start_time,end_time)
+        #start_time = request.GET.get("time1")
+        #end_time = request.GET.get("time2")
+        result1 = UserTopic.objects.filter(uid = uid)  #, store_date__range=(start_time,end_time)
+        result2 = UserDomain.objects.filter(uid = uid)  #, store_date__range=(start_time,end_time)
         #return HttpResponse(typeof(result))
-        if result.exists():
-            json_data = serializers.serialize("json",result)
+        if result1.exists():
+            json_data = serializers.serialize("json",result1)
             results = json.loads(json_data)
             #return JsonResponse(results,safe=False)
-            #'''
+            '''
             count = np.zeros(19)
             for i in results:
                 #return JsonResponse(i,safe=False)
@@ -270,39 +289,151 @@ class Show_topic(APIView):
                 i["fields"]["topics"]["social-security"] += count[18]
                 count[18] = i["fields"]["topics"]["social-security"]
                 re.append(i["fields"]["topics"])
-            re = sorted(re[len(results)-1].items(),key=lambda x:x[1],reverse=True)[:5]
+            '''
+            for i in results:
+                uid = i["fields"]["uid"]
+                re[uid].append(i["fields"]["topics"])
+            #re = sorted(re.values()[0],key=lambda x:x[1],reverse=True)[:5]
+            prefer['topic'] = re
             #result = sorted(result[0], reverse = True)
             #return HttpResponse(re)
+        #if result2.exists():
+            json_data2 = serializers.serialize("json",result2)
+            results2 = json.loads(json_data2)
+            for i in results2:
+                #re2[i['fields']['uid']].append(i["fields"]["domains"])  #,{"main_domain":i["fields"]["main_domain"]}
+                re2[i['fields']['uid']].append({"main_domain":i["fields"]["main_domain"]})
+            #re2 = sorted(re2.items(),key=lambda x:x[1],reverse=True)[:5]
+            prefer['domain'] = re2
+            return JsonResponse(prefer,safe=False)
+        else:
+            return JsonResponse({"status":400, "error": "未找到该用户信息"},safe=False,json_dumps_params={'ensure_ascii':False}) 
 
-            return JsonResponse(re,safe=False)
+
+class Show_keyword(APIView):
+    def get(self,request):
+        re1 = defaultdict(list)
+        uid = request.GET.get("uid")
+        #start_time = request.GET.get("time1")
+        #end_time = request.GET.get("time2")
+        result = UserKeyWord.objects.filter(uid = uid)  #, store_date__range=(start_time,end_time)
+        #return HttpResponse(typeof(result))
+        if result.exists():
+            json_data = serializers.serialize("json",result)
+            results = json.loads(json_data)
+            #return JsonResponse(results,safe=False)
+            for i in results:
+                uid = i["fields"]["uid"]
+                #re1[uid].append({"keywords":i["fields"]["keywords"],"sensitive_words":i["fields"]["sensitive_words"],"hastags":i["fields"]["hastags"]})
+                re1[uid] = {"keywords":i["fields"]["keywords"],"sensitive_words":i["fields"]["sensitive_words"],"hastags":i["fields"]["hastags"]}
+            return JsonResponse(re1,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "未找到该用户信息"},safe=False,json_dumps_params={'ensure_ascii':False})
 
 class Show_contact(APIView):
     def get(self,request):
         user_source=defaultdict(list)
-        #user_target=defaultdict(list)
+        user_target=defaultdict(list)
+        insource = []
+        outsource = []
+        intarget = []
+        outtarget = []
         uid = request.GET.get("uid")
         start_time = request.GET.get("time1")
-        end_time = request.GET.get("time2")
-        result1 = UserSocialContact.objects.filter(target = uid, store_date__range=(start_time,end_time))\
-                   .values('source').annotate(c=Count('uid')).filter(c__gte=5)
-        result2 = UserSocialContact.objects.filter(source = uid, store_date__range=(start_time,end_time))\
-                   .values('target').annotate(c=Count('uid')).filter(c__gte=5)
+        #end_time = request.GET.get("time2")
+        days = request.GET.get("days")
+        result1 = UserSocialContact.objects.filter(target = uid, store_date__range=(start_time,start_time-days))\
+                   .values('source').annotate(c=Count('uid')).filter(c__gte=1)
+        result2 = UserSocialContact.objects.filter(source = uid, store_date__range=(start_time,start_time-days))\
+                   .values('target').annotate(c=Count('uid')).filter(c__gte=1)
         if result1.exists():
             for re in result1:
                 test = Figure.objects.filter(uid=re['source'])
                 if test.exists():
-                    user_source["in"].append({'uid':re['uid'],'insource':re['source']})
+                    insource.append(re['source'])
+                    #user_source["in"].append({'uid':re['uid'],'insource':re['source']})
                 else:
-                    user_source["out"].append({'uid':re['uid'],'outsource':re['source']})
+                    outsource.append(re['source'])
+                    #user_source["out"].append('outsource':re['source'])
             #json_source = serializers.serialize("json",in_)
             #results1 = json.loads(json_source)
-            return JsonResponse(user_source,safe=False)
         if result2.exists():
-            json_target = serializers.serialize("json",result2)
-            results2 = json.loads(json_target)
-            return JsonResponse(results2,safe=False)
-        else:
+            for re in result2:
+                test = Figure.objects.filter(uid=re['target'])
+                if test.exists():
+                    intarget.append(re['target'])
+                    #user_source["in"].append({"uid":re["uid"],'intarget':re['target']})
+                else:
+                    outtarget.append(re['target'])
+                    #user_source["out"].append({'uid':re['uid'],'outtarget':re['target']})
+        user_source["in"].append("uid":uid,'intarget':outtarget,'insource':outsource)
+        user_source["out"].append("uid":uid,'outtarget':outtarget,'outsource':outsource)
+        return JsonResponse(user_source,safe=False)
+        '''else:
             return JsonResponse({"status":400, "error": "未找到符合条件的用户"},safe=False,json_dumps_params={'ensure_ascii':False})
+<<<<<<< Updated upstream
+
+=======
+        '''
+
+class Figure_create(APIView):
+    """添加人物入库和删除人物"""
+# status 0->未计算 1->已计算 2->计算中 3->计算失败
+    def get(self,request):
+        """添加人物：获取添加信息，输入uid,nick,location,fans,friends,political,domain
+           调取人物id、昵称、注册地、粉丝数、关注数、政治倾向和领域，若没有填写微博ID则wb_id="";输出状态及提示：400 状态错误，201写入成功"""
+        times = int(time.time())
+        dates = datetime.datetime.now().strftime('%Y-%m-%d')  # 获取当前时间戳和日期
+        f_id = request.GET.get("uid") #f_id与uid均为输入的用户id
+        uid = request.GET.get("uid")  
+        nick = request.GET.get("nick")
+        location = request.GET.get("location")
+        fans = request.GET.get("fans")
+        friends = request.GET.get("friends")
+        political = request.GET.get("political")
+        domain = request.GET.get("domain")
+        #h_id = request.GET.get("wb_id")  # 若该条人工输入事件从微博而来 则需输入来源微博的id
+        #result = Task.objects.filter(~Q(mid=''), mid=h_id) #判断从微博得来的事件是否已存在，若微博ID未给出返回一个空值
+        if f_id and nick :
+            Figure.objects.create(f_id=f_id, uid=uid, nick_name=nick,user_location=location,fansnum=fans,
+                                friendsnum=friends,political = political,domain=domain)
+            return JsonResponse({"status":201, "msg": "人物添加成功"},safe=False,json_dumps_params={'ensure_ascii':False})
+        else:
+            return JsonResponse({"status":400, "error": "请输入人物的相关信息"},safe=False,json_dumps_params={'ensure_ascii':False})
+
+
+class Figure_delete(APIView):
+# 选中要删除的人物 选中时传入uid 
+    def get(self,request):
+        uid = request.GET.get("uid")
+        result = Figure.objects.filter(f_id=uid)
+        if result.exists():
+            try:
+                Figure.objects.filter(f_id=uid).delete() 
+                return JsonResponse({"status":201, "msg": "人物已删除"},safe=False,json_dumps_params={'ensure_ascii':False})
+            except:
+                return JsonResponse({"status":400, "error": "删除失败"},safe=False,json_dumps_params={'ensure_ascii':False})
+        else:
+            return JsonResponse({"status":400, "error": "人物不存在"},safe=False,json_dumps_params={'ensure_ascii':False})
+
+
+
+class Show_figure(APIView):
+    """展示人物列表"""
+    def get(self, request):
+        """展示人物,该文档返回Figure表中存在的需要展示的数据，返回字段f_id为用户账号，nick_name为昵称
+          fansnum粉丝数,friendsnum关注数,political政治倾向,domain领域,user_location地点"""
+        result = Figure.objects.values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')
+        return HttpResponse(result)
+
+
+
+class search_figure(APIView):
+    """展示所搜寻人物信息"""
+    def get(self, request):
+        """展示人物,该文档返回Figure表中存在的需要展示的数据，返回字段f_id为用户账号，nick_name为昵称
+          fansnum粉丝数,friendsnum关注数,political政治倾向,domain领域,user_location地点"""
+        name = request.GET.get("nick")
+        result = Figure.objects.filter(nick_name__contains = name).values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')
+        return HttpResponse(result)
 

@@ -82,7 +82,7 @@ DATABASES = {
         'NAME': 'PoliticalInfiltration',         # 你要存储数据的库名，事先要创建之
         'USER': 'root',         # 数据库用户名
         'PASSWORD': 'mysql3306',     # 密码
-        'HOST': '219.224.134.214',    # 主机
+        'HOST': '219.224.135.12',    # 主机
         'PORT': '3306',         # 数据库使用的端口
         'OPTIONS': {'charset': 'utf8mb4'},  # 用utf8mb4编码在MySQL中存储4字节字符
     }

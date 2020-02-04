@@ -18,7 +18,7 @@ def sensitive_word():
     for b in open('sensitive_words.txt', 'r'):
         word = b.strip().split('\t')[0]
         weight =  b.strip().split('\t')[1]
-        sensitive_words_weight[word] =  weight
+        sensitive_words_weight[word] = weight
     return sensitive_words_weight
 
 
@@ -26,9 +26,9 @@ def sensitive_word():
 def get_p(train_dict,test_dict):
     result_p={}
     p_dict=defaultdict(list)
+    train_word = set(train_dict.keys())
     for k,v in test_dict.items():
         test_word = set(v.keys())
-        train_word = set(train_dict.keys())
         #for i,j in train_dict.items():
             #train_word = set(j.keys())
         c_set = test_word & train_word
@@ -50,29 +50,50 @@ def get_user_keywords(text_list,word_dict, keywords_num=5):
     hastag_dict=defaultdict(list)
     hastag = []
     user_kw={}
-    keywords_dict=defaultdict(list)
+    keywords_dict=defaultdict(dict)
     text_all=""
     thedate = datetime.date.today()
     tr4w = TextRank4Keyword()
+    time11 = time.time()
     for k,v in text_list.items():
-        if isinstance(v, str):
-            RE = re.compile(u'#([a-zA-Z-_⺀-⺙⺛-⻳⼀-⿕々〇〡-〩〸-〺〻㐀-䶵一-鿃豈-鶴侮-頻並-龎]+)#', re.UNICODE)
-        # hashtag = '&'.join(RE.findall(text))
-            hastag = RE.findall(v)
-                #text_all += text
+        for text in v:
+            if isinstance(text, str):
+                RE = re.compile(u'#([a-zA-Z-_⺀-⺙⺛-⻳⼀-⿕々〇〡-〩〸-〺〻㐀-䶵一-鿃豈-鶴侮-頻並-龎]+)#', re.UNICODE)
+                #print(RE.findall(text))
+                #RE = re.compile(u"#.[\u4e00-\u9fa5]+#")
+                #hastag.append(RE.findall(text.encode('utf-8').decode('utf-8'))) 
+                tr4w.analyze(text=text, lower=True, window=2)   # py2中text必须是utf8编码的str或者unicode对象，py3中必须是utf8编码的bytes或者str对象
+                for item in tr4w.get_keywords(keywords_num, word_min_len= 1):
+                    #print(item.word,item.weight)
+                    try:
+                        keywords_dict[k][item['word']] += item['weight']
+                    except:
+                        keywords_dict[k][item['word']] = item['weight']
+                #print(json.dumps(keywords_dict[k],ensure_ascii=False))
         hastag_dict[k] = hastag
-        tr4w.analyze(text=v.encode('utf-8', 'ignore'), lower=True, window=2)   # py2中text必须是utf8编码的str或者unicode对象，py3中必须是utf8编码的bytes或者str对象
-        for item in tr4w.get_keywords(keywords_num, word_min_len= 1):
-            keywords.append(item.word)
-        keywords_dict[k] = keywords
-    hastag_dict = wordcount(hastag_dict)
-    keywords_dict=wordcount(keywords_dict)
+        #keywords_dict[k] = keywords
+    #print(hastag_dict)
+    time22 = time.time()
+    print("获取关键词和has花费：",time22-time11)
+    if len(hastag_dict):
+        hastag_dict = wordcount(hastag_dict)
+    #keywords_dict=wordcount(keywords_dict)
+    time2 = time.time()
+    print("wordcount花费：",time2-time22)
     sensitive_words_weight = sensitive_word()
+    time3=time.time()
+    print("读取敏感词花费：",time3-time2)
     stw_dict = get_p(sensitive_words_weight,word_dict)
-    for k in word_dict.keys():
-        keyword_json = json.dumps(keywords_dict[k])
-        hastag_json = json.dumps(hastag_dict[k])
-        stw_json = json.dumps(stw_dict[k])
+    time4 = time.time()
+    print("获取概率：",time4-time3)
+    for k in word_dict:
+        #if len(keywords_dict):
+        keyword_json = json.dumps(keywords_dict[k],ensure_ascii=False)
+        #print(keyword_json)
+        #if len(hastag_dict):
+        hastag_json = json.dumps(hastag_dict[k],ensure_ascii=False)
+        #if len(stw_dict):
+        stw_json = json.dumps(stw_dict[k],ensure_ascii=False)
         user_kw["%s_%s" % (str(int(time.time())), k)]={"uid": k,
                                                         "timestamp": int(time.time()),
                                                         "keywords":keyword_json,
@@ -80,4 +101,6 @@ def get_user_keywords(text_list,word_dict, keywords_num=5):
                                                         "sensitive_words":stw_json,
                                                         "store_date":thedate}
     sql_insert_many(cursor, "UserKeyWord", "ukw_id", user_kw)
-    #return keywords_dict,hastag_dict
+    time5 = time.time()
+    print("插入kw花费：",time5-time4)
+    #return keywords_dict,hastag_dict'''

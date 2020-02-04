@@ -3,7 +3,13 @@ import emoji
 from pandas import DataFrame
 from collections import defaultdict
 import jieba
-from get_user_profile import get_data_dict
+from get_user_profile import get_data_dict,sql_insert_many
+import time
+#from data_get_utils import sql_select_many
+from Config.db_utils import es, pi_cur, conn
+import datetime
+import json
+cursor = pi_cur()
 
 
 
@@ -17,39 +23,43 @@ def get_field(data_dict,field_name):
 
 #对得到的微博文本进行去除链接、符号、空格等操作
 def weibo_move(field_dict):
-    if len(field_dict)>=1:
-
-        text_list = {}
+    if len(field_dict):
+        text_dict = defaultdict(list)
+        text_list = defaultdict(list)
         for k,v in field_dict.items():
-            text = ""
+            #text = ""
             for item in v:
-                text += item
-            result = Weibo_utils()
-            result.remove_c_t(text)
-            text = result.remove_emoji(text)
-            text = result.remove_nochn(text)
-            text_list[k] = text
+                result = Weibo_utils()
+                result.remove_c_t(item)
+                item = result.remove_emoji(item)
+                text = result.remove_nochn(item)
+                text_list[k].append(text)
+                text_dict[k].append(jieba.lcut(text,cut_all=False))
         #with open('weibocut_%s.txt' % k,"w") as f:
             #f.writelines(text_list)
-        return text_list
+        return text_list,text_dict
     else:
         print("无微博内容")
 
-
+'''
 #对处理过的敏感人物微博进行分词，返回结果为字典{uid:词列表}
 def jieba_cut(text_list):
     #text_list = weibo_move()
-    text_dict = defaultdict(list)
-    for k,v in text_list.items():
-        text_dict[k] = jieba.lcut(v,cut_all=False)
-    return text_dict
-
+    if len(text_list):
+        text_dict = defaultdict(list)
+        for k,v in text_list.items():
+            for item 
+            text_dict[k] = jieba.lcut(v,cut_all=False)
+        return text_dict
+    else: 
+        print("无数据")
+'''
 
 
 
 #读取停用词
 def stopwordslist():
-    stopwords = [line.strip() for line in open('stop_words.txt').readlines()]
+    stopwords = set([line.strip() for line in open('stop_words.txt').readlines()])
     return stopwords
 
 
@@ -57,22 +67,37 @@ def stopwordslist():
 #输入为分词后的{uid:[词列表]} 返回格式为字典{uid:{词：词频}}
 def wordcount(text_dict):
     stopwords = stopwordslist()
-    word_list = {} #统计词频后的字典{uid:词频}
+    #word_list = {} #统计词频后的字典{uid:词频}
     word_dict = {} #格式为字典{uid:{词：词频}}
+    user_wc = {}
     for k,v in text_dict.items():
-        #count=0
+        word_list = {}
+        count=0
         for item in v:
-            if item not in stopwords:
-                #count + =1
-                if item not in word_list.keys(): 
-                    word_list[item] = 1
-                else:
-                    word_list[item] += 1 
+            for item1 in item:
+                if item1 not in stopwords and item1 != " ":
+                    count += 1
+                    try:
+                        word_list[item1] += 1
+                    except:
+                        word_list[item1] = 1 
+        word_list["count"] = count
         #for w,c in word_list:
             #word_list[w] = c/count
         word_dict[k]=word_list
-        
+    thedate = datetime.date.today()
+    for k in word_dict.keys():
+        word_json = json.dumps(word_dict[k])
+        user_wc["%s_%s" % (str(int(time.time())), k)]={"uid": k,
+                                                           "timestamp": int(time.time()),
+                                                           "wordcount":word_json,
+                                                           "store_date":thedate}
+    sql_insert_many(cursor, "WordCount", "uwc_id", user_wc)
     return word_dict
+
+
+
+
 
 
 class Weibo_utils:
@@ -120,13 +145,20 @@ class Weibo_utils:
         return doclist_new
 
 
-
+ 
 def get_processed_data(data_dict):
     #data_dict=get_data_dict(cursor, table_name, field_name1)
+    time1 = time.time()
     field_dict = get_field(data_dict,"text")
-    text_list = weibo_move(field_dict)
-    text_dict = jieba_cut(text_list)
-    return wordcount(text_dict),text_list
+    time2 = time.time()
+    print("获取特定字段花费：",time2-time1)
+    text_list,text_dict = weibo_move(field_dict)
+    time11 = time.time()
+    print("去除链接以及分词等花费：",time11-time2)
+    word_dict = wordcount(text_dict)
+    time22 = time.time()
+    print("统计词频花费：",time22-time11)
+    return word_dict,text_list
 
 
 if __name__ == '__main__':
@@ -137,4 +169,5 @@ if __name__ == '__main__':
     print(text_list)
     '''
     word,text = get_processed_data(data)
-
+    print(word)
+    print(text)
