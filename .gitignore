@@ -123,3 +123,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# ours
+Cron/profile_cal/sentiment_model_data/weibo_vector.pkl
