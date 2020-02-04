@@ -14,6 +14,7 @@ class UserTopic(models.Model):
 class UserDomain(models.Model):
     ud_id = models.CharField(max_length=50, primary_key=True)
     uid = models.CharField(max_length=30)
+    main_domain = models.CharField(max_length=30,blank=True, null=True)
     domains = JSONField()
     timestamp = models.BigIntegerField()
     store_date = models.DateField(blank=True, null=True)
@@ -88,6 +89,7 @@ class Influence(models.Model):
     date = models.DateField()
     class Meta():
         db_table = 'Influence'
+
 
 
 class WordCount(models.Model):

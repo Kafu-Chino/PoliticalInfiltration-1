@@ -12,4 +12,5 @@ IMPORTANCE_WEIGHT_DICT = {'fansnum': 0.2, 'domain': 0.5, 'topic': 0.3}
 DOMAIN_WEIGHT_DICT = {'university': 0.8, 'homeadmin': 0.6, 'abroadadmin': 1, 'homemedia': 1, \
                       'abroadmedia': 1, 'folkorg': 0.8, 'lawyer': 1, 'politician': 0.8, \
                       'mediaworker': 0.8, 'activer': 0.6, 'grassroot': 0.6, 'other': 0.5, 'business': 0.6}
+
 activeness_weight_dict = { 'activity_geo': 0.5, 'statusnum': 0.5}
