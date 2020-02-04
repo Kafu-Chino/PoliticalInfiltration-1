@@ -137,4 +137,5 @@ if __name__ == '__main__':
     print(text_list)
     '''
     word,text = get_processed_data(data)
-
+    print(word)
+    print(text)

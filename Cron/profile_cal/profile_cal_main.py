@@ -9,38 +9,45 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'PoliticalInfiltration.settings'
 django.setup()
 
 import math
-from Cron.profile_cal.data_get_utils import *
-from Cron.profile_cal.user_position import *
-from Cron.profile_cal.user_msg_type import *
-from user_topic import get_user_topic
-from user_domain import get_user_domain
-from user_social import get_user_social
-from user_keywords import get_user_keywords
+from data_utils import get_uid_list, get_uidlist_data
 from data_process_utils import get_processed_data
+from user_sentiment import cal_user_emotion
 
-
+# 批量计算用户
 def profile_cal_uidlist(uidlist):
-	data = get_items_from_uidList(uidlist)
-    result_position = get_user_activity_aggs(data)
-    result_msg_type = get_msg_type_aggs(data)
-    sql_insert_many(cursor, "UserBehavior", "ub_id", result_msg_type)
-    sql_insert_many(cursor, "UserActivity", "ua_id", result_position)
-	word_dict,text_list = get_processed_data(data)
-	get_user_topic(word_dict)
-	get_user_domain(word_dict)
-	get_user_social(data)
-	get_user_keywords(text_list,word_dict,5)
+    data = get_uidlist_data(uidlist)
+    word,text = get_processed_data(data)
+
+    # 地域特征（文娟）
+    # result_position = get_user_activity_aggs(data)
+
+    # 活动特征（文娟）
+    # result_msg_type = get_msg_type_aggs(data)
+
+    # 偏好特征（梦丽）
+
+
+    # 影响力特征（英汉）
+
+
+    # 社交特征（梦丽）
+
+
+    # 情绪特征（中方）
+    
+
+
 
 
 def main():
-    uidlist = get_uid_list(cursor, "Figure", "uid")
-    uidlist_new = []
-    n = math.ceil(len(uidlist) / 1000)
-    for i in range(n):
-        uids = uidlist[i * 1000, (i + 1) * 1000]
-        uidlist_new.append(uids)
-    for uidlist_sub in uidlist_new:
-        profile_cal_uidlist(uidlist_sub)
+    uidlist = get_uid_list()
+    batch_num = 1000
+    batch_all = math.ceil(len(uidlist) / batch_num)
+    for batch_epoch in range(batch_all):
+        uidlist_batch = uidlist[batch_epoch * batch_num: (batch_epoch + 1) * batch_num]
+        print("用户{}至{}， 共{}".format(batch_epoch * batch_num, (batch_epoch + 1) * batch_num, len(uidlist)))
+
+        profile_cal_uidlist(uidlist_batch)
 
 
 if __name__ == '__main__':
