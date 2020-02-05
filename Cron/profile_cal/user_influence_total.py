@@ -43,7 +43,15 @@ def querry(field,root_uid,type):
             "bool": {
                 "must": [
                     {
-                        "term": {
+                        "range": {
+                            "timestamp": {
+                                "gt": pre_time,
+                                "lt": day_time
+                            }
+                        }
+                    },
+                    {
+                        "terms": {
                             field: root_uid
                         }
                     }
@@ -88,8 +96,6 @@ def get_queue_index(timestamp):
 
 
 def statistics(uid_list):
-    tart_time = time.time()
-
     o_save_dict = dict()
     for uid in uid_list:
         o_save_dict[uid] = dict()
@@ -98,41 +104,54 @@ def statistics(uid_list):
         for i in range(0, 97):
             o_save_dict[uid]['or_act'][i] = 0
             o_save_dict[uid]['oc_act'][i] = 0
-    start_time = time.time()
-    num = 0
-    for uid in uid_list:
+
+    # for uid in uid_list:
         # print(uid)
-        o_mid = []
-        for list in querry("uid", uid, 1):
-            print(len(list))
-            for message in list:
-                # print(message)
-                o_mid.append((message['mid'], message['timestamp'], message['time']))
-        # print(o_mid)
+    uid_o_mid = {}
+    for uid in uid_list:
+        uid_o_mid[uid] = []
+    for list in querry("uid", uid_list, 1):
+        for message in list:
+            # if message['uid'] in uid_o_mid.keys():
+            uid_o_mid[message['uid']].append((message['mid'], message['timestamp'], message['time']))
+    mid_set = set()
+    for uid in uid_list:
+        o_mid = uid_o_mid[uid]
+        mids = []
         for tuple in o_mid:
             mid = tuple[0]
-            # print(mid)
+            mid_set.add(mid)
+            mids.append(mid)
             o_save_dict[uid][mid] = dict()
-            o_save_dict[uid][mid]['timestamp'] = tuple[1]
-            o_save_dict[uid][mid]['date'] = tuple[2]
-            for list in querry("root_mid", mid, 2):
-                o_save_dict[uid][mid]['comment'] = len(list)
-                for message in list:
-                    index = get_queue_index(message['timestamp'])
-                    # print(o_save_dict[uid]['oc_act'])
-                    o_save_dict[uid]['oc_act'][index] += 1
-                    # try:
-                    #     o_save_dict[uid][mid]['comment'] += 1
-                    # except:
-                    #     o_save_dict[uid][mid]['comment'] = 1
+            o_save_dict[uid][mid]['comment'] = 0
+            o_save_dict[uid][mid]['retweet'] = 0
 
-            for list in querry("root_mid", mid, 3):
-                # print(len(list))
-                o_save_dict[uid][mid]['retweet'] = len(list)
-                for message in list:
-                    index = get_queue_index(message['timestamp'])
-                    o_save_dict[uid]['or_act'][index] += 1
 
+
+        for tuple in o_mid:
+            # mid = tuple[0]
+
+            # o_save_dict[uid][mid] = dict()
+            o_save_dict[uid][tuple[0]]['timestamp'] = tuple[1]
+            o_save_dict[uid][tuple[0]]['date'] = tuple[2][:10]
+
+    print(len(mid_set))
+    for list in querry("root_uid", uid_list, 2):
+        # o_save_dict[uid][mid]['comment'] = len(list)
+        for message in list:
+            o_save_dict[message['root_uid']][message['root_mid']]['comment'] += 1
+            index = get_queue_index(message['timestamp'])
+            # print(o_save_dict[uid]['oc_act'])
+            o_save_dict[message['root_uid']]['oc_act'][index] += 1
+    for list in querry("root_uid", uid_list, 3):
+        # o_save_dict[uid][mid]['comment'] = len(list)
+        for message in list:
+            o_save_dict[message['root_uid']][message['root_mid']]['retweet'] += 1
+            index = get_queue_index(message['timestamp'])
+            # print(o_save_dict[uid]['oc_act'])
+            o_save_dict[message['root_uid']]['or_act'][index] += 1
+
+    for uid in uid_list:
         oc_index_l = o_save_dict[uid]['oc_act'].values()
         max_oc_index = max(oc_index_l)
         oc_activite_time_num = 0
@@ -153,7 +172,7 @@ def statistics(uid_list):
         or_activite_time_num = 0
         active_act_num = 0
         for i in or_index_l:
-            if i > int(max_oc_index / 2) + 1 and i > 5:
+            if i > int(max_or_index / 2) + 1 and i > 5:
                 or_activite_time_num += 1
                 active_act_num += i
         try:
@@ -163,20 +182,17 @@ def statistics(uid_list):
         o_save_dict[uid]['or_act']['or_activite_time_num'] = or_activite_time_num
         o_save_dict[uid]['or_act']['or_ac_av_num'] = or_ev_av_num
 
-        num += 1
-        # print(num)
-        # if num % 1000 == 0:
-        #     print(time.time() - start_time)
+
 
 
     cursor = db.cursor()
-    with open('uid.txt', 'w', encoding='utf8') as wf:
-        for uid in o_save_dict.keys():
-            wf.write(uid + '\n')
-
+    # with open('uid.txt', 'w', encoding='utf8') as wf:
+    #     for uid in o_save_dict.keys():
+    #         wf.write(uid + '\n')
+    # num = 0
     for uid in o_save_dict.keys():
         # print(uid)
-        try:
+        # try:
             for mid in o_save_dict[uid].keys():
                 if mid != 'or_act' and mid != 'oc_act':
                     # print(mid)
@@ -194,9 +210,11 @@ def statistics(uid_list):
                           "original_comment_time_num,original_comment_average_num,date) values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s )"
                     # print(data)
                     cursor.executemany(sql, data)
-        except:
-            continue
+        # except:
+        #     print('cuowu')
+        #     continue
     db.commit()
+
 
 '''
 影响力计算
@@ -217,8 +235,9 @@ def activity_influence(total,ave,max,ac_num,av_ac_num):
                 0.1*math.log(ac_num+1,math.e)+0.1*math.log(av_ac_num+1,math.e)
     return influence
 
-def user_influence(uid,or_influence,oc_influence,pre_time,day_time):
-    query_body = {
+
+def querry2(field,uid_list):
+    querrybody = {
         "query": {
             "bool": {
                 "must": [
@@ -229,86 +248,21 @@ def user_influence(uid,or_influence,oc_influence,pre_time,day_time):
                                 "lt": day_time
                             }
                         }
-                    }
-                    ,
+                    },
                     {
-                        "term": {
-                            "uid": uid
+                        "terms": {
+                            field: uid_list
                         }
                     }
                     ,
-                    {
-                        "term": {
-                            "message_type": 1
-                        }
-                    }
+
                 ],
                 "must_not": [],
                 "should": []
             }
         },
         "from": 0,
-        "sort": [],
-        "aggs": {}
-    }
-
-    query = es.search(index="weibo_all", body=query_body,scroll='5m', size=10000)
-    o_num = query['hits']['total']
-
-
-    query_body1 = {
-        "query": {
-            "bool": {
-                "must": [
-                    {
-                        "range": {
-                            "timestamp": {
-                                "gt": pre_time,
-                                "lt": day_time
-                            }
-                        }
-                    }
-                    ,
-                    {
-                        "term": {
-                            "uid": uid
-                        }
-                    }
-                    ,
-                    {
-                        "term": {
-                            "message_type": 3
-                        }
-                    }
-                ],
-                "must_not": [],
-                "should": []
-            }
-        },
-        "from": 0,
-        "sort": [],
-        "aggs": {}
-    }
-    query = es.search(index="weibo_all", body=query_body1,scroll='5m', size=10000 )
-    r_num = query['hits']['total']
-
-    query_body2 = {
-        "query": {
-            "bool": {
-                "must": [
-
-                    {
-                        "term": {
-                            "uid": uid
-                        }
-                    }
-                    ,
-                ],
-                "must_not": [],
-                "should": []
-            }
-        },
-        "from": 0,
+        "size": 10000,
         "sort":{
             "timestamp":{
                 "order":"desc"
@@ -316,29 +270,45 @@ def user_influence(uid,or_influence,oc_influence,pre_time,day_time):
         },
         "aggs": {}
     }
-    result = es.search(index="weibo_all", body=query_body2, scroll='5m', size=1)['hits']['hits']
-    if len(result)==0:
-        fans_num = 0
-    else:
-        print(result)
-        for line in result:
-            fans_num = line['_source']['user_fansnum']
+    query = es.search(index="weibo_all", body=querrybody, scroll='5m', size=10000)
+
+    results = query['hits']['hits']  # es查询出的结果第一页
+    total = query['hits']['total']  # es查询出的结果总量
+    scroll_id = query['_scroll_id']  # 游标用于输出es查询出的所有结果
+    list = []
+    for line in results:
+        list.append(line['_source'])
+    for i in range(0, int(total / 10000) + 1):
+        # scroll参数必须指定否则会报错
+        query_scroll = es.scroll(scroll_id=scroll_id, scroll='5m')['hits']['hits']
+
+        for line in query_scroll:
+            list.append(line['_source'])
+        yield list
+
+
+def user_influence(or_influence,oc_influence,o_num,r_num,fans_num):
     user_influence = (0.15*(0.6*math.log(o_num+1,math.e)+0.3*math.log(r_num+1,math.e)+0.1*math.log(fans_num+1,math.e))+
                       0.85*(0.5*or_influence+0.5*oc_influence))*300
     return user_influence
 
 
 
-
-
-
-
 def get_influence_dict(uid_list):
+    statistic = {}
+    for uid in uid_list:
+        statistic[uid] = {}
+        statistic[uid]['fansnum'] = 0
+        statistic[uid]['original'] = 0
+        statistic[uid]['retweet'] = 0
+    for list in querry2("uid", uid_list):
+        for message in list:
+            if message['message_type'] == 1:
+                statistic[message['uid']]['original'] += 1
+            if message['message_type'] == 3:
+                statistic[message['uid']]['retweet'] += 1
+            statistic[message['uid']]['fansnum'] += message['user_fansnum']
 
-    # uids = []
-    # with open("uid.txt", 'r', encoding='utf8') as f:
-    #     for line in f.readlines():
-    #         uids.append(line.strip())
     for uid in uid_list:
         # print(uid)
         influence = 0
@@ -377,7 +347,8 @@ def get_influence_dict(uid_list):
                                               line_statistic['original_retweeted_time_num'],line_statistic['original_retweeted_average_num'])
             oc_influence = activity_influence(line_statistic['total_comment'],line_statistic['av_comment'],line_statistic['max_comment'],
                                               line_statistic['original_comment_time_num'],line_statistic['original_comment_average_num'])
-        influence = user_influence(uid,or_influence,oc_influence,pre_time=pre_time,day_time=day_time)
+
+        influence = user_influence(or_influence=or_influence,oc_influence=oc_influence,o_num=statistic[uid]['original'],r_num=statistic[uid]['retweet'],fans_num=statistic[uid]['fansnum'])
         result_dict[uid]['influence'] = influence
 
 '''
@@ -505,7 +476,7 @@ def get_importance_dic(uid_list):
 '''
 def search_woordcount(uid,nowtime,pretime):
     cursor = db.cursor()
-    sql = "SELECT wordcount FROM  WordCount  WHERE timestamp between '%d'and '%d'and uid = '%s' " % (pretime,nowtime,uid)#timestamp between '%d'and '%d'，pretime,nowtime,
+    sql = "SELECT wordcount FROM  WordCount  WHERE timestamp between '%d'and '%d'and uid = '%s' limit 1" % (pretime,nowtime,uid)#timestamp between '%d'and '%d'，pretime,nowtime,
     # try:
     cursor.execute(sql)
     # 获取所有记录列表
@@ -623,22 +594,22 @@ def get_sensitive_dict(word_dict):
             line = line.strip().split('\t')
             # print(line)
             word_score[line[0]] = int(line[1])
-    num = 0
+    # num = 0
     sensitive_word = word_score.keys()
     for uid in uids:
         sensitiveness = 0
-        for day_dic in word_dict[uid]:
-            for word in day_dic.keys():
-                if word in sensitive_word:
-                    sensitiveness += word_score[word]*day_dic[word]
-        num +=1
-        print(num)
+        # for day_dic in word_dict[uid]:
+        for word in word_dict[uid].keys():
+            if word in sensitive_word:
+                sensitiveness += word_score[word]*word_dict[uid][word]
+        # num +=1
+        # print(num)
         result_dict[uid]['sensitive'] = sensitiveness
 
 '''
 存储计算结果
 '''
-def influence_total(uid_list,start_date,end_date):
+def influence_total(uid_list,start_date,end_date,word_count):
     global day_time
     # day_time = int(time.mktime(datetime.date.today().timetuple()))+86400
     day_time =int(time.mktime(time.strptime(end_date, "%Y-%m-%d")))
@@ -651,22 +622,14 @@ def influence_total(uid_list,start_date,end_date):
     for uid in uid_list:
         result_dict[uid] = {}
     statistics(uid_list)
+    print(time.time()-start_time)
     get_influence_dict(uid_list)
+    print(time.time()-start_time)
     get_importance_dic(uid_list)
     get_activityness_dict(uid_list)
 
-    wordcount = {}
-    for uid in uid_list:
-        worddict_list = []
-        try:
-            for i in search_woordcount(uid, nowtime=day_time, pretime=pre_time):
-                worddict_list.append(json.loads(i[0]))
-            wordcount[uid] = worddict_list
-            # wordcount[uid] = json.loads(search_woordcount(uid, nowtime=day_time, pretime=pre_time)[0][0])
-        except:
-            wordcount[uid] = {}
-            continue
-    get_sensitive_dict(wordcount)
+
+    get_sensitive_dict(word_count)
 
     save_sql(result_dict)
 
@@ -694,6 +657,4 @@ def save_sql(dic):
         print('错误')
         db.rollback()
     db.close()
-
-
 
