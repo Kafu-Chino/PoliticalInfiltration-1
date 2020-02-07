@@ -7,7 +7,7 @@ import math
 import time
 
 # from influence.Config import *
-TOPIC_WEIGHT_DICT = {'topic_art': 0.2, 'topic_computer': 0.3*100000, 'topic_economic': 0.5, \
+TOPIC_WEIGHT_DICT = {'topic_art': 0.2, 'topic_computer': 0.3*1, 'topic_economic': 0.5, \
                      'topic_education': 0.5, 'topic_environment': 0.3, 'topic_medicine': 0.3, \
                      'topic_military': 0.8, 'topic_politics': 0.8, 'topic_sports': 0.2, \
                      'topic_traffic': 0.3, 'topic_life': 0.2, 'topic_anti_corruption': 0.8, \
@@ -37,7 +37,7 @@ db = pymysql.connect(
 '''
 影响力依赖统计
 '''
-def querry(field,root_uid,type):
+def querry(field,root_uid,type,days):
     querrybody = {
         "query": {
             "bool": {
@@ -45,7 +45,7 @@ def querry(field,root_uid,type):
                     {
                         "range": {
                             "timestamp": {
-                                "gt": pre_time,
+                                "gt": day_time-86400*days,
                                 "lt": day_time
                             }
                         }
@@ -110,46 +110,50 @@ def statistics(uid_list):
     uid_o_mid = {}
     for uid in uid_list:
         uid_o_mid[uid] = []
-    for list in querry("uid", uid_list, 1):
+    for list in querry("uid", uid_list, 1,30):
         for message in list:
             # if message['uid'] in uid_o_mid.keys():
             uid_o_mid[message['uid']].append((message['mid'], message['timestamp'], message['time']))
-    mid_set = set()
+    mid_list = []
     for uid in uid_list:
         o_mid = uid_o_mid[uid]
         mids = []
         for tuple in o_mid:
             mid = tuple[0]
-            mid_set.add(mid)
+            mid_list.append(mid)
             mids.append(mid)
             o_save_dict[uid][mid] = dict()
             o_save_dict[uid][mid]['comment'] = 0
             o_save_dict[uid][mid]['retweet'] = 0
 
-
-
         for tuple in o_mid:
             # mid = tuple[0]
-
             # o_save_dict[uid][mid] = dict()
             o_save_dict[uid][tuple[0]]['timestamp'] = tuple[1]
             o_save_dict[uid][tuple[0]]['date'] = tuple[2][:10]
+    print(len(mid_list))
 
-    print(len(mid_set))
-    for list in querry("root_uid", uid_list, 2):
+
+    for list1 in querry("root_mid", mid_list, 2,1):
         # o_save_dict[uid][mid]['comment'] = len(list)
-        for message in list:
-            o_save_dict[message['root_uid']][message['root_mid']]['comment'] += 1
-            index = get_queue_index(message['timestamp'])
-            # print(o_save_dict[uid]['oc_act'])
-            o_save_dict[message['root_uid']]['oc_act'][index] += 1
-    for list in querry("root_uid", uid_list, 3):
+        for message in list1:
+            try:
+                o_save_dict[message['root_uid']][message['root_mid']]['comment'] += 1
+                index = get_queue_index(message['timestamp'])
+                # print(o_save_dict[uid]['oc_act'])
+                o_save_dict[message['root_uid']]['oc_act'][index] += 1
+            except:
+                continue
+    for list1 in querry("root_mid",  mid_list, 3,1):
         # o_save_dict[uid][mid]['comment'] = len(list)
-        for message in list:
-            o_save_dict[message['root_uid']][message['root_mid']]['retweet'] += 1
-            index = get_queue_index(message['timestamp'])
-            # print(o_save_dict[uid]['oc_act'])
-            o_save_dict[message['root_uid']]['or_act'][index] += 1
+        for message in list1:
+            try:
+                o_save_dict[message['root_uid']][message['root_mid']]['retweet'] += 1
+                index = get_queue_index(message['timestamp'])
+                # print(o_save_dict[uid]['oc_act'])
+                o_save_dict[message['root_uid']]['or_act'][index] += 1
+            except:
+                continue
 
     for uid in uid_list:
         oc_index_l = o_save_dict[uid]['oc_act'].values()
@@ -186,10 +190,7 @@ def statistics(uid_list):
 
 
     cursor = db.cursor()
-    # with open('uid.txt', 'w', encoding='utf8') as wf:
-    #     for uid in o_save_dict.keys():
-    #         wf.write(uid + '\n')
-    # num = 0
+
     for uid in o_save_dict.keys():
         # print(uid)
         # try:
@@ -222,13 +223,11 @@ def statistics(uid_list):
 def search(uid,nowtime,pretime):
     cursor = db.cursor()
     sql = "SELECT * FROM  Influence  WHERE timestamp between '%d'and '%d'and uid = '%s'" % (pretime,nowtime,uid)#timestamp between '%d'and '%d'，pretime,nowtime,
-    # try:
     cursor.execute(sql)
     # 获取所有记录列表
     results = cursor.fetchall()
     return results
-    # except:
-    #     return None
+
 
 def activity_influence(total,ave,max,ac_num,av_ac_num):
     influence = 0.5*math.log(total+1,math.e)+0.2*math.log(ave+1,math.e)+0.1*math.log(max+1,math.e)+\
@@ -253,9 +252,7 @@ def querry2(field,uid_list):
                         "terms": {
                             field: uid_list
                         }
-                    }
-                    ,
-
+                    },
                 ],
                 "must_not": [],
                 "should": []
@@ -295,7 +292,6 @@ def user_influence(or_influence,oc_influence,o_num,r_num,fans_num):
 
 
 def get_influence_dict(uid_list):
-    statistic = {}
     for uid in uid_list:
         statistic[uid] = {}
         statistic[uid]['fansnum'] = 0
@@ -354,6 +350,36 @@ def get_influence_dict(uid_list):
 '''
 重要度计算
 '''
+def get_domain_topic(uid_list,day_timestamp):
+    cursor = db.cursor()
+    uids = ''
+    for uid in uid_list:
+        uids += uid + ','
+
+    sql = "select uid,main_domain from UserDomain where  uid in (%s) and timestamp = %d" % (uids[:-1], day_timestamp)
+
+    # 执行sql语句
+    cursor.execute(sql)
+    # 提交到数据库执行
+    results = cursor.fetchall()
+
+    cursor = db.cursor()
+    sql = "select uid,topics from UserTopic where  uid in (%s)and timestamp = %d" % (uids[:-1], day_timestamp)
+    cursor.execute(sql)
+    # 提交到数据库执行
+    results1 = cursor.fetchall()
+    domain_topic_dict = {}
+    for uid in uid_list:
+        domain_topic_dict[uid] = dict()
+        domain_topic_dict[uid]['main_domain'] = 0
+        domain_topic_dict[uid]['topic'] = 0
+    # 关闭数据库连接
+    for m in results:
+        domain_topic_dict[m[0]]['main_domain'] = m[1]
+    for m in results1:
+        domain_topic_dict[m[0]]['topic'] = json.loads(m[1])
+    return domain_topic_dict
+
 
 def search_domain(uid,nowtime,pretime):
     cursor = db.cursor()
@@ -396,79 +422,37 @@ def get_max_fansnum():
     return max_fansnum
 
 def cal_importance(domain, topic_dict, user_fansnum, fansnum_max):
-    result = 0
     domain_result = 0
-    domain_result = DOMAIN_WEIGHT_DICT[domain]*1
-    # print(domain_result)
+    if domain!=0:
+        domain_result = DOMAIN_WEIGHT_DICT[domain]*1
     topic_result = 0
-    for topic in topic_dict.keys():
-        try :
-            # print(topic_result)
-            topic_result += topic_dict[topic]*TOPIC_WEIGHT_DICT['topic_'+topic]
-        except :
-            continue
-    # print(  fansnum_max)
+    if topic_dict != 0:
+        for topic in topic_dict.keys():
+            try :
+                # print(topic_result)
+                topic_result += topic_dict[topic]*TOPIC_WEIGHT_DICT['topic_'+topic]
+            except :
+                continue
+    # print(topic_result,domain_result,user_fansnum)
     result = (IMPORTANCE_WEIGHT_DICT['fansnum']*math.log(float(user_fansnum)/ fansnum_max*9+1, 10) +
             IMPORTANCE_WEIGHT_DICT['domain']*domain_result +
-              IMPORTANCE_WEIGHT_DICT['topic']*(topic_result / 3))*100
+              IMPORTANCE_WEIGHT_DICT['topic']*(topic_result / 3))*100000
     return result
 
-def get_fansnum(uid):
-    query_body2 = {
-        "query": {
-            "bool": {
-                "must": [
 
-                    {
-                        "term": {
-                            "uid": uid
-                        }
-                    }
-                    ,
-                ],
-                "must_not": [],
-                "should": []
-            }
-        },
-        "from": 0,
-        "sort": {
-            "timestamp": {
-                "order": "desc"
-            }
-        },
-        "aggs": {}
-    }
-    result = es.search(index="weibo_all", body=query_body2, scroll='5m', size=1)['hits']['hits']
-    if len(result) == 0:
-        fans_num = 0
-    else:
-        for line in result:
-            fans_num = line['_source']['user_fansnum']
-    return fans_num
 # 1579177125
 def get_importance_dic(uid_list):
     max_fans_num = get_max_fansnum()
+    domain_topic = get_domain_topic(uid_list,day_time-86400)
     for uid in uid_list:
         try:
-            domains = search_domain(uid,nowtime=day_time,pretime=pre_time)[0]
-            # print(domains)
-            domain = domains[0]
-            # domains_dict = {}
-            # for i in domain_list:
-            #     domains_dict[i[0]]=i[1]
-            topics = search_topic(uid, nowtime=day_time, pretime=pre_time)[0]
-            topic_list = json.loads(topics[0])
-            # print(topic_list)
-            # topics_dict = {}
-            # for i in topic_list:
-            #     topics_dict[i[0]] = i[1]
-            # # print(topics_dict)
-            fansnum = get_fansnum(uid)
-            # print(topics_dict)
-            # print(topic_list)
-            importance = cal_importance(domain=domain,topic_dict=topic_list,user_fansnum=fansnum,fansnum_max=max_fans_num)
+            domain = domain_topic[uid]['main_domain']
+            topics = domain_topic[uid]['topic']
+            # fansnum = get_fansnum(uid)
+            importance = cal_importance(domain=domain,topic_dict=topics,user_fansnum=statistic[uid]['fansnum'],fansnum_max=max_fans_num)
             result_dict[uid]['importance']=importance
         except:
+            print('错误')
             result_dict[uid]['importance'] = 0
 
 '''
@@ -612,19 +596,19 @@ def get_sensitive_dict(word_dict):
 def influence_total(uid_list,start_date,end_date,word_count):
     global day_time
     # day_time = int(time.mktime(datetime.date.today().timetuple()))+86400
-    day_time =int(time.mktime(time.strptime(end_date, "%Y-%m-%d")))
+    day_time =int(time.mktime(time.strptime(end_date, "%Y-%m-%d")))+86400
     global pre_time
     pre_time = int(time.mktime(time.strptime(start_date, "%Y-%m-%d")))
     # pre_time = day_time - 86400 * 200
     global result_dict
     result_dict = {}
+    global statistic
+    statistic = {}
 
     for uid in uid_list:
         result_dict[uid] = {}
     statistics(uid_list)
-    print(time.time()-start_time)
     get_influence_dict(uid_list)
-    print(time.time()-start_time)
     get_importance_dic(uid_list)
     get_activityness_dict(uid_list)
 
