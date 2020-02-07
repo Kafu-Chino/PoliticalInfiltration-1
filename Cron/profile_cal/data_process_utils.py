@@ -146,7 +146,3 @@ def get_processed_data(data_dict,date):
     #print("统计词频花费：",time22-time11)
     return word_dict,text_list,text_dict
 
-
-if __name__ == '__main__':
-    pass
-
