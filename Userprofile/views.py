@@ -366,8 +366,8 @@ class Show_contact(APIView):
                 else:
                     outtarget.append(re['target'])
                     #user_source["out"].append({'uid':re['uid'],'outtarget':re['target']})
-        user_source["in"].append("uid":uid,'intarget':outtarget,'insource':outsource)
-        user_source["out"].append("uid":uid,'outtarget':outtarget,'outsource':outsource)
+        user_source["in"].append({"uid":uid,'intarget':outtarget,'insource':outsource})
+        user_source["out"].append({"uid":uid,'outtarget':outtarget,'outsource':outsource})
         return JsonResponse(user_source,safe=False)
         '''else:
             return JsonResponse({"status":400, "error": "未找到符合条件的用户"},safe=False,json_dumps_params={'ensure_ascii':False})

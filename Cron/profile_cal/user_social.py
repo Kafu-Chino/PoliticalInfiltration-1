@@ -12,7 +12,7 @@ cursor = pi_cur()
 
 #计算用户上下游关系
 #输入直接得到微博全字段信息
-def get_user_social(data_dict):
+def get_user_social(data_dict,date):
     #cur = conn.cursor(cursor=pymysql.cursors.DictCursor)
     time1 = time.time()
     info_list = sql_select(cursor, "Figure", field_name="*")
@@ -55,7 +55,7 @@ def get_user_social(data_dict):
                                                                                                       "source":num["source"],
                                                                                                       "source_name":num["source_name"],
                                                                                                       "message_type":num["message_type"],
-                                                                                                      "store_date":thedate}
+                                                                                                      "store_date":date}
         sql_insert_many(cursor, "UserSocialContact", "uc_id", user_sc)
         time4 = time.time()
         print("插入social花费：",time4-time3)
