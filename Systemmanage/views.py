@@ -12,7 +12,8 @@ from rest_framework.views import APIView
 from rest_framework.schemas import ManualSchema
 from .敏感词扩展.sensitive_word_extent import extent
 
-
+from Systemmanage.models import *
+from Mainevent.models import *
 class Test(APIView):
     """测试页面"""
 
@@ -148,3 +149,195 @@ class Modify_global_parameter(APIView):
 
         else:
             return JsonResponse({"status":400, "error": "请输入全局参数和修改值"},safe=False,json_dumps_params={'ensure_ascii':False})
+
+
+
+
+class Add_sensitiveword(APIView):
+    """展示事件管理接口"""
+
+    def add_sensitiveword(self, request):
+        """
+        增加事件敏感词
+        格式：{'word':word,'e_id':eid,'bias':bias}
+        """
+        res_dict = {}
+        word = request.GET.get('word')
+        e_id = request.GET.get('e_id')
+        bias = request.GET.get('bias')
+        try:
+            SensitiveWord.objects.create(s_id=word + e_id, prototype=word, e_id=e_id, perspective_bias=bias)
+            res_dict["status"] = 1
+            res_dict["result"] = "添加成功"
+        except:
+            res_dict["status"] = 0
+            res_dict["result"] = "添加失败"
+        return JsonResponse(res_dict)
+
+class Delete_sensitiveword(APIView):
+    """展示事件管理接口"""
+
+    def delete_sensitiveword(self, request):
+        """
+        删除敏感词
+        格式：{'word':word,'e_id':eid}
+        """
+        res_dict = {}
+        word = request.GET.get('word')
+        e_id = request.GET.get('e_id')
+
+        try:
+            SensitiveWord.objects.filter(word = word,e_id = e_id).delete()
+            res_dict["status"] = 1
+            res_dict["result"] = "删除成功"
+        except:
+            res_dict["status"] = 0
+            res_dict["result"] = "删除失败"
+        return JsonResponse(res_dict)
+
+
+#敏感文本的添加和删除
+class Add_sensitivetext(APIView):
+    """展示事件管理接口"""
+
+    def add_sensitivetext(self, request):
+        """
+        增加事件敏感文本
+        格式：{'i_id':i_id,'uid':uid,'mid':mid,'root_uid':root_uid,'root_mid':root_mid,'text':text,'timestamp':timestamp,
+        'date':date,'send_ip':send_ip,'geo':geo,'message_type':message_type,'source':ource,'status':status}
+        """
+        res_dict = {}
+        i_id = request.GET.get('i_id')
+        uid = request.GET.get('uid')
+        mid = request.GET.get('mid')
+        root_uid = request.GET.get('root_uid')
+        root_mid = request.GET.get('root_mid')
+        text = request.GET.get('text')
+        timestamp = request.GET.get('timestamp')
+        date = request.GET.get('date')
+        send_ip = request.GET.get('send_ip')
+        geo = request.GET.get('geo')
+        message_type = request.GET.get('message_type')
+        source = request.GET.get('source')
+        status = request.GET.get('status')
+        try:
+            Information.objects.create(s_id=i_id, uid=uid, root_uid=root_uid, mid=mid,root_mid=root_mid, timestamp=timestamp,
+                                       text=text, date=date,send_ip=send_ip, geo=geo, message_type=message_type,source=source,status=status)
+            res_dict["status"] = 1
+            res_dict["result"] = "添加成功"
+        except:
+            res_dict["status"] = 0
+            res_dict["result"] = "添加失败"
+        return JsonResponse(res_dict)
+
+class Delete_sensitivetext(APIView):
+    """展示事件管理接口"""
+
+    def delete_sensitivetext(self, request):
+        """
+        删除敏感文本
+        格式：{'mid':mid}
+        """
+        res_dict = {}
+        mid = request.GET.get('mid')
+
+        try:
+            Information.objects.filter(mid = mid).delete()
+            res_dict["status"] = 1
+            res_dict["result"] = "删除成功"
+        except:
+            res_dict["status"] = 0
+            res_dict["result"] = "删除失败"
+        return JsonResponse(res_dict)
+#事件关键词的添加与删除
+class Add_keyword(APIView):
+    """展示事件管理接口"""
+
+    def add_keyword(self, request):
+        """
+        增加事件关键词
+        格式：{'word':word',e_id':e_id'}
+        """
+        res_dict = {}
+        word = request.GET.get('word')
+        e_id = request.GET.get('e_id')
+
+        try:
+            EventKeyWord.objects.create(k_id=word+e_id, word=word, e_id=e_id)
+            res_dict["status"] = 1
+            res_dict["result"] = "添加成功"
+        except:
+            res_dict["status"] = 0
+            res_dict["result"] = "添加失败"
+        return JsonResponse(res_dict)
+
+class Delete_keyword(APIView):
+    """展示事件管理接口"""
+
+    def delete_keyword(self, request):
+        """
+        删除事件关键词
+        格式：{'word':word',e_id':e_id'}
+        """
+        res_dict = {}
+        word = request.GET.get('word')
+        e_id = request.GET.get('e_id')
+
+        try:
+            EventKeyWord.objects.filter(k_id = word+e_id).delete()
+            res_dict["status"] = 1
+            res_dict["result"] = "删除成功"
+        except:
+            res_dict["status"] = 0
+            res_dict["result"] = "删除失败"
+        return JsonResponse(res_dict)
+#事件参数的添加更新
+class Add_eventparameter(APIView):
+    """展示事件管理接口"""
+
+    def add_eventparameter(self, request):
+        """
+        增加事件关键词
+        格式：{'p_name':p_name','p_value':p_value,'e_id':e_id}
+        """
+        res_dict = {}
+        p_name = request.GET.get('p_name')
+        e_id = request.GET.get('e_id')
+        p_value = request.GET.get('p_value')
+
+        try:
+            EventParameter.objects.create(p_id = p_name+e_id,p_name=p_name, p_value=p_value, e_id=e_id)
+            res_dict["status"] = 1
+            res_dict["result"] = "添加成功"
+            '''
+            此处启动事件计算
+            '''
+        except:
+            res_dict["status"] = 0
+            res_dict["result"] = "添加失败"
+        return JsonResponse(res_dict)
+
+class Update_eventparameter(APIView):
+    """展示事件管理接口"""
+
+    def Update_eventparameter(self, request):
+        """
+        更新事件关键词
+        格式：{'p_name':p_name','e_id':e_id,'new_value':new_value}
+        """
+        res_dict = {}
+        p_name = request.GET.get('p_name')
+        e_id = request.GET.get('e_id')
+        new_value = request.GET.get('new_value')
+
+        try:
+            EventParameter.objects.filter(p_name=p_name,e_id = e_id).update(p_value = new_value)
+            res_dict["status"] = 1
+            res_dict["result"] = "添加成功"
+            '''
+            此处启动事件计算
+            '''
+        except:
+            res_dict["status"] = 0
+            res_dict["result"] = "添加失败"
+        return JsonResponse(res_dict)
