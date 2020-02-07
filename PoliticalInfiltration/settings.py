@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'Userprofile',
     'Usermanager',
     'Informationspread',
+    'Systemmanage',
 ]
 
 MIDDLEWARE = [
