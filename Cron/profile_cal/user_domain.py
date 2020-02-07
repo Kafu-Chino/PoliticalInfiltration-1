@@ -61,7 +61,7 @@ def get_p(train_dict,test_dict):
 
 
 
-def get_user_domain(word_dict):
+def get_user_domain(word_dict,date):
     time1 = time.time()
     domain_dict = domain_tfidf()
     time2 = time.time()
@@ -82,5 +82,5 @@ def get_user_domain(word_dict):
                                                            "timestamp": int(time.time()),
                                                            "main_domain":md,
                                                            "domains":domain_json,
-                                                           "store_date":thedate}
+                                                           "store_date":date}
     sql_insert_many(cursor, "UserDomain", "ud_id", user_domain)
