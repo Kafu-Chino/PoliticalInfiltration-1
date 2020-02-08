@@ -5,7 +5,7 @@ from collections import defaultdict
 from django.http import JsonResponse, HttpResponse
 from django.core import serializers
 from django.db.models import Q
-from Mainevent.models import Task
+from Mainevent.models import Task,Event_Analyze,Event,Figure
 
 
 from rest_framework.views import APIView
@@ -106,38 +106,31 @@ class Show_event_info(APIView):
             return HttpResponse(result)
         else:
             return JsonResponse({"status":400, "error": "无事件详情"},safe=False)
-        json_data = serializers.serialize("json",result)
-        results = json.loads(json_data)
-        return JsonResponse(results,safe=False)
+
 
 
 class Event_analy(APIView):
     """事件热度、敏感度、负面指数"""
     def get(self, request):
-        """获取事件名称"""
-        event_name = request.GET.get('name') 
+        """获取事件id:eid"""
+        event_id = request.GET.get('eid') 
+        res_dict= defaultdict(list)
         times = time.time()
-        query_body = {
-                      "query": {
-                      "match_all":{}
-                               },
-                      "aggs" : {
-                      "weibo_count" : { 
-                      "cardinality" : { 
-                      "field" : "mid" } 
-                      }
-               }
-        }
-        dates = datetime.datetime.now().strftime('%Y-%m-%d')
-        if result.exists():
-            return JsonResponse({"status":400, "error": "事件已存在"},safe=False,json_dumps_params={'ensure_ascii':False})
-        elif relative_id == "":  # 判断是否选中了相关事件,若未选中，其rmid为空
-            Task.objects.create(t_id=event_id, task_type="0", into_type="1", status="0", keywords_dict=keywords, into_timestamp=times, into_date=dates)
-            return JsonResponse({"status": 201, "msg": "新事件入库成功"},safe=False,json_dumps_params={'ensure_ascii':False})
-        else:
-            Task.objects.create(t_id=event_id, task_type="1", into_type="1", e_id=relative_id, status="0", keywords_dict=keywords, into_timestamp=times, into_date=dates)
-            return JsonResponse({"status": 201, "msg": "相关事件入库成功"},safe=False,json_dumps_params={'ensure_ascii':False})
+        result = Event_Analyze.objects.filter(e_id = event_id)
+        e = Event.objects.filter(e_id = event_id)
+        for item in e:
 
+            info = item.information.all().order_by("hazard_index")[:5]
+        if result.exists():
+            for re in result:
+                res_dict["trend"].append({"hot_index":re.hot_index,"sensitive_index":re.sensitive_index,"negative_index":re.negative_index})
+                for i in info:
+                    lt = time.localtime(i.timestamp)
+                    itime = time.strftime("%Y-%m-%s %H:%M:%S",lt)
+                    res_dict["info"].append({"uid":i.uid,"comment":i.comment,"retweeted":i.retweeted,"date":itime,"text":i.text,"hazard":i.hazard_index})
+            return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
+        else:
+            return JsonResponse({"status":400, "error": "事件不存在"},safe=False,json_dumps_params={'ensure_ascii':False})
 
 class search_event(APIView):
     """搜索事件 输入事件标题title 输出'event_name','keywords_dict','content','begin_date','end_date'"""
@@ -148,20 +141,9 @@ class search_event(APIView):
             return HttpResponse(result)
         else:
             return JsonResponse({"status":400, "error": "该事件不存在"},safe=False)
-        json_data = serializers.serialize("json",result)
-        results = json.loads(json_data)
-        #results = json.dumps(result,ensure_ascii= False)
-        return JsonResponse(results,safe=False)
-'''
-class search_event(APIView):
-        """搜索事件返回事件概括 获取name"""
-    def get(self, request):
-        name = request.GET.get("event_title")
-        result = Event.objects.filter(event_name_contains= name)
-        json_data = serializers.serialize("json",result)
-        results = json.loads(json_data)
-        return JsonResponse(results,safe=False)
-'''
+
+
+
 
 class figure_info(APIView):
     """人物和信息关联分析"""

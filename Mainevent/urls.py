@@ -6,7 +6,7 @@ urlpatterns = [
     path('test/', views.Test.as_view()),
     #path('add/',views.AddByInput.as_view()),
     #path('push/',views.AddFromPush.as_view()),
-    #path('show/',views.Show.as_view()),
+    path('analyze/',views.Event_analy.as_view()),
     path('Hotpost/',views.push_Hotpost.as_view()),
     path('person/',views.Person_show.as_view()),
     path('taskshow/',views.Show_task.as_view()),

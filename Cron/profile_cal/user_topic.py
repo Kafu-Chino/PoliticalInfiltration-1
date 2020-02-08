@@ -108,3 +108,4 @@ def topic_domain_cal(start_date=thatday,end_date=thedate):
     #print(word_c)
     get_user_topic(word_c,end_date)
     get_user_domain(word_c,end_date)
+
