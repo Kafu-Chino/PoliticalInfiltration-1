@@ -92,9 +92,7 @@ class Show_event(APIView):
             return HttpResponse(result)
         else:
             return JsonResponse({"status":400, "error": "无事件"},safe=False)
-        json_data = serializers.serialize("json",result)
-        results = json.loads(json_data)
-        return JsonResponse(results,safe=False)
+
 
 
 class Show_event_info(APIView):
@@ -131,6 +129,24 @@ class Event_analy(APIView):
             return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "事件不存在"},safe=False,json_dumps_params={'ensure_ascii':False})
+
+
+class representative_info(APIView):
+    """输入事件id:eid 
+       输出代表微博列表：[{"uid": ,"comment": ,"retweeted": ,"date": ,"text": ,"hazard": },{}...]"""
+    def get(self, request):
+        event_id = request.GET.get('eid')
+        etime = request.GET.get('time')
+        res = []
+        e = Event.objects.filter(e_id = event_id)
+        for item in e:
+            info = item.information.all().filter(date=etime).order_by("hazard_index")[:5]
+        for i in info:
+            lt = time.localtime(i.timestamp)
+            itime = time.strftime("%Y-%m-%s %H:%M:%S",lt)
+            res.append({"uid":i.uid,"comment":i.comment,"retweeted":i.retweeted,"date":itime,"text":i.text,"hazard":i.hazard_index})
+        return JsonResponse(res,safe=False,json_dumps_params={'ensure_ascii':False})
+
 
 class search_event(APIView):
     """搜索事件 输入事件标题title 输出'event_name','keywords_dict','content','begin_date','end_date'"""
