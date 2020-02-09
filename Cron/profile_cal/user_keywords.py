@@ -45,7 +45,7 @@ def get_p(train_dict,test_dict):
 #计算用户关键词、话题、敏感词并保存
 #输入text_list为{uid:[text]}未分词,word_dict为分词后的词频字典；
 #输出为关键词字典列表{uid:{keyword:count}}和话题字典列表{uid:{hastag:count}}和敏感词字典{uid:{敏感词：比重}}
-def get_user_keywords(text_list,word_dict, keywords_num=5):
+def get_user_keywords(text_list,word_dict, keywords_num=5,date):
     keywords = []
     hastag_dict=defaultdict(list)
     hastag = []
@@ -73,19 +73,19 @@ def get_user_keywords(text_list,word_dict, keywords_num=5):
         hastag_dict[k] = hastag
         #keywords_dict[k] = keywords
     #print(hastag_dict)
-    time22 = time.time()
-    print("获取关键词和has花费：",time22-time11)
+    #time22 = time.time()
+    #print("获取关键词和has花费：",time22-time11)
     if len(hastag_dict):
         hastag_dict = wordcount(hastag_dict)
     #keywords_dict=wordcount(keywords_dict)
-    time2 = time.time()
-    print("wordcount花费：",time2-time22)
+    #time2 = time.time()
+    #print("wordcount花费：",time2-time22)
     sensitive_words_weight = sensitive_word()
-    time3=time.time()
-    print("读取敏感词花费：",time3-time2)
+    #time3=time.time()
+    #print("读取敏感词花费：",time3-time2)
     stw_dict = get_p(sensitive_words_weight,word_dict)
-    time4 = time.time()
-    print("获取概率：",time4-time3)
+    #time4 = time.time()
+    #print("获取概率：",time4-time3)
     for k in word_dict:
         #if len(keywords_dict):
         keyword_json = json.dumps(keywords_dict[k],ensure_ascii=False)
@@ -99,7 +99,7 @@ def get_user_keywords(text_list,word_dict, keywords_num=5):
                                                         "keywords":keyword_json,
                                                         "hastags":hastag_json,
                                                         "sensitive_words":stw_json,
-                                                        "store_date":thedate}
+                                                        "store_date":date}
     sql_insert_many(cursor, "UserKeyWord", "ukw_id", user_kw)
     time5 = time.time()
     print("插入kw花费：",time5-time4)

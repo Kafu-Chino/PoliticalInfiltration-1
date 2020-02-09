@@ -40,7 +40,7 @@ def stopwordslist():
 
 #得到微博词频 
 #输入为分词后的{uid:[词列表]} 返回格式为字典{uid:{词：词频}}
-def wordcount(text_dict, thedate):
+def wordcount(text_dict,date):
     stopwords = stopwordslist()
     word_dict = {} #格式为字典{uid:{词：词频}}
     user_wc = {}
@@ -65,7 +65,7 @@ def wordcount(text_dict, thedate):
             "uid": k,
             "timestamp":date2ts(thedate),
             "wordcount":word_json,
-            "store_date":thedate
+            "store_date":date
         }
     sql_insert_many("WordCount", "uwc_id", user_wc)
     return word_dict
@@ -94,7 +94,7 @@ class Weibo_utils:
         return text
 
 
-# 数据处理，包括微博过滤与分词，及
+# 数据处理，包括微博过滤与分词，及分词后的词频统计
 def get_processed_data(data_dict, thedate):
     field_dict = get_field(data_dict,"text")
     text_list, text_dict = weibo_move(field_dict)
