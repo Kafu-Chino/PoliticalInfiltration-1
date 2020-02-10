@@ -34,17 +34,16 @@ class Test(APIView):
 
 
 class Task_create(APIView):
-    """添加任务入库和删除任务"""
-# status 0->未计算 1->已计算 2->计算中 3->计算失败
+    """添加任务入库
+       输入任务名称name、任务内容content和关键词keywords
+       若成功输出{"status":201, "msg": "任务成功添加"}
+       若失败输出{"status":400, "error": "请输入事件的名称，关键词和内容"}"""
     def get(self,request):
-        """人工添加事件：获取添加信息，输入name,keywords,content,wb_id调取事件名称、关键词、内容和微博ID，若没有填写微博ID则wb_id="";输出状态及提示：400 状态错误，201写入成功"""
         times = int(time.time())
         dates = datetime.datetime.now().strftime('%Y-%m-%d')  # 获取当前时间戳和日期
         event_id = str(request.GET.get("name")) + str(times)  # 事件名+时间戳作为任务ID
         event_content = request.GET.get("content")
         keywords = request.GET.get("keywords")
-        #h_id = request.GET.get("wb_id")  # 若该条人工输入事件从微博而来 则需输入来源微博的id
-        #result = Task.objects.filter(~Q(mid=''), mid=h_id) #判断从微博得来的事件是否已存在，若微博ID未给出返回一个空值
         if event_id and keywords and event_content:
             Task.objects.create(t_id=event_id, status=0, text=event_content,keywords_dict=keywords, into_timestamp=times,
                                 into_date=dates,task_type=1,into_type=1)
@@ -68,10 +67,9 @@ class Task_delete(APIView):
 
 
 class Show_task(APIView):
-    """展示任务列表"""
+    """展示任务列表
+       输出{‘t_id(任务id)’: ,’keywords_dict(任务关键词)’: ,’status(计算状态)’: , ‘into_date(添入日期)’: },{},{}"""
     def get(self, request):
-        """展示任务列表,该文档返回Task表中存在的需要展示的数据，其中返回的字段keywords_dict作为事件名称(暂时以关键词作为名称)，
-           into_date为添加时间，task_type为计算状态，若返回0则未计算，1为已计算，2为计算中，3为计算失败"""
         result = Task.objects.values('t_id','keywords_dict','status','into_date')
         if result.exists():
             return HttpResponse(result)
@@ -82,11 +80,9 @@ class Show_task(APIView):
         return JsonResponse(results,safe=False)
 
 class Show_event(APIView):
-    """展示事件列表"""
+    """展示事件列表
+       输出{‘event_name(事件名称)’: ,’keywords_dict(事件关键词)’: ,’content(事件内容)’: , ‘begin_date(开始日期)’:  ,‘end_date(结束日期)’: },{},{}"""
     def get(self, request):
-        """展示事件列表,该文档返回Event表中存在的需要展示的数据，其中返回的字段keywords_dict为关键词，event_name作为事件名称，
-           content为内容，begin_date,end_date分别为事件起止时间
-           into_date为添加时间，task_type为计算状态，若返回0则未计算，1为已计算，2为计算中，3为计算失败"""
         result = Event.objects.values('event_name','keywords_dict','content','begin_date','end_date')
         if result.exists():
             return HttpResponse(result)
@@ -96,7 +92,8 @@ class Show_event(APIView):
 
 
 class Show_event_info(APIView):
-    """展示事件详情,点击事件传入事件eid"""
+    """展示事件详情,点击事件传入事件eid
+       输出{‘event_name(事件名称)’: ,’keywords_dict(事件关键词)’: ,’content(事件内容)’: , ‘begin_date(开始日期)’:  ,‘end_date(结束日期)’: },{},{}"""
     def get(self, request):
         eid = request.GET.get("eid")
         result = Event.objects.filter(e_id =eid).values('event_name','keywords_dict','content','begin_date','end_date')
@@ -108,24 +105,18 @@ class Show_event_info(APIView):
 
 
 class Event_analy(APIView):
-    """事件热度、敏感度、负面指数"""
+    """事件热度、敏感度、负面指数
+       输入事件id:eid
+       输出{"hot_index(热度)": ,"sensitive_index(敏感度)": ,"negative_index(负面指数)":}"""
     def get(self, request):
         """获取事件id:eid"""
         event_id = request.GET.get('eid') 
-        res_dict= defaultdict(list)
+        res_dict= []
         times = time.time()
         result = Event_Analyze.objects.filter(e_id = event_id)
-        e = Event.objects.filter(e_id = event_id)
-        for item in e:
-
-            info = item.information.all().order_by("hazard_index")[:5]
         if result.exists():
             for re in result:
-                res_dict["trend"].append({"hot_index":re.hot_index,"sensitive_index":re.sensitive_index,"negative_index":re.negative_index})
-                for i in info:
-                    lt = time.localtime(i.timestamp)
-                    itime = time.strftime("%Y-%m-%s %H:%M:%S",lt)
-                    res_dict["info"].append({"uid":i.uid,"comment":i.comment,"retweeted":i.retweeted,"date":itime,"text":i.text,"hazard":i.hazard_index})
+                res_dict.append({"hot_index":re.hot_index,"sensitive_index":re.sensitive_index,"negative_index":re.negative_index})
             return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "事件不存在"},safe=False,json_dumps_params={'ensure_ascii':False})

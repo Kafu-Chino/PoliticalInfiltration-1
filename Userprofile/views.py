@@ -232,6 +232,9 @@ def insertData(e_name, *figure_names):
 
 
 class Show_prefer(APIView):
+    """展示用户的话题和领域
+       输入uid
+       输出{“topics”：{“uid”:{“topic1”:p,…}},‘domains’：{‘uid’:{“domain1”:p},…{‘mian_domain’:p}}}"""
     def get(self,request):
         re = defaultdict(list)
         re2 = defaultdict(list)
@@ -267,6 +270,9 @@ class Show_prefer(APIView):
 
 
 class Show_keyword(APIView):
+    """展示用户关键词、参与话题、敏感词
+       输入uid
+       输出{‘uid’:{‘keywords’:{…},’sensitive_words’:{},’hastags’:{}}"""
     def get(self,request):
         re1 = defaultdict(list)
         uid = request.GET.get("uid")
@@ -346,7 +352,6 @@ class Show_contact(APIView):
 
 class Figure_create(APIView):
     """添加人物入库和删除人物"""
-# status 0->未计算 1->已计算 2->计算中 3->计算失败
     def get(self,request):
         """添加人物：获取添加信息，输入uid,nick,location,fans,friends,political,domain
            调取人物id、昵称、注册地、粉丝数、关注数、政治倾向和领域，若没有填写微博ID则wb_id="";输出状态及提示：400 状态错误，201写入成功"""
