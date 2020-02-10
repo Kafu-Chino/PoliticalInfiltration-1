@@ -22,6 +22,9 @@ def get_items_from_ese_scan(index_name,date):
     sql = 'select f_id from Figure'
     cursor.execute(sql)
     result = cursor.fetchall()
+    re = []
+    for i in result:
+        re.append(i['f_id'])
     #print(result)
     data_dict = defaultdict(list)
     figure_dict = defaultdict(list)
@@ -31,7 +34,6 @@ def get_items_from_ese_scan(index_name,date):
         "match_all":{}
         }
     }
-
     r = scan(es, index=index_name, query=query_body)
     for item in r:
         uid = item['_source']["uid"]
@@ -39,29 +41,32 @@ def get_items_from_ese_scan(index_name,date):
     for uid in data_dict.keys():
         weibo_count[uid] = len(data_dict[uid])
     user_count = dict(sorted(weibo_count.items(),key=lambda x:x[1],reverse=True)[:10000])
+    uid_list = [x for x in user_count.keys() if x not in re]
+    #print(len(uid_list))
     query_body1 = {
         "query": {
             "bool": {
                 "should": [
                     {"terms": {
-                        "uid": user_count.keys()
+                        "uid": uid_list
                                 }
                                 }
                             ]
                         }
         }
     }
-    r1 = scan(es, index='weibo_user', query=query_body)
-    drop = False
+    r1 = scan(es, index='weibo_user', query=query_body1)
     for item in r1:
+        #drop = False
         uid = item['_source']["uid"]
+        '''
         for i in result:
             if uid == i['f_id']:
                 drop = True
         if drop == True:
-            break
-        else:
-            figure_dict[uid] = {"uid":uid,
+            continue
+        '''
+        figure_dict[uid] = {"uid":uid,
                             "nick_name":item['_source']["nick_name"],
                             "create_at":item['_source']["create_at"],
                             "user_birth":item['_source']["user_birth"],
@@ -73,7 +78,10 @@ def get_items_from_ese_scan(index_name,date):
                             "monitorstatus":1,
                             "into_date":date,
                             "user_location":item['_source']["user_location"]}
+    #print(figure_dict)
+    #print(len(figure_dict))
     sql_insert_many(cursor, "Figure", "f_id", figure_dict)
+
 
 if __name__ == '__main__':
     thedate = datetime.date.today()

@@ -5,7 +5,7 @@ from collections import defaultdict
 from django.http import JsonResponse, HttpResponse
 from django.core import serializers
 from django.db.models import Q
-from Mainevent.models import Task
+from Mainevent.models import Task,Event_Analyze,Event,Figure
 
 
 from rest_framework.views import APIView
@@ -34,17 +34,16 @@ class Test(APIView):
 
 
 class Task_create(APIView):
-    """添加任务入库和删除任务"""
-# status 0->未计算 1->已计算 2->计算中 3->计算失败
+    """添加任务入库
+       输入任务名称name、任务内容content和关键词keywords
+       若成功输出{"status":201, "msg": "任务成功添加"}
+       若失败输出{"status":400, "error": "请输入事件的名称，关键词和内容"}"""
     def get(self,request):
-        """人工添加事件：获取添加信息，输入name,keywords,content,wb_id调取事件名称、关键词、内容和微博ID，若没有填写微博ID则wb_id="";输出状态及提示：400 状态错误，201写入成功"""
         times = int(time.time())
         dates = datetime.datetime.now().strftime('%Y-%m-%d')  # 获取当前时间戳和日期
         event_id = str(request.GET.get("name")) + str(times)  # 事件名+时间戳作为任务ID
         event_content = request.GET.get("content")
         keywords = request.GET.get("keywords")
-        #h_id = request.GET.get("wb_id")  # 若该条人工输入事件从微博而来 则需输入来源微博的id
-        #result = Task.objects.filter(~Q(mid=''), mid=h_id) #判断从微博得来的事件是否已存在，若微博ID未给出返回一个空值
         if event_id and keywords and event_content:
             Task.objects.create(t_id=event_id, status=0, text=event_content,keywords_dict=keywords, into_timestamp=times,
                                 into_date=dates,task_type=1,into_type=1)
@@ -68,10 +67,9 @@ class Task_delete(APIView):
 
 
 class Show_task(APIView):
-    """展示任务列表"""
+    """展示任务列表
+       输出{‘t_id(任务id)’: ,’keywords_dict(任务关键词)’: ,’status(计算状态)’: , ‘into_date(添入日期)’: },{},{}"""
     def get(self, request):
-        """展示任务列表,该文档返回Task表中存在的需要展示的数据，其中返回的字段keywords_dict作为事件名称(暂时以关键词作为名称)，
-           into_date为添加时间，task_type为计算状态，若返回0则未计算，1为已计算，2为计算中，3为计算失败"""
         result = Task.objects.values('t_id','keywords_dict','status','into_date')
         if result.exists():
             return HttpResponse(result)
@@ -82,23 +80,20 @@ class Show_task(APIView):
         return JsonResponse(results,safe=False)
 
 class Show_event(APIView):
-    """展示事件列表"""
+    """展示事件列表
+       输出{‘event_name(事件名称)’: ,’keywords_dict(事件关键词)’: ,’content(事件内容)’: , ‘begin_date(开始日期)’:  ,‘end_date(结束日期)’: },{},{}"""
     def get(self, request):
-        """展示事件列表,该文档返回Event表中存在的需要展示的数据，其中返回的字段keywords_dict为关键词，event_name作为事件名称，
-           content为内容，begin_date,end_date分别为事件起止时间
-           into_date为添加时间，task_type为计算状态，若返回0则未计算，1为已计算，2为计算中，3为计算失败"""
         result = Event.objects.values('event_name','keywords_dict','content','begin_date','end_date')
         if result.exists():
             return HttpResponse(result)
         else:
             return JsonResponse({"status":400, "error": "无事件"},safe=False)
-        json_data = serializers.serialize("json",result)
-        results = json.loads(json_data)
-        return JsonResponse(results,safe=False)
+
 
 
 class Show_event_info(APIView):
-    """展示事件详情,点击事件传入事件eid"""
+    """展示事件详情,点击事件传入事件eid
+       输出{‘event_name(事件名称)’: ,’keywords_dict(事件关键词)’: ,’content(事件内容)’: , ‘begin_date(开始日期)’:  ,‘end_date(结束日期)’: },{},{}"""
     def get(self, request):
         eid = request.GET.get("eid")
         result = Event.objects.filter(e_id =eid).values('event_name','keywords_dict','content','begin_date','end_date')
@@ -106,37 +101,42 @@ class Show_event_info(APIView):
             return HttpResponse(result)
         else:
             return JsonResponse({"status":400, "error": "无事件详情"},safe=False)
-        json_data = serializers.serialize("json",result)
-        results = json.loads(json_data)
-        return JsonResponse(results,safe=False)
+
 
 
 class Event_analy(APIView):
-    """事件热度、敏感度、负面指数"""
+    """事件热度、敏感度、负面指数
+       输入事件id:eid
+       输出{"hot_index(热度)": ,"sensitive_index(敏感度)": ,"negative_index(负面指数)":}"""
     def get(self, request):
-        """获取事件名称"""
-        event_name = request.GET.get('name') 
+        """获取事件id:eid"""
+        event_id = request.GET.get('eid') 
+        res_dict= []
         times = time.time()
-        query_body = {
-                      "query": {
-                      "match_all":{}
-                               },
-                      "aggs" : {
-                      "weibo_count" : { 
-                      "cardinality" : { 
-                      "field" : "mid" } 
-                      }
-               }
-        }
-        dates = datetime.datetime.now().strftime('%Y-%m-%d')
+        result = Event_Analyze.objects.filter(e_id = event_id)
         if result.exists():
-            return JsonResponse({"status":400, "error": "事件已存在"},safe=False,json_dumps_params={'ensure_ascii':False})
-        elif relative_id == "":  # 判断是否选中了相关事件,若未选中，其rmid为空
-            Task.objects.create(t_id=event_id, task_type="0", into_type="1", status="0", keywords_dict=keywords, into_timestamp=times, into_date=dates)
-            return JsonResponse({"status": 201, "msg": "新事件入库成功"},safe=False,json_dumps_params={'ensure_ascii':False})
+            for re in result:
+                res_dict.append({"hot_index":re.hot_index,"sensitive_index":re.sensitive_index,"negative_index":re.negative_index})
+            return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
-            Task.objects.create(t_id=event_id, task_type="1", into_type="1", e_id=relative_id, status="0", keywords_dict=keywords, into_timestamp=times, into_date=dates)
-            return JsonResponse({"status": 201, "msg": "相关事件入库成功"},safe=False,json_dumps_params={'ensure_ascii':False})
+            return JsonResponse({"status":400, "error": "事件不存在"},safe=False,json_dumps_params={'ensure_ascii':False})
+
+
+class representative_info(APIView):
+    """输入事件id:eid 
+       输出代表微博列表：[{"uid": ,"comment": ,"retweeted": ,"date": ,"text": ,"hazard": },{}...]"""
+    def get(self, request):
+        event_id = request.GET.get('eid')
+        etime = request.GET.get('time')
+        res = []
+        e = Event.objects.filter(e_id = event_id)
+        for item in e:
+            info = item.information.all().filter(date=etime).order_by("hazard_index")[:5]
+        for i in info:
+            lt = time.localtime(i.timestamp)
+            itime = time.strftime("%Y-%m-%s %H:%M:%S",lt)
+            res.append({"uid":i.uid,"comment":i.comment,"retweeted":i.retweeted,"date":itime,"text":i.text,"hazard":i.hazard_index})
+        return JsonResponse(res,safe=False,json_dumps_params={'ensure_ascii':False})
 
 
 class search_event(APIView):
@@ -148,20 +148,9 @@ class search_event(APIView):
             return HttpResponse(result)
         else:
             return JsonResponse({"status":400, "error": "该事件不存在"},safe=False)
-        json_data = serializers.serialize("json",result)
-        results = json.loads(json_data)
-        #results = json.dumps(result,ensure_ascii= False)
-        return JsonResponse(results,safe=False)
-'''
-class search_event(APIView):
-        """搜索事件返回事件概括 获取name"""
-    def get(self, request):
-        name = request.GET.get("event_title")
-        result = Event.objects.filter(event_name_contains= name)
-        json_data = serializers.serialize("json",result)
-        results = json.loads(json_data)
-        return JsonResponse(results,safe=False)
-'''
+
+
+
 
 class figure_info(APIView):
     """人物和信息关联分析"""

@@ -232,6 +232,9 @@ def insertData(e_name, *figure_names):
 
 
 class Show_prefer(APIView):
+    """展示用户的话题和领域
+       输入uid
+       输出{“topics”：{“uid”:{“topic1”:p,…}},‘domains’：{‘uid’:{“domain1”:p},…{‘mian_domain’:p}}}"""
     def get(self,request):
         re = defaultdict(list)
         re2 = defaultdict(list)
@@ -246,50 +249,6 @@ class Show_prefer(APIView):
             json_data = serializers.serialize("json",result1)
             results = json.loads(json_data)
             #return JsonResponse(results,safe=False)
-            '''
-            count = np.zeros(19)
-            for i in results:
-                #return JsonResponse(i,safe=False)
-                i["fields"]["topics"]["art"] += count[0]
-                count[0] = i["fields"]["topics"]["art"]
-                i["fields"]["topics"]["computer"]+= count[1]
-                count[1] = i["fields"]["topics"]["computer"]
-                i["fields"]["topics"]["economic"] += count[2]
-                count[2] = i["fields"]["topics"]["economic"]
-                i["fields"]["topics"]["education"] += count[3]
-                count[3] = i["fields"]["topics"]["education"]
-                i["fields"]["topics"]["environment"] += count[4]
-                count[4] = i["fields"]["topics"]["environment"]
-                i["fields"]["topics"]["medicine"] += count[5]
-                count[5] = i["fields"]["topics"]["medicine"]
-                i["fields"]["topics"]["military"] += count[6]
-                count[6] = i["fields"]["topics"]["military"]
-                i["fields"]["topics"]["politics"] += count[7]
-                count[7] = i["fields"]["topics"]["politics"]
-                i["fields"]["topics"]["sports"] += count[8]
-                count[8] = i["fields"]["topics"]["sports"]
-                i["fields"]["topics"]["traffic"] += count[9]
-                count[9] = i["fields"]["topics"]["traffic"]
-                i["fields"]["topics"]["life"] += count[10]
-                count[10] = i["fields"]["topics"]["life"]
-                i["fields"]["topics"]["anti-corruption"] += count[11]
-                count[11] = i["fields"]["topics"]["anti-corruption"]
-                i["fields"]["topics"]["employment"] += count[12]
-                count[12] = i["fields"]["topics"]["employment"]
-                i["fields"]["topics"]["fear-of-violence"] += count[13]
-                count[13] = i["fields"]["topics"]["fear-of-violence"]
-                i["fields"]["topics"]["house"] += count[14]
-                count[14] = i["fields"]["topics"]["house"]
-                i["fields"]["topics"]["law"] += count[15]
-                count[15] = i["fields"]["topics"]["law"]
-                i["fields"]["topics"]["peace"] += count[16]
-                count[16] = i["fields"]["topics"]["peace"]
-                i["fields"]["topics"]["religion"] += count[17]
-                count[17] = i["fields"]["topics"]["religion"]
-                i["fields"]["topics"]["social-security"] += count[18]
-                count[18] = i["fields"]["topics"]["social-security"]
-                re.append(i["fields"]["topics"])
-            '''
             for i in results:
                 uid = i["fields"]["uid"]
                 re[uid].append(i["fields"]["topics"])
@@ -311,6 +270,9 @@ class Show_prefer(APIView):
 
 
 class Show_keyword(APIView):
+    """展示用户关键词、参与话题、敏感词
+       输入uid
+       输出{‘uid’:{‘keywords’:{…},’sensitive_words’:{},’hastags’:{}}"""
     def get(self,request):
         re1 = defaultdict(list)
         uid = request.GET.get("uid")
@@ -331,54 +293,65 @@ class Show_keyword(APIView):
             return JsonResponse({"status":400, "error": "未找到该用户信息"},safe=False,json_dumps_params={'ensure_ascii':False})
 
 class Show_contact(APIView):
+    """输入uid=&time=终止时间&days=从该终止时间往前的天数
+       输出{"in": [{"uid": , "intarget": {"comment":[评论该uid的用户列表],"retweet":[转发该uid的用户列表]}, "insource": {"comment":[该uid评论的用户列表],"retweet":[该uid转发的用户列表]}}], 
+           "out": [{"uid": , "outtarget": {"comment":[评论该uid的用户列表],"retweet":[转发该uid的用户列表]}, "outsource": {"comment":[该uid评论的用户列表],"retweet":[该uid转发的用户列表]}}]}"""
     def get(self,request):
         user_source=defaultdict(list)
         user_target=defaultdict(list)
-        insource = []
-        outsource = []
-        intarget = []
-        outtarget = []
+        insource = defaultdict(list)
+        outsource = defaultdict(list)
+        intarget = defaultdict(list)
+        outtarget = defaultdict(list)
         uid = request.GET.get("uid")
-        start_time = request.GET.get("time1")
+        end_time = request.GET.get("time")
+        stime = datetime.datetime.strptime(end_time, '%Y-%m-%d')
         #end_time = request.GET.get("time2")
         days = request.GET.get("days")
-        result1 = UserSocialContact.objects.filter(target = uid, store_date__range=(start_time,start_time-days))\
-                   .values('source').annotate(c=Count('uid')).filter(c__gte=1)
-        result2 = UserSocialContact.objects.filter(source = uid, store_date__range=(start_time,start_time-days))\
-                   .values('target').annotate(c=Count('uid')).filter(c__gte=1)
+        du = datetime.timedelta(days=int(days))
+        result1 = UserSocialContact.objects.filter(target = uid, store_date__range=(stime-du,end_time)) \
+                   .values('source','message_type')  #.annotate(c=Count('uid')).filter(c__gte=1)
+        result2 = UserSocialContact.objects.filter(source = uid, store_date__range=(stime-du,end_time)) \
+                   .values('target','message_type')  #.annotate(c=Count('uid')).filter(c__gte=1)
         if result1.exists():
             for re in result1:
                 test = Figure.objects.filter(uid=re['source'])
-                if test.exists():
-                    insource.append(re['source'])
+                if re['message_type']==2:
+                    if test.exists():
+                        insource['comment'].append(re['source'])
                     #user_source["in"].append({'uid':re['uid'],'insource':re['source']})
-                else:
-                    outsource.append(re['source'])
-                    #user_source["out"].append('outsource':re['source'])
-            #json_source = serializers.serialize("json",in_)
-            #results1 = json.loads(json_source)
+                    else:
+                        outsource['comment'].append(re['source'])
+                if re['message_type']==3:
+                    if test.exists():
+                        insource['retweet'].append(re['source'])
+                    #user_source["in"].append({'uid':re['uid'],'insource':re['source']})
+                    else:
+                        outsource['retweet'].append(re['source'])
         if result2.exists():
             for re in result2:
                 test = Figure.objects.filter(uid=re['target'])
-                if test.exists():
-                    intarget.append(re['target'])
+                if re['message_type']==2:
+                    if test.exists():
+                        intarget['comment'].append(re['target'])
                     #user_source["in"].append({"uid":re["uid"],'intarget':re['target']})
-                else:
-                    outtarget.append(re['target'])
+                    else:
+                        outtarget['comment'].append(re['target'])
+                if re['message_type']==3:
+                    if test.exists():
+                        intarget['retweet'].append(re['target'])
+                    #user_source["in"].append({"uid":re["uid"],'intarget':re['target']})
+                    else:
+                        outtarget['retweet'].append(re['target'])
                     #user_source["out"].append({'uid':re['uid'],'outtarget':re['target']})
-        user_source["in"].append({"uid":uid,'intarget':outtarget,'insource':outsource})
+        user_source["in"].append({"uid":uid,'intarget':intarget,'insource':insource})
         user_source["out"].append({"uid":uid,'outtarget':outtarget,'outsource':outsource})
         return JsonResponse(user_source,safe=False)
-        '''else:
-            return JsonResponse({"status":400, "error": "未找到符合条件的用户"},safe=False,json_dumps_params={'ensure_ascii':False})
-<<<<<<< Updated upstream
 
-=======
-        '''
+
 
 class Figure_create(APIView):
     """添加人物入库和删除人物"""
-# status 0->未计算 1->已计算 2->计算中 3->计算失败
     def get(self,request):
         """添加人物：获取添加信息，输入uid,nick,location,fans,friends,political,domain
            调取人物id、昵称、注册地、粉丝数、关注数、政治倾向和领域，若没有填写微博ID则wb_id="";输出状态及提示：400 状态错误，201写入成功"""
