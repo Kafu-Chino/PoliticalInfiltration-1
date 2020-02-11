@@ -1,8 +1,13 @@
 import os
+import re
 import time
 import datetime
+from collections import defaultdict
 from django.http import JsonResponse, HttpResponse
 from django.db.models import Sum
+
+from Config.time_utils import *
+from Config.base import MSG_TYPE_DIC
 from Informationspread.models import *
 from Mainevent.models import Information
 
@@ -13,18 +18,19 @@ ABS_PATH = os.path.dirname(os.path.abspath(__file__))
 
 class Sen_info(APIView):
     def get(self,request):
-        swords = []
-        for b in open(os.path.abspath(os.path.join(ABS_PATH, '../Cron/profile_cal/sensitive_words.txt')), 'r'):
-            swords.append(b.strip().split('\t')[0])
-        iid = request.GET.get('id')
-        result = Information.objects.filter(i_id=iid).values("uid",'text','keywords_dict','comment','retweeted','date','hazard_index')
-        res = defaultdict(list)
-        for i in result:
-            for word in swords:
-                pattern = re.compile(r".*(%s)" % word)
-                if pattern.search(i['text']): 
-                    res["sw"].append(word)
-            res["info"].append(i)
+        mid = request.GET.get('mid')
+        result = Information.objects.filter(mid=mid).values("uid",'text','timestamp','geo','message_type','hazard_index')
+        res = {
+            "uid": result[0]["uid"],
+            "text": result[0]["text"],
+            "time": ts2datetime(result[0]["timestamp"]),
+            "geo": result[0]["geo"],
+            "message_type": MSG_TYPE_DIC[result[0]["message_type"]]
+        }
+        if result[0]["hazard_index"]:
+            res["hazard_index"] = result[0]["hazard_index"]
+        else:
+            res["hazard_index"] = "无"
         return JsonResponse(res,safe=False,json_dumps_params={'ensure_ascii':False})
 
 class Show_Info(APIView):
