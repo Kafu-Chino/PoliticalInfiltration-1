@@ -28,20 +28,16 @@ class Information(models.Model):
     uid = models.CharField(max_length=30)
     root_uid = models.CharField(max_length=30)
     mid = models.CharField(max_length=30)
-    comment = models.IntegerField(null=True)
-    retweeted = models.IntegerField(null=True)
+    root_mid = models.CharField(max_length=30,null=True)
     text = models.CharField(max_length=400,null=True)
-    keywords_dict = models.CharField(max_length=100,null=True)
     timestamp = models.BigIntegerField(null=True)
-    date = models.DateField(null=True)
     send_ip = models.CharField(max_length=20,null=True)
     geo = models.CharField(max_length=50,null=True)
     message_type = models.IntegerField(null=True)
-    root_mid = models.CharField(max_length=30,null=True)
     source = models.CharField(max_length=20,null=True)
-    i_level = models.IntegerField(null=True)
-    status = models.IntegerField(default=1)
     hazard_index = models.FloatField(blank=True, null=True)
+    cal_status = models.IntegerField(default=0)
+    monitor_status = models.IntegerField(default=1)
 
     class Meta():
         db_table = 'Information'
@@ -63,56 +59,6 @@ class Event(models.Model):
 
     class Meta():
         db_table = 'Event'
-
-class Hot_post(models.Model):
-    h_id = models.CharField(max_length=30, primary_key=True)
-    uid = models.CharField(max_length=30)
-    root_uid = models.CharField(max_length=30)
-    mid = models.CharField(max_length=30)
-    comment = models.IntegerField()
-    retweeted = models.IntegerField()
-    text = models.CharField(max_length=400)
-    keywords_dict = models.CharField(max_length=100)
-    timestamp = models.BigIntegerField()
-    date = models.DateField()
-    send_ip = models.CharField(max_length=20)
-    geo = models.CharField(max_length=50)
-    message_type = models.IntegerField()
-    root_mid = models.CharField(max_length=30)
-    source = models.CharField(max_length=20)
-    store_timestamp = models.BigIntegerField()
-    store_date = models.DateField()
-    similar_event = models.CharField(max_length=400, blank=True, null=True)
-
-    class Meta():
-        db_table = 'Hot_post'
-
-
-class Task(models.Model):
-    t_id = models.CharField(max_length=30, primary_key=True)
-    task_type = models.IntegerField()
-    into_type = models.IntegerField()
-    status = models.IntegerField()
-    e_id = models.CharField(max_length=100, blank=True, null=True)
-    uid = models.CharField(max_length=30, blank=True, null=True)
-    root_uid = models.CharField(max_length=30, blank=True, null=True)
-    mid = models.CharField(max_length=30, blank=True, null=True)
-    comment = models.IntegerField(blank=True, null=True)
-    retweeted = models.IntegerField(blank=True, null=True)
-    text = models.CharField(max_length=400)
-    keywords_dict = models.CharField(max_length=100)
-    timestamp = models.BigIntegerField(blank=True, null=True)
-    date = models.DateField(blank=True, null=True)
-    send_ip = models.CharField(max_length=20, blank=True, null=True)
-    geo = models.CharField(max_length=50, blank=True, null=True)
-    message_type = models.IntegerField(blank=True, null=True)
-    root_mid = models.CharField(max_length=30, blank=True, null=True)
-    source = models.CharField(max_length=20)
-    into_timestamp = models.BigIntegerField()
-    into_date = models.DateField()
-
-    class Meta():
-        db_table = 'Task'
 
 
 class Event_Analyze(models.Model):
