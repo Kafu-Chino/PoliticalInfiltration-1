@@ -44,6 +44,7 @@ def wordcount(text_dict,date):
     stopwords = stopwordslist()
     word_dict = {} #格式为字典{uid:{词：词频}}
     user_wc = {}
+    thedate = datetime.date.today()
     for k,v in text_dict.items():
         word_list = {}
         count=0
@@ -93,12 +94,13 @@ class Weibo_utils:
         text = self.re_text.sub("", text)
         return text
 
-
+ 
 # 数据处理，包括微博过滤与分词，及分词后的词频统计
-def get_processed_data(data_dict, thedate):
+def get_processed_data(data_dict, date):
+    thedate = datetime.date.today() 
     field_dict = get_field(data_dict,"text")
     text_list, text_dict = weibo_move(field_dict)
-    word_dict = wordcount(text_dict, thedate)
+    word_dict = wordcount(text_dict, date)
     return word_dict, text_list, text_dict
 
 

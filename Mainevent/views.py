@@ -187,6 +187,9 @@ import re
 ABS_PATH = os.path.dirname(os.path.abspath(__file__))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'PoliticalInfiltration.settings'
 class Sen_info(APIView):
+    """展示敏感微博内容涉及到的敏感词
+       输入：敏感微博id：id
+       输出：{‘sw(敏感词汇)’:{},…, ‘info’:{‘text’(敏感信息内容)：，‘hazard_index(危险指数)’：，‘keywords(关键词)’: , ‘comment(评论数)’：，‘retweet(转发数)’：}}"""
     def get(self,request):
         swords = []
         for b in open(os.path.abspath(os.path.join(ABS_PATH, '../Cron/profile_cal/sensitive_words.txt')), 'r'):
