@@ -1,34 +1,31 @@
-# -*- coding: utf-8 -*-
-
-from django.http import JsonResponse, HttpResponse
-from django.db.models import Sum
+import os
 import time
 import datetime
+from django.http import JsonResponse, HttpResponse
+from django.db.models import Sum
 from Informationspread.models import *
+from Mainevent.models import Information
 
 from rest_framework.views import APIView
 from rest_framework.schemas import ManualSchema
 
+ABS_PATH = os.path.dirname(os.path.abspath(__file__))
 
-class Test(APIView):
-    """测试页面"""
-
-    def get(self, request):
-        """GET方法的功能说明写在这里"""
-        return HttpResponse('这是测试的GET方法')
-
-    def post(self, request):
-        """POST方法的功能说明写在这里"""
-        return HttpResponse('这是测试的POST方法')
-
-    def put(self, request):
-        """PUT方法的功能说明写在这里"""
-        return HttpResponse('这是测试的PUT方法')
-
-    def delete(self, request):
-        """DELETE方法的功能说明写在这里"""
-        return HttpResponse('这是测试的DELETE方法')
-
+class Sen_info(APIView):
+    def get(self,request):
+        swords = []
+        for b in open(os.path.abspath(os.path.join(ABS_PATH, '../Cron/profile_cal/sensitive_words.txt')), 'r'):
+            swords.append(b.strip().split('\t')[0])
+        iid = request.GET.get('id')
+        result = Information.objects.filter(i_id=iid).values("uid",'text','keywords_dict','comment','retweeted','date','hazard_index')
+        res = defaultdict(list)
+        for i in result:
+            for word in swords:
+                pattern = re.compile(r".*(%s)" % word)
+                if pattern.search(i['text']): 
+                    res["sw"].append(word)
+            res["info"].append(i)
+        return JsonResponse(res,safe=False,json_dumps_params={'ensure_ascii':False})
 
 class Show_Info(APIView):
     """展示信息传播态势接口"""
@@ -50,7 +47,3 @@ class Show_Info(APIView):
             t = item.pop("timestamp") - 24 * 60 * 60
             res_dict[time.strftime("%Y-%m-%d", time.localtime(t))] = item
         return JsonResponse(res_dict)
-
-    def post(self, request):
-        """"""
-        return HttpResponse('这是POST方法')
