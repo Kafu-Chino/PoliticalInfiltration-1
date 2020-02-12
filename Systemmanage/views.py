@@ -5,7 +5,6 @@ import json
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import redirect
 from django.core import serializers
-from .models import *
 import time
 
 from rest_framework.views import APIView
@@ -14,6 +13,8 @@ from .敏感词扩展.sensitive_word_extent import extent
 
 from Systemmanage.models import *
 from Mainevent.models import *
+
+
 class Test(APIView):
     """测试页面"""
 
@@ -72,11 +73,11 @@ class Add_sensitive_word(APIView):
             result = SensitiveWord.objects.filter(prototype=prototype)
             if not result.exists():
                 times = int(time.time())
-                SensitiveWord.objects.create(s_id=str(times) + prototype, prototypy=prototype, perspective_bias=0)
+                SensitiveWord.objects.create(s_id=str(times) + prototype, prototype=prototype, perspective_bias=0)
                 transforms = extent(prototype)
                 for transform in transforms:
-                    SensitiveWord.objects.create(s_id=str(times)+transform, prototypy=prototype, transform=transform, perspective_bias=0)
-                return JsonResponse({"status":201, "msg": "任务成功添加"},safe=False,json_dumps_params={'ensure_ascii':False})
+                    SensitiveWord.objects.create(s_id=str(times)+transform, prototype=prototype, transform=transform, perspective_bias=0)
+                return JsonResponse({"status":201, "msg": "敏感词成功添加"},safe=False,json_dumps_params={'ensure_ascii':False})
             else:
                 return JsonResponse({"status": 400, "error": "敏感词已存在"}, safe=False,json_dumps_params={'ensure_ascii': False})
 
@@ -122,7 +123,7 @@ class Show_global_parameter(APIView):
     """展示全局参数"""
     def get(self, request):
         """展示全局参数,返回GlobalParameter表中存在的需要展示的数据，其中返回的字段p_name为参数名称，p_value为参数的值"""
-        result = SensitiveWord.objects.values('p_name', 'p_value')
+        result = GlobalParameter.objects.values('p_name', 'p_value')
         if result.exists():
             return HttpResponse(result)
         else:
@@ -156,7 +157,7 @@ class Modify_global_parameter(APIView):
 class Add_sensitiveword(APIView):
     """展示事件管理接口"""
 
-    def add_sensitiveword(self, request):
+    def get(self, request):
         """
         增加事件敏感词
         格式：{'word':word,'e_id':eid,'bias':bias}
@@ -177,7 +178,7 @@ class Add_sensitiveword(APIView):
 class Delete_sensitiveword(APIView):
     """展示事件管理接口"""
 
-    def delete_sensitiveword(self, request):
+    def get(self, request):
         """
         删除敏感词
         格式：{'word':word,'e_id':eid}
@@ -187,7 +188,7 @@ class Delete_sensitiveword(APIView):
         e_id = request.GET.get('e_id')
 
         try:
-            SensitiveWord.objects.filter(word = word,e_id = e_id).delete()
+            SensitiveWord.objects.filter(prototype = word,e_id = e_id).delete()
             res_dict["status"] = 1
             res_dict["result"] = "删除成功"
         except:
@@ -200,7 +201,7 @@ class Delete_sensitiveword(APIView):
 class Add_sensitivetext(APIView):
     """展示事件管理接口"""
 
-    def add_sensitivetext(self, request):
+    def get(self, request):
         """
         增加事件敏感文本
         格式：{'i_id':i_id,'uid':uid,'mid':mid,'root_uid':root_uid,'root_mid':root_mid,'text':text,'timestamp':timestamp,
@@ -233,7 +234,7 @@ class Add_sensitivetext(APIView):
 class Delete_sensitivetext(APIView):
     """展示事件管理接口"""
 
-    def delete_sensitivetext(self, request):
+    def get(self, request):
         """
         删除敏感文本
         格式：{'mid':mid}
@@ -253,7 +254,7 @@ class Delete_sensitivetext(APIView):
 class Add_keyword(APIView):
     """展示事件管理接口"""
 
-    def add_keyword(self, request):
+    def get(self, request):
         """
         增加事件关键词
         格式：{'word':word',e_id':e_id'}
@@ -274,7 +275,7 @@ class Add_keyword(APIView):
 class Delete_keyword(APIView):
     """展示事件管理接口"""
 
-    def delete_keyword(self, request):
+    def get(self, request):
         """
         删除事件关键词
         格式：{'word':word',e_id':e_id'}
@@ -295,7 +296,7 @@ class Delete_keyword(APIView):
 class Add_eventparameter(APIView):
     """展示事件管理接口"""
 
-    def add_eventparameter(self, request):
+    def get(self, request):
         """
         增加事件关键词
         格式：{'p_name':p_name','p_value':p_value,'e_id':e_id}
@@ -320,7 +321,7 @@ class Add_eventparameter(APIView):
 class Update_eventparameter(APIView):
     """展示事件管理接口"""
 
-    def Update_eventparameter(self, request):
+    def get(self, request):
         """
         更新事件关键词
         格式：{'p_name':p_name','e_id':e_id,'new_value':new_value}
@@ -333,11 +334,11 @@ class Update_eventparameter(APIView):
         try:
             EventParameter.objects.filter(p_name=p_name,e_id = e_id).update(p_value = new_value)
             res_dict["status"] = 1
-            res_dict["result"] = "添加成功"
+            res_dict["result"] = "更新成功"
             '''
             此处启动事件计算
             '''
         except:
             res_dict["status"] = 0
-            res_dict["result"] = "添加失败"
+            res_dict["result"] = "更新失败"
         return JsonResponse(res_dict)
