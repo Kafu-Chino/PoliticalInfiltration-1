@@ -45,7 +45,7 @@ def get_p(train_dict,test_dict):
 #计算用户关键词、话题、敏感词并保存
 #输入text_list为{uid:[text]}未分词,word_dict为分词后的词频字典；
 #输出为关键词字典列表{uid:{keyword:count}}和话题字典列表{uid:{hastag:count}}和敏感词字典{uid:{敏感词：比重}}
-def get_user_keywords(text_list,word_dict, keywords_num=5,date):
+def get_user_keywords(text_list,word_dict,date, keywords_num=5):
     keywords = []
     hastag_dict=defaultdict(list)
     hastag = []

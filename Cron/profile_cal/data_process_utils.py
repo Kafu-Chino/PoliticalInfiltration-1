@@ -44,6 +44,7 @@ def wordcount(text_dict,date):
     stopwords = stopwordslist()
     word_dict = {} #格式为字典{uid:{词：词频}}
     user_wc = {}
+    thedate = datetime.date.today()
     for k,v in text_dict.items():
         word_list = {}
         count=0
@@ -60,10 +61,10 @@ def wordcount(text_dict,date):
 
     for k in word_dict.keys():
         word_json = json.dumps(word_dict[k])
-        id = "%s_%s" % (str(date2ts(thedate)), k)
+        id = "%s_%s" % (str(int(time.time())), k)
         user_wc[id] = {
             "uid": k,
-            "timestamp":date2ts(thedate),
+            "timestamp":int(time.time()),
             "wordcount":word_json,
             "store_date":date
         }
@@ -93,17 +94,18 @@ class Weibo_utils:
         text = self.re_text.sub("", text)
         return text
 
-
+ 
 # 数据处理，包括微博过滤与分词，及分词后的词频统计
-def get_processed_data(data_dict, thedate):
+def get_processed_data(data_dict, date):
     field_dict = get_field(data_dict,"text")
     text_list, text_dict = weibo_move(field_dict)
-    word_dict = wordcount(text_dict, thedate)
+    word_dict = wordcount(text_dict, date)
     return word_dict, text_list, text_dict
 
 
 if __name__ == '__main__':
+    thedate = datetime.date.today() 
     data =  {'5241560394': [{'source': '新浪', 'uid': '5241560394', 'root_uid': '', 'mid': '4404755222396058', 'root_mid': '', 'time': '2019-08-13 09:15:44', 'message_type': 1, 'sentiment': '0', 'text': '#外国人香港机场教训示威者# 看了这个视频我终于知道了什么叫:你永远滋不醒一个张嘴接尿的人http://t.cn/AiHh83xh ', 'geo': '\x08(国外未知未知)', 'net_type': '荣耀20 PRO', 'user_fansnum': 43, 'timestamp': 1565658944.0}], '6598780267': [{'source': '新浪', 'uid': '6598780267', 'root_uid': '', 'mid': '4404757026037564', 'root_mid': '', 'time': '2019-08-13 09:22:54', 'message_type': 1, 'sentiment': '-15', 'text': '#搜狐资讯#《香港机场再遭示威者瘫痪 今日余下航班全部取消》大批示威者今天聚集香港国际机场（联合早报网）海外网8月12日http://t.cn/AiHZDiWp ', 'geo': '中国移动(国外未知未知)', 'net_type': '搜狐资讯', 'user_fansnum': 3, 'timestamp': 1565659374.0}, {'source': '新浪', 'uid': '6598780267', 'root_uid': '', 'mid': '4405455973350546', 'root_mid': '', 'time': '2019-08-15 07:40:16', 'message_type': 1, 'sentiment': '-9', 'text': '#搜狐资讯#《内地记者在香港机场被示威者拘押殴打 被警方 救出》13日晚，环球网记者付国豪在香港机场被示威者非法拘押，遭到非http://t.cn/AiHiTdKD ', 'geo': '中国移动(国外未知未知)', 'net_type': '搜狐资讯', 'user_fansnum': 3, 'timestamp': 1565826016.0}]}
-    word,text = get_processed_data(data)
+    word,text,text_dict = get_processed_data(data,thedate)
     print(word)
     print(text)

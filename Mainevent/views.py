@@ -5,79 +5,10 @@ from collections import defaultdict
 from django.http import JsonResponse, HttpResponse
 from django.core import serializers
 from django.db.models import Q
-from Mainevent.models import Task,Event_Analyze,Event,Figure
-
+from Mainevent.models import Event_Analyze, Event, Figure, Information
 
 from rest_framework.views import APIView
 from rest_framework.schemas import ManualSchema
-
-from Mainevent.models import Hot_post
-
-class Test(APIView):
-    """测试页面"""
-'''    def get(self, request):
-        """获取用户信息"""
-        # do something
-        return HttpResponse('Hello world')
-
-    def post(self, request):
-        """获取用户信息"""
-        pass
-
-    def put(self, request):
-        """更新用户信息"""
-        pass
-
-    def delete(self, request):
-        """删除用户信息"""
-        pass'''
-
-
-class Task_create(APIView):
-    """添加任务入库
-       输入任务名称name、任务内容content和关键词keywords
-       若成功输出{"status":201, "msg": "任务成功添加"}
-       若失败输出{"status":400, "error": "请输入事件的名称，关键词和内容"}"""
-    def get(self,request):
-        times = int(time.time())
-        dates = datetime.datetime.now().strftime('%Y-%m-%d')  # 获取当前时间戳和日期
-        event_id = str(request.GET.get("name")) + str(times)  # 事件名+时间戳作为任务ID
-        event_content = request.GET.get("content")
-        keywords = request.GET.get("keywords")
-        if event_id and keywords and event_content:
-            Task.objects.create(t_id=event_id, status=0, text=event_content,keywords_dict=keywords, into_timestamp=times,
-                                into_date=dates,task_type=1,into_type=1)
-            return JsonResponse({"status":201, "msg": "任务成功添加"},safe=False,json_dumps_params={'ensure_ascii':False})
-        else:
-            return JsonResponse({"status":400, "error": "请输入事件的名称，关键词和内容"},safe=False,json_dumps_params={'ensure_ascii':False})
-
-class Task_delete(APIView):
-#展示的t_id作为id  选中时传入该id
-    def get(self,request):
-        tid = request.GET.get("id")
-        result = Task.objects.filter(t_id=tid)
-        if result.exists():
-            try:
-                Task.objects.filter(t_id=tid).delete() 
-                return JsonResponse({"status":201, "msg": "任务已删除"},safe=False,json_dumps_params={'ensure_ascii':False})
-            except:
-                return JsonResponse({"status":400, "error": "删除失败"},safe=False,json_dumps_params={'ensure_ascii':False})
-        else:
-            return JsonResponse({"status":400, "error": "任务不存在"},safe=False,json_dumps_params={'ensure_ascii':False})
-
-
-class Show_task(APIView):
-    """展示任务列表
-       输出{‘t_id(任务id)’: ,’keywords_dict(任务关键词)’: ,’status(计算状态)’: , ‘into_date(添入日期)’: },{},{}"""
-    def get(self, request):
-        result = Task.objects.values('t_id','keywords_dict','status','into_date')
-        if result.exists():
-            return HttpResponse(result)
-        else:
-            return JsonResponse({"status":400, "error": "无任务"},safe=False)
-        json_data = serializers.serialize("json",result)
-        results = json.loads(json_data)
-        return JsonResponse(results,safe=False)
 
 class Show_event(APIView):
     """展示事件列表
@@ -149,9 +80,6 @@ class search_event(APIView):
         else:
             return JsonResponse({"status":400, "error": "该事件不存在"},safe=False)
 
-
-
-
 class figure_info(APIView):
     """人物和信息关联分析"""
 
@@ -181,12 +109,16 @@ class figure_info(APIView):
             return JsonResponse({"status":400, "error": "无相关人物和信息"},safe=False)
 
 
+
 import os
 import sys
 import re
 ABS_PATH = os.path.dirname(os.path.abspath(__file__))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'PoliticalInfiltration.settings'
 class Sen_info(APIView):
+    """展示敏感微博内容涉及到的敏感词
+       输入：敏感微博id：id
+       输出：{‘sw(敏感词汇)’:{},…, ‘info’:{‘text’(敏感信息内容)：，‘hazard_index(危险指数)’：，‘keywords(关键词)’: , ‘comment(评论数)’：，‘retweet(转发数)’：}}"""
     def get(self,request):
         swords = []
         for b in open(os.path.abspath(os.path.join(ABS_PATH, '../Cron/profile_cal/sensitive_words.txt')), 'r'):
@@ -241,6 +173,7 @@ class push_Hotpost(APIView):
             hot_post_display.append(a_post)
         results = json.dumps(hot_post_display)
         return JsonResponse(results, safe=False)  # json [{data},{data}]
+
 
 
 class Person_show(APIView):
