@@ -83,15 +83,18 @@ def get_user_topic(word_dict,date):
                                                           "store_date":date}
     sql_insert_many(cursor, "UserTopic", "ut_id", user_topic)
     time4 = time.time()
-    print("插入topic数据：",time4-time3)
+    # print("插入topic数据：",time4-time3)
     #return category_dict
 
 
 thedate = datetime.date.today()
 thatday = thedate - datetime.timedelta(days=7)
 #print(thedate,thatday)
-def topic_domain_cal(start_date=thatday,end_date=thedate):
-    sql = 'select uid,wordcount from WordCount where store_date >= %s and store_date <= %s' % (start_date,end_date)
+def topic_domain_cal(uid_list,start_date=thatday,end_date=thedate):
+    uids = ''
+    for uid in uid_list:
+        uids += uid + ','
+    sql = 'select uid,wordcount from WordCount where uid in (%s) and  store_date >= %s and store_date <= %s' % (uids[:-1],start_date,end_date)
     cursor.execute(sql)
     word_c =defaultdict(dict)
     word = {}
