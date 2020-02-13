@@ -1,5 +1,5 @@
 chaizidict = {}
-with open('chaizi-jt.txt','r',encoding='utf-8')as f:
+with open('Systemmanage/敏感词扩展/chaizi-jt.txt','r',encoding='utf-8')as f:
     lines = f.readlines()
     # print(len(lines))
     for line in lines:

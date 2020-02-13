@@ -1,16 +1,14 @@
 # from chaizi import chaizi读取
-from chaizi import chaizi
-from zhuanhuan import *
+from .chaizi import chaizi
+from .zhuanhuan import *
 
 def extent(sensitive_word):
     n = 1
-    sensitive_word = [sensitive_word]
     total_fanti_list = []
     total_jianti_list = []
-    for word in sensitive_word:
-        if len(word)<=4:
-            total_fanti_list.append(hk2s(word))
-            total_jianti_list.append(s2hk(word))
+    if len(sensitive_word)<=4:
+        total_fanti_list.append(hk2s(sensitive_word))
+        total_jianti_list.append(s2hk(sensitive_word))
     if n == 1:
         total_chaizi_list = []
         total_pinyin_list = []
@@ -100,5 +98,5 @@ def extent(sensitive_word):
                 new_word_list.append(newword)
             set2 = set(new_word_list)
             total_set = set1 | set2
+            total_set.remove(sensitive_word)
     return total_set
-

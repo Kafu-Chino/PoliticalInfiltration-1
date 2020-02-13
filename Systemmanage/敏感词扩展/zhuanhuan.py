@@ -8,7 +8,7 @@
 @file: zhuanhuan.py
 """
 
-from opencc.opencc import OpenCC
+from .opencc.opencc import OpenCC
 from pypinyin import lazy_pinyin
 
 
@@ -27,21 +27,11 @@ def s2hk(string):
 
 
 def get_acronym(str_data):
-    """
-    获取字符串的首字母
-    :param str_data: 字符串
-    :return: 字符pinyin串
-    """
     return "".join([i[0][0] for i in lazy_pinyin(str_data)])
 # print(get_acronym('台湾wan'))
 
 
 def get_pinyin(str_data):
-    """
-    获取字符串的拼音
-    :param str_data: 字符串
-    :return: 字符串
-    """
     return "".join([i for i in lazy_pinyin(str_data)])
 
 
