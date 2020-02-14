@@ -208,7 +208,6 @@ class Add_sensitivetext(APIView):
         'date':date,'send_ip':send_ip,'geo':geo,'message_type':message_type,'source':ource,'status':status}
         """
         res_dict = {}
-        i_id = request.GET.get('i_id')
         uid = request.GET.get('uid')
         mid = request.GET.get('mid')
         root_uid = request.GET.get('root_uid')
@@ -221,7 +220,7 @@ class Add_sensitivetext(APIView):
         source = request.GET.get('source')
         # status = request.GET.get('status')
         try:
-            Information.objects.create(i_id=i_id, uid=uid, root_uid=root_uid, mid=mid,root_mid=root_mid, timestamp=timestamp,
+            Information.objects.create(i_id=source+mid, uid=uid, root_uid=root_uid, mid=mid,root_mid=root_mid, timestamp=timestamp,
                                        text=text,send_ip=send_ip, geo=geo, message_type=message_type,source=source)
             res_dict["status"] = 1
             res_dict["result"] = "添加成功"
@@ -249,7 +248,7 @@ class Delete_sensitivetext(APIView):
                 res_dict["status"] = 0
                 res_dict["result"] = "删除失败"
         else:
-            res_dict["status"] = 2
+            res_dict["status"] = 0
             res_dict["result"] = "信息不存在"
         return JsonResponse(res_dict)
 #事件关键词的添加与删除
@@ -304,15 +303,16 @@ class Add_eventparameter(APIView):
     def get(self, request):
         """
         增加事件关键词
-        格式：{'p_name':p_name','p_value':p_value,'e_id':e_id}
+        格式：{'p_name':p_name','p_value':p_value,'e_id':e_id,'p_intruduction':p_instruction}
         """
         res_dict = {}
         p_name = request.GET.get('p_name')
         e_id = request.GET.get('e_id')
         p_value = request.GET.get('p_value')
+        p_instruction = request.GET.get('p_instruction')
 
         try:
-            EventParameter.objects.create(p_id = p_name+e_id,p_name=p_name, p_value=p_value, e_id=e_id)
+            EventParameter.objects.create(p_id = p_name+e_id,p_name=p_name, p_value=p_value, e_id=e_id,p_instruction=p_instruction)
             res_dict["status"] = 1
             res_dict["result"] = "添加成功"
             '''
@@ -361,7 +361,7 @@ class Show_eventparameter(APIView):
         格式：{'e_id':e_id}
         """
         e_id = request.GET.get('e_id')
-        result = EventParameter.objects.filter(e_id=e_id).values('p_name', 'p_value')
+        result = EventParameter.objects.filter(e_id=e_id).values('p_name', 'p_value', 'p_instruction')
         if not result.exists():
             return JsonResponse({"status": 400, "error": "该事件不存在参数，请检查事件是否正确"}, safe=False)
         else:
