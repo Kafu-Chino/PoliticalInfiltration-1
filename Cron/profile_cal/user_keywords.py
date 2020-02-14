@@ -76,7 +76,7 @@ def get_user_keywords(text_list,word_dict,date, keywords_num=5):
     #time22 = time.time()
     #print("获取关键词和has花费：",time22-time11)
     if len(hastag_dict):
-        hastag_dict = wordcount(hastag_dict)
+        hastag_dict = wordcount(hastag_dict,date)
     #keywords_dict=wordcount(keywords_dict)
     #time2 = time.time()
     #print("wordcount花费：",time2-time22)
@@ -102,5 +102,5 @@ def get_user_keywords(text_list,word_dict,date, keywords_num=5):
                                                         "store_date":date}
     sql_insert_many(cursor, "UserKeyWord", "ukw_id", user_kw)
     time5 = time.time()
-    print("插入kw花费：",time5-time4)
+    # print("插入kw花费：",time5-time4)
     #return keywords_dict,hastag_dict'''
