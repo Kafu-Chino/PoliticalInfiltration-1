@@ -43,8 +43,8 @@ class Show_sensitive_word(APIView):
         if not result.exists():
             return JsonResponse({"status":400, "error": "无通用敏感词"},safe=False)
         else:
-	        json_data = serializers.serialize("json", result)
-	        results = json.loads(json_data)
+	        data = json.dumps(list(result))
+	        results = json.loads(data)
 	        return JsonResponse(results, safe=False)
 
 
@@ -56,9 +56,9 @@ class Show_sensitive_word_transform(APIView):
         if not result.exists():
             return JsonResponse({"status":400, "error": "无敏感词变型"},safe=False)
         else:
-	        json_data = serializers.serialize("json", result)
-	        results = json.loads(json_data)
-	        return JsonResponse(results, safe=False)
+            data = json.dumps(list(result))
+            results = json.loads(data)
+            return JsonResponse(results, safe=False)
 
 
 class Add_sensitive_word(APIView):
@@ -125,9 +125,9 @@ class Show_global_parameter(APIView):
         if not result.exists():
             return JsonResponse({"status":400, "error": "无可显示的全局参数"},safe=False)
         else:
-	        json_data = serializers.serialize("json", result)
-	        results = json.loads(json_data)
-	        return JsonResponse(results, safe=False)
+            data = json.dumps(list(result))
+            results = json.loads(data)
+            return JsonResponse(results, safe=False)
 
 
 class Modify_global_parameter(APIView):
