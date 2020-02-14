@@ -350,3 +350,56 @@ class Update_eventparameter(APIView):
             res_dict["status"] = 0
             res_dict["result"] = "参数不存在"
         return JsonResponse(res_dict)
+
+
+class Show_eventparameter(APIView):
+    """展示事件管理接口"""
+
+    def get(self, request):
+        """
+        展示事件参数
+        格式：{'e_id':e_id}
+        """
+        e_id = request.GET.get('e_id')
+        result = EventParameter.objects.filter(e_id=e_id).values('p_name', 'p_value')
+        if not result.exists():
+            return JsonResponse({"status": 400, "error": "该事件不存在参数，请检查事件是否正确"}, safe=False)
+        else:
+            data = json.dumps(list(result))
+            results = json.loads(data)
+            return JsonResponse(results, safe=False)
+
+
+class Show_eventkeyword(APIView):
+    """展示事件管理接口"""
+
+    def get(self, request):
+        """
+        展示事件关键词
+        格式：{'e_id':e_id}
+        """
+        e_id = request.GET.get('e_id')
+        result = EventKeyWord.objects.filter(e_id=e_id).values('word')
+        if not result.exists():
+            return JsonResponse({"status": 400, "error": "该事件不存在关键词，请检查事件是否正确"}, safe=False)
+        else:
+            data = json.dumps(list(result))
+            results = json.loads(data)
+            return JsonResponse(results, safe=False)
+
+class Show_eventsensitiveword(APIView):
+    """展示事件管理接口"""
+
+    def get(self, request):
+        """
+        展示事件关键词
+        格式：{'e_id':e_id}
+        """
+        e_id = request.GET.get('e_id')
+        result = SensitiveWord.objects.filter(e_id=e_id).values('prototype')
+        if not result.exists():
+            return JsonResponse({"status": 400, "error": "该事件不存在敏感词，请检查事件是否正确"}, safe=False)
+        else:
+            data = json.dumps(list(result))
+            results = json.loads(data)
+            return JsonResponse(results, safe=False)
