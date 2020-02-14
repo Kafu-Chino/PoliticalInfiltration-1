@@ -81,16 +81,15 @@ def political_classify(uid_weibo):
     return domain_dict
 
 
-thedate = datetime.date.today()
-thatday = thedate - datetime.timedelta(days=7)
-def get_user_political(uid_list, start_date=thatday, end_date=thedate):
+
+def get_user_political(uid_list, start_ts, end_ts):
     '''
     用户政治倾向计算函数  left为左倾 mid为中立 right为右倾
     '''
     uids = ''
     for uid in uid_list:
         uids += uid + ','
-    sql = 'select uid,wordcount from WordCount where uid in (%s) and  store_date >= %s and store_date <= %s' % (uids[:-1], start_date, end_date)
+    sql = 'select uid,wordcount from WordCount where uid in (%s) and  timestamp >= %s and timestamp <= %s' % (uids[:-1],start_ts,end_ts)
     cursor.execute(sql)
     word_c = defaultdict(dict)
     result = cursor.fetchall()

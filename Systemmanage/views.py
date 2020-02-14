@@ -40,13 +40,12 @@ class Show_sensitive_word(APIView):
     def get(self, request):
         """展示通用敏感词列表,该文档返回SensitiveWord表中存在的需要展示的数据，其中返回的字段prototype为通用敏感词原型"""
         result = SensitiveWord.objects.filter(transform=None, perspective_bias=0).values('prototype')
-        if result.exists():
-            return HttpResponse(result)
-        else:
+        if not result.exists():
             return JsonResponse({"status":400, "error": "无通用敏感词"},safe=False)
-        json_data = serializers.serialize("json", result)
-        results = json.loads(json_data)
-        return JsonResponse(results, safe=False)
+        else:
+	        data = json.dumps(list(result))
+	        results = json.loads(data)
+	        return JsonResponse(results, safe=False)
 
 
 class Show_sensitive_word_transform(APIView):
@@ -54,13 +53,12 @@ class Show_sensitive_word_transform(APIView):
     def get(self, request):
         prototype = request.GET.get("prototype")
         result = SensitiveWord.objects.filter(prototype=prototype).values('transform')
-        if result.exists():
-            return HttpResponse(result)
-        else:
+        if not result.exists():
             return JsonResponse({"status":400, "error": "无敏感词变型"},safe=False)
-        json_data = serializers.serialize("json", result)
-        results = json.loads(json_data)
-        return JsonResponse(results, safe=False)
+        else:
+            data = json.dumps(list(result))
+            results = json.loads(data)
+            return JsonResponse(results, safe=False)
 
 
 class Add_sensitive_word(APIView):
@@ -123,14 +121,13 @@ class Show_global_parameter(APIView):
     """展示全局参数"""
     def get(self, request):
         """展示全局参数,返回GlobalParameter表中存在的需要展示的数据，其中返回的字段p_name为参数名称，p_value为参数的值"""
-        result = GlobalParameter.objects.values('p_name', 'p_value')
-        if result.exists():
-            return HttpResponse(result)
-        else:
+        result = GlobalParameter.objects.values('p_name', 'p_value', 'p_instruction')
+        if not result.exists():
             return JsonResponse({"status":400, "error": "无可显示的全局参数"},safe=False)
-        json_data = serializers.serialize("json", result)
-        results = json.loads(json_data)
-        return JsonResponse(results, safe=False)
+        else:
+            data = json.dumps(list(result))
+            results = json.loads(data)
+            return JsonResponse(results, safe=False)
 
 
 class Modify_global_parameter(APIView):
