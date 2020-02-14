@@ -90,11 +90,11 @@ def get_user_topic(word_dict,date):
 thedate = datetime.date.today()
 thatday = thedate - datetime.timedelta(days=7)
 #print(thedate,thatday)
-def topic_domain_cal(uid_list,start_date=thatday,end_date=thedate):
+def topic_domain_cal(uid_list,start_ts,end_ts,start_date=thatday,end_date=thedate):
     uids = ''
     for uid in uid_list:
         uids += uid + ','
-    sql = 'select uid,wordcount from WordCount where uid in (%s) and  store_date >= %s and store_date <= %s' % (uids[:-1],start_date,end_date)
+    sql = 'select uid,wordcount from WordCount where uid in (%s) and  timestamp >= %s and timestamp <= %s' % (uids[:-1],start_ts,end_ts)
     cursor.execute(sql)
     word_c =defaultdict(dict)
     word = {}
