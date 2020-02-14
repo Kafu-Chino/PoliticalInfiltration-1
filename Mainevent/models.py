@@ -70,3 +70,14 @@ class Event_Analyze(models.Model):
     into_date = models.DateField(blank=True, null=True)
     class Meta():
         db_table = 'Event_Analyze'
+
+
+class Event_Semantic(models.Model):
+    es_id = models.CharField(max_length=30, primary_key=True)
+    e_id = models.CharField(max_length=30, blank=True, null=True)
+    e_name = models.CharField(max_length=50)
+    topics = JSONField()
+    timestamp = models.BigIntegerField(blank=True, null=True)
+    into_date = models.DateField(blank=True, null=True)
+    class Meta():
+        db_table = 'Event_Semantic'
