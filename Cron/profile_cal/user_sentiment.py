@@ -33,7 +33,7 @@ def cal_user_emotion(word_dict, thedate):
     user_sentiment_dict = {}
     for uid, weibo_list in word_dict.items():#value 为列表  key 为uid
         sentiment_dict = {}
-        thedate = today()
+        # thedate = today()
         sum_r = len(weibo_list)
         if sum_r :#此天有微博数据
             sentiment = triple_classifier(weibo_list, weibo_dic, l_m)
