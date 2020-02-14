@@ -89,7 +89,7 @@ def get_user_political(uid_list, start_ts, end_ts):
     uids = ''
     for uid in uid_list:
         uids += uid + ','
-        sql = 'select uid,wordcount from WordCount where uid in (%s) and  timestamp >= %s and timestamp <= %s' % (uids[:-1],start_ts,end_ts)
+    sql = 'select uid,wordcount from WordCount where uid in (%s) and  timestamp >= %s and timestamp <= %s' % (uids[:-1],start_ts,end_ts)
     cursor.execute(sql)
     word_c = defaultdict(dict)
     result = cursor.fetchall()
