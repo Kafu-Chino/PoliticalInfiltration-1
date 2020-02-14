@@ -186,14 +186,17 @@ class Delete_sensitiveword(APIView):
         res_dict = {}
         word = request.GET.get('word')
         e_id = request.GET.get('e_id')
-
-        try:
-            SensitiveWord.objects.filter(prototype = word,e_id = e_id).delete()
-            res_dict["status"] = 1
-            res_dict["result"] = "删除成功"
-        except:
+        if SensitiveWord.objects.filter(prototype = word,e_id = e_id).exists():
+            try:
+                SensitiveWord.objects.filter(prototype = word,e_id = e_id).delete()
+                res_dict["status"] = 1
+                res_dict["result"] = "删除成功"
+            except:
+                res_dict["status"] = 0
+                res_dict["result"] = "删除失败"
+        else:
             res_dict["status"] = 0
-            res_dict["result"] = "删除失败"
+            res_dict["result"] = "敏感词不存在"
         return JsonResponse(res_dict)
 
 
@@ -215,15 +218,14 @@ class Add_sensitivetext(APIView):
         root_mid = request.GET.get('root_mid')
         text = request.GET.get('text')
         timestamp = request.GET.get('timestamp')
-        date = request.GET.get('date')
         send_ip = request.GET.get('send_ip')
         geo = request.GET.get('geo')
         message_type = request.GET.get('message_type')
         source = request.GET.get('source')
-        status = request.GET.get('status')
+        # status = request.GET.get('status')
         try:
-            Information.objects.create(s_id=i_id, uid=uid, root_uid=root_uid, mid=mid,root_mid=root_mid, timestamp=timestamp,
-                                       text=text, date=date,send_ip=send_ip, geo=geo, message_type=message_type,source=source,status=status)
+            Information.objects.create(i_id=i_id, uid=uid, root_uid=root_uid, mid=mid,root_mid=root_mid, timestamp=timestamp,
+                                       text=text,send_ip=send_ip, geo=geo, message_type=message_type,source=source)
             res_dict["status"] = 1
             res_dict["result"] = "添加成功"
         except:
@@ -241,14 +243,17 @@ class Delete_sensitivetext(APIView):
         """
         res_dict = {}
         mid = request.GET.get('mid')
-
-        try:
-            Information.objects.filter(mid = mid).delete()
-            res_dict["status"] = 1
-            res_dict["result"] = "删除成功"
-        except:
-            res_dict["status"] = 0
-            res_dict["result"] = "删除失败"
+        if Information.objects.filter(mid = mid).exists():
+            try:
+                Information.objects.filter(mid = mid).delete()
+                res_dict["status"] = 1
+                res_dict["result"] = "删除成功"
+            except:
+                res_dict["status"] = 0
+                res_dict["result"] = "删除失败"
+        else:
+            res_dict["status"] = 2
+            res_dict["result"] = "信息不存在"
         return JsonResponse(res_dict)
 #事件关键词的添加与删除
 class Add_keyword(APIView):
@@ -283,14 +288,17 @@ class Delete_keyword(APIView):
         res_dict = {}
         word = request.GET.get('word')
         e_id = request.GET.get('e_id')
-
-        try:
-            EventKeyWord.objects.filter(k_id = word+e_id).delete()
-            res_dict["status"] = 1
-            res_dict["result"] = "删除成功"
-        except:
+        if EventKeyWord.objects.filter(k_id = word+e_id).exists():
+            try:
+                EventKeyWord.objects.filter(k_id = word+e_id).delete()
+                res_dict["status"] = 1
+                res_dict["result"] = "删除成功"
+            except:
+                res_dict["status"] = 0
+                res_dict["result"] = "删除失败"
+        else:
             res_dict["status"] = 0
-            res_dict["result"] = "删除失败"
+            res_dict["result"] = "关键词不存在"
         return JsonResponse(res_dict)
 #事件参数的添加更新
 class Add_eventparameter(APIView):
@@ -330,15 +338,18 @@ class Update_eventparameter(APIView):
         p_name = request.GET.get('p_name')
         e_id = request.GET.get('e_id')
         new_value = request.GET.get('new_value')
-
-        try:
-            EventParameter.objects.filter(p_name=p_name,e_id = e_id).update(p_value = new_value)
-            res_dict["status"] = 1
-            res_dict["result"] = "更新成功"
-            '''
-            此处启动事件计算
-            '''
-        except:
+        if  EventParameter.objects.filter(p_name=p_name,e_id = e_id).exists():
+            try:
+                EventParameter.objects.filter(p_name=p_name,e_id = e_id).update(p_value = new_value)
+                res_dict["status"] = 1
+                res_dict["result"] = "更新成功"
+                '''
+                此处启动事件计算
+                '''
+            except:
+                res_dict["status"] = 0
+                res_dict["result"] = "更新失败"
+        else:
             res_dict["status"] = 0
-            res_dict["result"] = "更新失败"
+            res_dict["result"] = "参数不存在"
         return JsonResponse(res_dict)
