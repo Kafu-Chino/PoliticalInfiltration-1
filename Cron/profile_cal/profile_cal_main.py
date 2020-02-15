@@ -16,7 +16,7 @@ from user_social import get_user_social
 from user_topic import topic_domain_cal
 from user_keywords import get_user_keywords
 from user_influence_total import influence_total
-from user_political import political_classify
+from user_political import get_user_political
 from user_influence_total import influence_total
 from user_position import get_user_activity_aggs
 from user_msg_type import get_msg_type_aggs
@@ -35,13 +35,13 @@ def profile_cal_uidlist(uidlist):
         word_dict, text_list, text_dict = get_processed_data(date_data, date)
 
         # 地域特征（文娟）
-        result_position = get_user_activity_aggs(data)
+        # result_position = get_user_activity_aggs(data)
 
         # 活动特征（文娟）
         result_msg_type = get_msg_type_aggs(data)
 
         # 情绪特征（中方）
-        # cal_user_emotion(text_dict, data)
+        # cal_user_emotion(data,date)
 
         # 影响力特征（英汉）
         # influence_total(date,uidlist,word_dict,date_data)
@@ -49,8 +49,8 @@ def profile_cal_uidlist(uidlist):
         # # 社交特征（梦丽）
         # get_user_social(date_data,date)
         #
-        # #每星期计算一次
-        # dayOfWeek = datetime.datetime.strptime(date, "%Y-%m-%d").weekday()
+        #每星期计算一次
+        dayOfWeek = datetime.datetime.strptime(date, "%Y-%m-%d").weekday()
         # if  dayOfWeek == 0:
         #     # 话题和领域特征
         #     print('开始周计算')
@@ -64,7 +64,7 @@ def profile_cal_uidlist(uidlist):
         #     get_user_keywords(text_list, word_dict, date, 5)
         #
         #     #政治倾向（中方）
-        #     # political_classify(uidlist,thedate,thatday)
+        #     get_user_political(uidlist,thatday,theday)
 
 
 
