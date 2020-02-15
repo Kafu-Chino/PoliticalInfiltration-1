@@ -1,14 +1,10 @@
 import os
 import re
-import time
-import datetime
-from collections import defaultdict
-from django.http import JsonResponse, HttpResponse
-from django.db.models import Sum
+from django.http import JsonResponse
 
 from Config.time_utils import *
 from Config.base import MSG_TYPE_DIC
-from Informationspread.models import *
+from Informationspread.models import Informationspread
 from Mainevent.models import Information
 
 from rest_framework.views import APIView
@@ -16,10 +12,11 @@ from rest_framework.schemas import ManualSchema
 
 ABS_PATH = os.path.dirname(os.path.abspath(__file__))
 
-class Sen_info(APIView):
+class Show_Info(APIView):
     def get(self,request):
         mid = request.GET.get('mid')
         result = Information.objects.filter(mid=mid).values("uid",'text','timestamp','geo','message_type','hazard_index')
+        print(result)
         res = {
             "uid": result[0]["uid"],
             "text": result[0]["text"],
@@ -33,23 +30,26 @@ class Sen_info(APIView):
             res["hazard_index"] = "无"
         return JsonResponse(res,safe=False,json_dumps_params={'ensure_ascii':False})
 
-class Show_Info(APIView):
-    """展示信息传播态势接口"""
-
+class Trend(APIView):
     def get(self, request):
-        """
-        获取微博mid，返回微博传播态势详情，可指定返回日期长度，默认为7天;
-        返回格式: {date1:{spread_count_s:10},
-                    date2:{spread_count_s: 10},
-                    ...}
-        """
-        res_dict = {}
         mid = request.GET.get('mid')
-        n = request.GET.get('n') if request.GET.get('n') else 7
-        new_date = (datetime.datetime.now() + datetime.timedelta(days=-n)).timestamp()
-        result = Informationspread.objects.filter(mid=mid, timestamp__gte=new_date).values(
-            "timestamp").annotate(spread_count_s=Sum("spread_count"))
-        for item in result:
-            t = item.pop("timestamp") - 24 * 60 * 60
-            res_dict[time.strftime("%Y-%m-%d", time.localtime(t))] = item
+        n = 90
+        date = date2ts("2019-08-20")
+        date_before = date - n * 86400
+        result = Informationspread.objects.filter(mid=mid, timestamp__gte=date_before, timestamp__lte=date).values()
+        data_dic = {ts2date(item["timestamp"]): item["comment_count"] + item["retweet_count"] for item in result}
+        print(data_dic)
+
+        datelist = get_datelist_v2(ts2date(date_before), ts2date(date))
+        count_list = []
+        for date in datelist:
+            if date in data_dic:
+                count_list.append(data_dic[date])
+            else:
+                count_list.append(0)
+
+        res_dict = {
+            'date': datelist,
+            'count': count_list
+        }
         return JsonResponse(res_dict)
