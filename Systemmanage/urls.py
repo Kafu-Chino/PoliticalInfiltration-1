@@ -25,11 +25,10 @@ urlpatterns = [
     path('eswdelete/',views.Delete_sensitiveword.as_view()),
     path('stadd/',views.Add_sensitivetext.as_view()),
     path('stdelete/',views.Delete_sensitivetext.as_view()),
-    path('kwadd/',views.Add_keyword.as_view()),
-    path('kwdelete/',views.Delete_keyword.as_view()),
-    path('epadd/',views.Add_eventparameter.as_view()),
+    path('kwupdate/',views.Update_eventkeyword.as_view()),
     path('epupdate/',views.Update_eventparameter.as_view()),
     path('kwshow/',views.Show_eventkeyword.as_view()),
     path('eswshow/',views.Show_eventsensitiveword.as_view()),
     path('epshow/',views.Show_eventparameter.as_view()),
+    path('estshow/',views.Show_sensitivetext.as_view()),
 ]

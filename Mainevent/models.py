@@ -38,6 +38,7 @@ class Information(models.Model):
     hazard_index = models.FloatField(blank=True, null=True)
     cal_status = models.IntegerField(default=0)
     monitor_status = models.IntegerField(default=1)
+    add_manully = models.BooleanField(null=True,default=0)
 
     class Meta():
         db_table = 'Information'
