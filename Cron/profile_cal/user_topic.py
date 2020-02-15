@@ -65,7 +65,7 @@ def get_p(train_dict,test_dict):
 #用户分类函数 计算用户话题和领域并保存至数据库
 #输入为结巴分词后的字典{uid:词列表}
 def get_user_topic(word_dict,date):
-    time1 = time.time()
+    #time1 = time.time()
     topic_dict=topic_tfidf()
     #time2 = time.time()
     #print("读取topic花费：",time2-time1)
@@ -90,8 +90,8 @@ def get_user_topic(word_dict,date):
 thedate = datetime.date.today()
 thatday = thedate - datetime.timedelta(days=7)
 #print(thedate,thatday)
-def topic_domain_cal(start_date=thatday,end_date=thedate):
-    sql = 'select uid,wordcount from WordCount where store_date >= %s and store_date <= %s' % (start_date,end_date)
+def topic_domain_cal(start_date=thatday,end_date=thedate,uid_list):
+    sql = 'select uid,wordcount from WordCount where uid in %s store_date >= %s and store_date <= %s' % (uid_list,start_date,end_date)
     cursor.execute(sql)
     word_c =defaultdict(dict)
     word = {}
