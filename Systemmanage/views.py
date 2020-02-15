@@ -83,6 +83,26 @@ class Add_sensitive_word(APIView):
             return JsonResponse({"status":400, "error": "请输入敏感词"},safe=False,json_dumps_params={'ensure_ascii':False})
 
 
+class Add_sensitive_word_transform(APIView):
+    """添加敏感词变型入库"""
+    def get(self,request):
+        """人工添加敏感词变型：传入敏感词原型prototype，变型transform;输出状态及提示：400 状态错误，201写入成功"""
+        prototype = request.GET.get("prototype")
+        transform = request.GET.get("transform")
+        #判断参数是否传入
+        if prototype and transform:
+            result = SensitiveWord.objects.filter(prototype=prototype,transform=transform)
+            if not result.exists():
+                times = int(time.time())
+                SensitiveWord.objects.create(s_id=str(times)+transform, prototype=prototype, transform=transform, perspective_bias=0)
+                return JsonResponse({"status":201, "msg": "添加成功"},safe=False,json_dumps_params={'ensure_ascii':False})
+            else:
+                return JsonResponse({"status": 400, "error": "该变型已存在"}, safe=False,json_dumps_params={'ensure_ascii': False})
+
+        else:
+            return JsonResponse({"status":400, "error": "请输入敏感词变型"},safe=False,json_dumps_params={'ensure_ascii':False})
+
+
 class Delete_sensitive_word_transform(APIView):
     """删除敏感词变型，点击叉号删除该变型，传入变型transform"""
     def get(self,request):

@@ -16,6 +16,7 @@ urlpatterns = [
     path('swshow/',views.Show_sensitive_word.as_view()),
     path('swtshow/',views.Show_sensitive_word_transform.as_view()),
     path('swadd/',views.Add_sensitive_word.as_view()),
+    path('swtadd/',views.Add_sensitive_word_transform.as_view()),
     path('swtdelete/',views.Delete_sensitive_word_transform.as_view()),
     path('swpdelete/',views.Delete_sensitive_word_prototype.as_view()),
     path('gparametershow/',views.Show_global_parameter.as_view()),
