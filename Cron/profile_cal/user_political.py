@@ -107,5 +107,5 @@ def get_user_political(uid_list, start_ts, end_ts):
         val.append((j, i))
     # 执行sql语句
     n = cursor.executemany(sql, val)
-    print("update %d success" % n)
+    print("update success")
     conn.commit()

@@ -533,6 +533,8 @@ def get_sensitive_dict(uid_list,word_dict):
 存储计算结果
 '''
 def influence_total(date,uid_list,word_count,data):
+    global store_date
+    store_date = date
     global es
     global db
     es,db = connect()
@@ -566,7 +568,7 @@ def save_sql(dic):
     sql = "INSERT INTO NewUserInfluence(uid_ts,uid,sensitity,activity,importance,influence,timestamp,store_date) VALUE(%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE uid_ts= values(uid_ts" \
           "),uid=values(uid),sensitity=values(sensitity),importance=values(importance),activity=values(activity),influence=values(influence),timestamp=values(timestamp ),store_date = values(store_date)"
     timestamp = int(day_time)
-    store_time = datetime.date.today()
+    store_time = store_date
     for uid in dic.keys():
         # uid_ts = uid + str(int(time.mktime(datetime.date.today().timetuple())))
         uid_ts = uid + str(day_time-86400)

@@ -1,8 +1,25 @@
 from Config.db_utils import es, pi_cur, conn
 
-def get_mid_dic():
+# 取不为人工添加的可计算信息
+def get_mid_dic_all():
     cursor = pi_cur()
-    sql = 'select %s from %s' % ("*", "Information")
+    sql = 'select * from Information where add_manully = 0'
+    cursor.execute(sql)
+    result = cursor.fetchall()
+    return result
+
+# 取不为人工添加的、已计算完成的、且正在监测的信息
+def get_mid_dic_caled():
+    cursor = pi_cur()
+    sql = 'select * from Information where cal_status = 2 and monitor_status = 1 and add_manully = 0'
+    cursor.execute(sql)
+    result = cursor.fetchall()
+    return result
+
+# 取不为人工添加的、且未计算的信息
+def get_mid_dic_notcal():
+    cursor = pi_cur()
+    sql = 'select * from Information where cal_status = 0 and add_manully = 0'
     cursor.execute(sql)
     result = cursor.fetchall()
     return result
