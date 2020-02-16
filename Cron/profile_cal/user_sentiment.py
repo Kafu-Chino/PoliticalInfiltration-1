@@ -36,6 +36,10 @@ def cal_user_emotion(word_dict, thedate):
         # thedate = today()
         sum_r = len(weibo_list)
         if sum_r :#此天有微博数据
+            x = 0
+            for w in weibo_list:
+                if w == []:
+                    x += 1
             sentiment = triple_classifier(weibo_list, weibo_dic, l_m)
             c = Counter(sentiment).most_common()
             c = dict(c)
@@ -43,6 +47,7 @@ def cal_user_emotion(word_dict, thedate):
             sentiment_dict['uid'] = uid
             sentiment_dict['negtive'] = c.get('0', 0)
             sentiment_dict['nuetral'] = c.get('1', 0)
+            sentiment_dict['nuetral'] = sentiment_dict['nuetral']+x
             sentiment_dict['positive'] = c.get('2', 0)
             sentiment_dict['store_date'] = thedate
             user_sentiment_dict['%s_%s'% (str(sentiment_dict['timestamp']), uid)] = sentiment_dict
@@ -56,3 +61,12 @@ def cal_user_emotion(word_dict, thedate):
             user_sentiment_dict['%s_%s' % (str(sentiment_dict['timestamp']), uid)] = sentiment_dict
             print("no data")
     sql_insert_many("UserSentiment", "us_id", user_sentiment_dict)
+
+
+def main():
+    data = {'123456489':[['ifeng', '国有国法', '家有家规']]}
+    cal_user_emotion(data, today())
+
+
+if __name__ == '__main__':
+    main()
