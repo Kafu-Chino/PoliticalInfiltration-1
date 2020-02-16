@@ -1,13 +1,16 @@
+import sys
+sys.path.append("../../")
+
 from copy import deepcopy
 from collections import defaultdict
 
-from Config.db_utils import es, pi_cur, conn
+from Config.db_utils import es, pi_cur, conn, get_global_para
 from Config.time_utils import *
-from data_utils import sql_insert_many
+from Cron.information_cal.data_utils import sql_insert_many
 
-basic_fraction = 50
-max_count = 50000
-decay_ratio = 0.1
+basic_fraction = get_global_para("information_basic_fraction")
+max_count = get_global_para("information_trend_max_count")
+decay_ratio = get_global_para("information_trend_decay_ratio")
 
 def get_trend(mid_dic, start_date, end_date):
     # 初始搜索列表的构建，原创微博为自身，转发评论微博为其原创微博
@@ -128,8 +131,9 @@ def cal_hazard_index(mid_dic, insert_dic, start_date, end_date):
                 hazard_index = 100
             hazard_index_dic[date][mid] = hazard_index
 
-    # 更新至新数据库
+    # 构建更新数据格式
     update_dic = {}
+    update_dic_information = {}
     for date in get_datelist_v2(start_date, end_date):
         for mid in mid_type:
             is_id = "{}_{}".format(date2ts(date), mid)
@@ -138,9 +142,28 @@ def cal_hazard_index(mid_dic, insert_dic, start_date, end_date):
             update_dic[is_id] = {
                 "hazard_index": hazard_index_dic[date][mid]
             }
+            update_dic_information[mid] = {
+                "hazard_index": hazard_index_dic[date][mid]
+            }
 
+    # 更新至信息态势库
     sql = "UPDATE Informationspread SET hazard_index = %s WHERE is_id = %s"
 
     params = [(update_dic[is_id]["hazard_index"], is_id) for is_id in update_dic]
+    n = cursor.executemany(sql, params)
+    conn.commit()
+
+    # 更新至信息库，无数据的置为初始值
+    for item in mid_dic:
+        if item["mid"] in update_dic_information:
+            update_dic_information[item["i_id"]] = update_dic_information.pop(item["mid"])
+        else:
+            update_dic_information[item["i_id"]] = {
+                "hazard_index": basic_fraction
+            }
+
+    sql = "UPDATE Information SET hazard_index = %s WHERE i_id = %s"
+
+    params = [(update_dic_information[i_id]["hazard_index"], i_id) for i_id in update_dic_information]
     n = cursor.executemany(sql, params)
     conn.commit()
