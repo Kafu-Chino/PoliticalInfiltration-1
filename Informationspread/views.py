@@ -34,6 +34,7 @@ class Trend(APIView):
     def get(self, request):
         mid = request.GET.get('mid')
         n = 90
+        date = today()
         date = date2ts("2019-08-20")
         date_before = date - n * 86400
         result = Informationspread.objects.filter(mid=mid, timestamp__gte=date_before, timestamp__lte=date).values()

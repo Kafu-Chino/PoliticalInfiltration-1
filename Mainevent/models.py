@@ -14,8 +14,9 @@ class Figure(models.Model):
     sex = models.NullBooleanField()  # True:male，Fales：female,Null：empty
     friendsnum = models.IntegerField(blank=True, null=True)
     fansnum = models.IntegerField(blank=True, null=True)
-    computestatus = models.IntegerField(blank=True, null=True)
-    monitorstatus = models.IntegerField(blank=True, null=True)
+    computestatus = models.IntegerField(default=0)  # 计算状态：0为未计算，1为计算中，2为计算完成
+    monitorstatus = models.IntegerField(default=1)  # 监测状态：0为未在监测，1为监测中
+    identitystatus = models.IntegerField(default=0)  # 确认状态：0为未确认为敏感用户，1为已确认
     into_date = models.DateField(blank=True, null=True)
     user_location = models.CharField(max_length=100, blank=True, null=True)
 
@@ -46,15 +47,11 @@ class Information(models.Model):
 class Event(models.Model):
     e_id = models.CharField(max_length=30, primary_key=True)
     event_name = models.CharField(max_length=50)
-    keywords_dict = models.CharField(max_length=100)
-    begin_timestamp = models.BigIntegerField()
-    begin_date = models.DateField()
-    end_timestamp = models.BigIntegerField(blank=True, null=True)
+    keywords_dict = models.CharField(max_length=100)   # 为查询表达式
+    begin_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
-    content = models.CharField(max_length=400)
-    uid = models.CharField(max_length=30, blank=True, null=True)
-    status = models.IntegerField(default=1)
-    if_manul = models.IntegerField(default=0)
+    cal_status = models.IntegerField(default=0)
+    monitor_status = models.IntegerField(default=1)
     information = models.ManyToManyField(Information, related_name="event")
     figure = models.ManyToManyField(Figure, related_name="event")
 
