@@ -143,15 +143,11 @@ class representative_info(APIView):
         res = []
         e = Event.objects.filter(e_id = event_id)
         for item in e:
-            print(e)
-            info = item.information.all() #.filter(timestamp__range=(ts1,ts2) ).order_by("hazard_index")[:5]
-            print(info)
-        for i in info:
-            print(i)
-
-            lt = time.localtime(i.timestamp)
-            itime = time.strftime("%Y-%m-%s %H:%M:%S",lt)
-            res.append({"uid":i.uid,"comment":i.comment,"retweeted":i.retweeted,"date":itime,"text":i.text,"hazard":i.hazard_index})
+            info = item.information.all().filter(timestamp__range=(ts1,ts2) ).order_by("hazard_index")[:5]
+            for i in info:
+                lt = time.localtime(i.timestamp)
+                itime = time.strftime("%Y-%m-%s %H:%M:%S",lt)
+                res.append({"uid":i.uid,"comment":i.comment,"retweeted":i.retweeted,"date":itime,"text":i.text,"hazard":i.hazard_index})
         return JsonResponse(res,safe=False,json_dumps_params={'ensure_ascii':False})
 
 
@@ -180,7 +176,7 @@ class figure_info(APIView):
         eid = request.GET.get('eid')
         res_event = Event.objects.filter(e_id=eid)  #.first().event_set.all()
         for e in res_event:
-            print(e)
+            #print(e)
             res = e.figure.all()
             for f in res:
                 res_dict["figure"].append({"f_id": f.f_id, "nick_name": f.nick_name,"fansnum":f.fansnum,"friendsnum":f.friendsnum})
