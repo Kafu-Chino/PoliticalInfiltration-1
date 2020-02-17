@@ -5,35 +5,94 @@ import time
 import datetime
 from collections import defaultdict
 from data_get_utils import sql_select,sql_insert_many
-from Config.db_utils import es, pi_cur, conn
-
-cursor = pi_cur()
+from Config.db_utils import es
+from elasticsearch.helpers import scan
+#cursor = pi_cur()
 
 
 #计算用户上下游关系
 #输入直接得到微博全字段信息
-def get_user_social(data_dict,date):
+def get_user_social(uidlist,date):
     #cur = conn.cursor(cursor=pymysql.cursors.DictCursor)
     time1 = time.time()
-    info_list = sql_select(cursor, "Figure", field_name="*")
-    time2 = time.time()
-    print("mysql遍历花费：",time2-time1)
+    data_list = []
+    user_list=[]
+    comment_target=[]
+    comment_source = []
+    retweet_target = []
+    retweet_source = []
+    #info_list = sql_select(cursor, "Figure", field_name="*")
+    query_body = {
+        "query": {
+            "bool": {
+                        "should": [
+                            {"terms": {
+                                "message_type": [2,3]
+                                }
+                                }
+                            ]
+                        }
+        }
+    }
+
+    r = scan(es, index="weibo_all", query=query_body)
+    for item in r:
+        user_list.append(item['_source']["uid"])
+        user_list.append(item['_source']["root_uid"])
+        data_list.append({'uid':item['_source']["uid"],'root_uid':item['_source']["root_uid"],'message_type':item['_source']["message_type"]})
+    user_list.append(uidlist)
+    #user_list = list(set(user_list))
+    query_body1 = {
+        "query": {
+            "bool": {
+                        "should": [
+                            {"terms": {
+                                "uid": user_list
+                                }
+                                }
+                            ]
+                        }
+        }
+    }
+    r1 = scan(es, index="weibo_user_big", query=query_body1)
+    name_dict = {}
+    for item in r1:
+        name_dict[item['_source']["u_id"]]=item['_source']["name"]
+
+    #time2 = time.time()
+    #print("mysql遍历花费：",time2-time1)
     #print(info_list)
     user_sc={}
     thedate = datetime.date.today()
     #info_all_dict = defaultdict(list)
     info_dict=defaultdict(list)
-    for k,v in data_dict.items():
+    for k in uidlist:
+        for data in data_list:
+            if data["message_type"]==2:
+                if data['uid'] == k:
+                    comment_source.append({'uid':data["root_uid"],'nick_name':name_dict[data["root_uid"]]})
+                if data['root_uid'] == k:
+                    comment_target.append({'uid':data["uid"],'nick_name':name_dict[data["uid"]]})
+                #info_dict[k].append({"source":data["root_uid"],"source_name":name_dict[data["root_uid"]],"target":k,"target_name":name_dict[k],"message_type":data["message_type"]})
+            if data["message_type"]==3:
+                #print(name_dict[k])
+                if data['uid'] == k:
+                    retweet_source.append({'uid':data["root_uid"],'nick_name':name_dict[data["root_uid"]]})
+                if data['root_uid'] == k:
+                    retweet_target.append({'uid':data["uid"],'nick_name':name_dict[data["uid"]]})
+        info_dict[k].append({"retweet_source":retweet_source,"retweet_target":retweet_target,"comment_target":comment_target,"comment_source":comment_source})
+            
+        '''
         for item in v:
             #print(item)
             if item["message_type"]==2 or item["message_type"]==3:
                 #print("项",item)
                 #info_dict[k].append({"source":item["root_uid"],"source_name":" ","target":k,"target_name":" ","message_type":item["message_type"]})
-                for info in info_list:
-                    if info["uid"] == item["root_uid"]:
+                for info in data:
+                    if info["root_uid"] == k:
                         #print("用户",info["uid"])
                         if info["uid"]==k:
-                            info_dict[k].append({"source":item["root_uid"],"source_name":info["nick_name"],"target":k,"target_name":info["nick_name"],"message_type":item["message_type"]})
+                            info_dict[k].append({"source":info["uid"],"source_name":info["nick_name"],"target":k,"target_name":info["nick_name"],"message_type":item["message_type"]})
                         else:
                             info_dict[k].append({"source":item["root_uid"],"source_name":info["nick_name"],"target":k,"target_name":k,"message_type":item["message_type"]})
                         #info_dict[k]["source_name"] = info["nick_name"]
@@ -45,20 +104,24 @@ def get_user_social(data_dict,date):
         #print(info_dict)
     time3 = time.time()
     print("获取social花费：",time3-time2)
+    '''
+    td = date + " 00:00:00"
+    ta = time.strptime(td, "%Y-%m-%d %H:%M:%S")
+    ts = int(time.mktime(ta))
     if len(info_dict):
         for i,v in info_dict.items():
             for num in v:
-                user_sc["%s_%s_%s" % (num["target"], num["source"],str(int(time.time())))]={"uid": num["target"],
-                                                                                                      "timestamp": int(time.time()),
-                                                                                                      "target":num["target"],
-                                                                                                      "target_name":num["target_name"],
-                                                                                                      "source":num["source"],
-                                                                                                      "source_name":num["source_name"],
-                                                                                                      "message_type":num["message_type"],
-                                                                                                      "store_date":date}
+                user_sc["%s_%s" % (i,str(ts))]={"uid": i,
+                                                "timestamp": ts,
+                                                "retweet_target":num["retweet_target"],
+                                                "retweet_source":num["retweet_source"],
+                                                "comment_target":num["comment_target"],
+                                                "comment_target":num["retweet_target"],
+                                                #"message_type":num["message_type"],
+                                                "store_date":date}
         sql_insert_many(cursor, "UserSocialContact", "uc_id", user_sc)
         time4 = time.time()
-        print("插入social花费：",time4-time3)
+        print("插入social花费：",time4-time1)
     else:
         print("没有转发或评论数据")
 

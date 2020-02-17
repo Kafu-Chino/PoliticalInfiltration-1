@@ -5,7 +5,6 @@ import json
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import redirect
 from django.core import serializers
-from .models import *
 import time
 
 from rest_framework.views import APIView
@@ -14,6 +13,9 @@ from .敏感词扩展.sensitive_word_extent import extent
 
 from Systemmanage.models import *
 from Mainevent.models import *
+
+
+
 class Test(APIView):
     """测试页面"""
 
@@ -39,13 +41,12 @@ class Show_sensitive_word(APIView):
     def get(self, request):
         """展示通用敏感词列表,该文档返回SensitiveWord表中存在的需要展示的数据，其中返回的字段prototype为通用敏感词原型"""
         result = SensitiveWord.objects.filter(transform=None, perspective_bias=0).values('prototype')
-        if result.exists():
-            return HttpResponse(result)
-        else:
+        if not result.exists():
             return JsonResponse({"status":400, "error": "无通用敏感词"},safe=False)
-        json_data = serializers.serialize("json", result)
-        results = json.loads(json_data)
-        return JsonResponse(results, safe=False)
+        else:
+	        data = json.dumps(list(result))
+	        results = json.loads(data)
+	        return JsonResponse(results, safe=False)
 
 
 class Show_sensitive_word_transform(APIView):
@@ -53,13 +54,12 @@ class Show_sensitive_word_transform(APIView):
     def get(self, request):
         prototype = request.GET.get("prototype")
         result = SensitiveWord.objects.filter(prototype=prototype).values('transform')
-        if result.exists():
-            return HttpResponse(result)
-        else:
+        if not result.exists():
             return JsonResponse({"status":400, "error": "无敏感词变型"},safe=False)
-        json_data = serializers.serialize("json", result)
-        results = json.loads(json_data)
-        return JsonResponse(results, safe=False)
+        else:
+            data = json.dumps(list(result))
+            results = json.loads(data)
+            return JsonResponse(results, safe=False)
 
 
 class Add_sensitive_word(APIView):
@@ -72,16 +72,36 @@ class Add_sensitive_word(APIView):
             result = SensitiveWord.objects.filter(prototype=prototype)
             if not result.exists():
                 times = int(time.time())
-                SensitiveWord.objects.create(s_id=str(times) + prototype, prototypy=prototype, perspective_bias=0)
+                SensitiveWord.objects.create(s_id=str(times) + prototype, prototype=prototype, perspective_bias=0)
                 transforms = extent(prototype)
                 for transform in transforms:
-                    SensitiveWord.objects.create(s_id=str(times)+transform, prototypy=prototype, transform=transform, perspective_bias=0)
-                return JsonResponse({"status":201, "msg": "任务成功添加"},safe=False,json_dumps_params={'ensure_ascii':False})
+                    SensitiveWord.objects.create(s_id=str(times)+transform, prototype=prototype, transform=transform, perspective_bias=0)
+                return JsonResponse({"status":201, "msg": "敏感词成功添加"},safe=False,json_dumps_params={'ensure_ascii':False})
             else:
                 return JsonResponse({"status": 400, "error": "敏感词已存在"}, safe=False,json_dumps_params={'ensure_ascii': False})
 
         else:
             return JsonResponse({"status":400, "error": "请输入敏感词"},safe=False,json_dumps_params={'ensure_ascii':False})
+
+
+class Add_sensitive_word_transform(APIView):
+    """添加敏感词变型入库"""
+    def get(self,request):
+        """人工添加敏感词变型：传入敏感词原型prototype，变型transform;输出状态及提示：400 状态错误，201写入成功"""
+        prototype = request.GET.get("prototype")
+        transform = request.GET.get("transform")
+        #判断参数是否传入
+        if prototype and transform:
+            result = SensitiveWord.objects.filter(prototype=prototype,transform=transform)
+            if not result.exists():
+                times = int(time.time())
+                SensitiveWord.objects.create(s_id=str(times)+transform, prototype=prototype, transform=transform, perspective_bias=0)
+                return JsonResponse({"status":201, "msg": "添加成功"},safe=False,json_dumps_params={'ensure_ascii':False})
+            else:
+                return JsonResponse({"status": 400, "error": "该变型已存在"}, safe=False,json_dumps_params={'ensure_ascii': False})
+
+        else:
+            return JsonResponse({"status":400, "error": "请输入敏感词变型"},safe=False,json_dumps_params={'ensure_ascii':False})
 
 
 class Delete_sensitive_word_transform(APIView):
@@ -122,14 +142,13 @@ class Show_global_parameter(APIView):
     """展示全局参数"""
     def get(self, request):
         """展示全局参数,返回GlobalParameter表中存在的需要展示的数据，其中返回的字段p_name为参数名称，p_value为参数的值"""
-        result = SensitiveWord.objects.values('p_name', 'p_value')
-        if result.exists():
-            return HttpResponse(result)
-        else:
+        result = GlobalParameter.objects.values('p_name', 'p_value', 'p_instruction')
+        if not result.exists():
             return JsonResponse({"status":400, "error": "无可显示的全局参数"},safe=False)
-        json_data = serializers.serialize("json", result)
-        results = json.loads(json_data)
-        return JsonResponse(results, safe=False)
+        else:
+            data = json.dumps(list(result))
+            results = json.loads(data)
+            return JsonResponse(results, safe=False)
 
 
 class Modify_global_parameter(APIView):
@@ -156,7 +175,7 @@ class Modify_global_parameter(APIView):
 class Add_sensitiveword(APIView):
     """展示事件管理接口"""
 
-    def add_sensitiveword(self, request):
+    def get(self, request):
         """
         增加事件敏感词
         格式：{'word':word,'e_id':eid,'bias':bias}
@@ -177,7 +196,7 @@ class Add_sensitiveword(APIView):
 class Delete_sensitiveword(APIView):
     """展示事件管理接口"""
 
-    def delete_sensitiveword(self, request):
+    def get(self, request):
         """
         删除敏感词
         格式：{'word':word,'e_id':eid}
@@ -185,44 +204,51 @@ class Delete_sensitiveword(APIView):
         res_dict = {}
         word = request.GET.get('word')
         e_id = request.GET.get('e_id')
-
-        try:
-            SensitiveWord.objects.filter(word = word,e_id = e_id).delete()
-            res_dict["status"] = 1
-            res_dict["result"] = "删除成功"
-        except:
+        if SensitiveWord.objects.filter(prototype = word,e_id = e_id).exists():
+            try:
+                SensitiveWord.objects.filter(prototype = word,e_id = e_id).delete()
+                res_dict["status"] = 1
+                res_dict["result"] = "删除成功"
+            except:
+                res_dict["status"] = 0
+                res_dict["result"] = "删除失败"
+        else:
             res_dict["status"] = 0
-            res_dict["result"] = "删除失败"
+            res_dict["result"] = "敏感词不存在"
         return JsonResponse(res_dict)
 
 
 #敏感文本的添加和删除
 class Add_sensitivetext(APIView):
     """展示事件管理接口"""
+    count = 0
 
-    def add_sensitivetext(self, request):
+    def get(self, request):
         """
         增加事件敏感文本
-        格式：{'i_id':i_id,'uid':uid,'mid':mid,'root_uid':root_uid,'root_mid':root_mid,'text':text,'timestamp':timestamp,
-        'date':date,'send_ip':send_ip,'geo':geo,'message_type':message_type,'source':ource,'status':status}
+        格式：{'i_id':i_id,'uid':uid,'mid':mid,''text':text,'timestamp':timestamp,
+        'date':date,'geo':geo,'message_type':message_type,'source':source,'e_id':e_id }
         """
         res_dict = {}
-        i_id = request.GET.get('i_id')
         uid = request.GET.get('uid')
         mid = request.GET.get('mid')
-        root_uid = request.GET.get('root_uid')
-        root_mid = request.GET.get('root_mid')
         text = request.GET.get('text')
         timestamp = request.GET.get('timestamp')
-        date = request.GET.get('date')
-        send_ip = request.GET.get('send_ip')
         geo = request.GET.get('geo')
         message_type = request.GET.get('message_type')
         source = request.GET.get('source')
-        status = request.GET.get('status')
+        e_id = request.GET.get('e_id')
+        if mid==None:
+            mid = str(int(time.time()))
+        if source==None:
+            source = '手动添加0'
+        if uid==None:
+            uid = '手动添加'
         try:
-            Information.objects.create(s_id=i_id, uid=uid, root_uid=root_uid, mid=mid,root_mid=root_mid, timestamp=timestamp,
-                                       text=text, date=date,send_ip=send_ip, geo=geo, message_type=message_type,source=source,status=status)
+            Event_information.create(i_id=source+mid,e_id=e_id)
+            Information.objects.create(i_id=source+mid, uid=uid,  mid=mid, timestamp=timestamp,
+                                       text=text, geo=geo, message_type=message_type,source=source,add_manully = 1)
+
             res_dict["status"] = 1
             res_dict["result"] = "添加成功"
         except:
@@ -233,94 +259,60 @@ class Add_sensitivetext(APIView):
 class Delete_sensitivetext(APIView):
     """展示事件管理接口"""
 
-    def delete_sensitivetext(self, request):
+    def get(self, request):
         """
         删除敏感文本
         格式：{'mid':mid}
         """
         res_dict = {}
         mid = request.GET.get('mid')
-
-        try:
-            Information.objects.filter(mid = mid).delete()
-            res_dict["status"] = 1
-            res_dict["result"] = "删除成功"
-        except:
+        if Information.objects.filter(mid = mid).exists():
+            try:
+                Information.objects.filter(mid = mid).delete()
+                res_dict["status"] = 1
+                res_dict["result"] = "删除成功"
+            except:
+                res_dict["status"] = 0
+                res_dict["result"] = "删除失败"
+        else:
             res_dict["status"] = 0
-            res_dict["result"] = "删除失败"
+            res_dict["result"] = "信息不存在"
         return JsonResponse(res_dict)
-#事件关键词的添加与删除
-class Add_keyword(APIView):
+#事件关键词的更新
+class Update_eventkeyword(APIView):
     """展示事件管理接口"""
 
-    def add_keyword(self, request):
+    def get(self, request):
         """
-        增加事件关键词
-        格式：{'word':word',e_id':e_id'}
-        """
-        res_dict = {}
-        word = request.GET.get('word')
-        e_id = request.GET.get('e_id')
-
-        try:
-            EventKeyWord.objects.create(k_id=word+e_id, word=word, e_id=e_id)
-            res_dict["status"] = 1
-            res_dict["result"] = "添加成功"
-        except:
-            res_dict["status"] = 0
-            res_dict["result"] = "添加失败"
-        return JsonResponse(res_dict)
-
-class Delete_keyword(APIView):
-    """展示事件管理接口"""
-
-    def delete_keyword(self, request):
-        """
-        删除事件关键词
-        格式：{'word':word',e_id':e_id'}
+        更新事件关键词
+        格式：{'e_id':e_id,'new_value':new_value}
         """
         res_dict = {}
-        word = request.GET.get('word')
         e_id = request.GET.get('e_id')
-
-        try:
-            EventKeyWord.objects.filter(k_id = word+e_id).delete()
-            res_dict["status"] = 1
-            res_dict["result"] = "删除成功"
-        except:
+        new_value = request.GET.get('new_value')
+        if  Event.objects.filter(e_id = e_id).exists():
+            try:
+                EventParameter.objects.filter(e_id = e_id).update(keyword_dict = new_value)
+                res_dict["status"] = 1
+                res_dict["result"] = "更新成功"
+                '''
+                此处启动事件计算
+                '''
+            except:
+                res_dict["status"] = 0
+                res_dict["result"] = "更新失败"
+        else:
             res_dict["status"] = 0
-            res_dict["result"] = "删除失败"
-        return JsonResponse(res_dict)
-#事件参数的添加更新
-class Add_eventparameter(APIView):
-    """展示事件管理接口"""
-
-    def add_eventparameter(self, request):
-        """
-        增加事件关键词
-        格式：{'p_name':p_name','p_value':p_value,'e_id':e_id}
-        """
-        res_dict = {}
-        p_name = request.GET.get('p_name')
-        e_id = request.GET.get('e_id')
-        p_value = request.GET.get('p_value')
-
-        try:
-            EventParameter.objects.create(p_id = p_name+e_id,p_name=p_name, p_value=p_value, e_id=e_id)
-            res_dict["status"] = 1
-            res_dict["result"] = "添加成功"
-            '''
-            此处启动事件计算
-            '''
-        except:
-            res_dict["status"] = 0
-            res_dict["result"] = "添加失败"
+            res_dict["result"] = "参数不存在"
         return JsonResponse(res_dict)
 
+
+
+#事件参数的更新
 class Update_eventparameter(APIView):
     """展示事件管理接口"""
 
-    def Update_eventparameter(self, request):
+    def get(self, request):
         """
         更新事件关键词
         格式：{'p_name':p_name','e_id':e_id,'new_value':new_value}
@@ -329,15 +321,89 @@ class Update_eventparameter(APIView):
         p_name = request.GET.get('p_name')
         e_id = request.GET.get('e_id')
         new_value = request.GET.get('new_value')
-
-        try:
-            EventParameter.objects.filter(p_name=p_name,e_id = e_id).update(p_value = new_value)
-            res_dict["status"] = 1
-            res_dict["result"] = "添加成功"
-            '''
-            此处启动事件计算
-            '''
-        except:
+        if  EventParameter.objects.filter(p_name=p_name,e_id = e_id).exists():
+            try:
+                EventParameter.objects.filter(p_name=p_name,e_id = e_id).update(p_value = new_value)
+                res_dict["status"] = 1
+                res_dict["result"] = "更新成功"
+                '''
+                此处启动事件计算
+                '''
+            except:
+                res_dict["status"] = 0
+                res_dict["result"] = "更新失败"
+        else:
             res_dict["status"] = 0
-            res_dict["result"] = "添加失败"
+            res_dict["result"] = "参数不存在"
         return JsonResponse(res_dict)
+
+
+class Show_eventparameter(APIView):
+    """展示事件管理接口"""
+
+    def get(self, request):
+        """
+        展示事件参数
+        格式：{'e_id':e_id}
+        """
+        e_id = request.GET.get('e_id')
+        result = EventParameter.objects.filter(e_id=e_id).values('p_name', 'p_value', 'p_instruction')
+        if not result.exists():
+            return JsonResponse({"status": 400, "error": "该事件不存在参数，请检查事件是否正确"}, safe=False)
+        else:
+            data = json.dumps(list(result))
+            results = json.loads(data)
+            return JsonResponse(results, safe=False)
+
+
+class Show_eventkeyword(APIView):
+    """展示事件管理接口"""
+
+    def get(self, request):
+        """
+        展示事件关键词
+        格式：{'e_id':e_id}
+        """
+        e_id = request.GET.get('e_id')
+        result = Event.objects.filter(e_id=e_id).values('keyword_dict')
+        if not result.exists():
+            return JsonResponse({"status": 400, "error": "该事件不存在关键词，请检查事件是否正确"}, safe=False)
+        else:
+            data = json.dumps(list(result))
+            results = json.loads(data)
+            return JsonResponse(results, safe=False)
+
+class Show_eventsensitiveword(APIView):
+    """展示事件管理接口"""
+
+    def get(self, request):
+        """
+        展示事件关键词
+        格式：{'e_id':e_id,'bias':bias}
+        """
+        e_id = request.GET.get('e_id')
+        bias = request.GET.get('bias')
+        result = SensitiveWord.objects.filter(e_id=e_id,perspective_bias=bias).values('prototype','perspective_bias')
+        if not result.exists():
+            return JsonResponse({"status": 400, "error": "该事件不存在敏感词，请检查事件是否正确"}, safe=False)
+        else:
+            data = json.dumps(list(result))
+            results = json.loads(data)
+            return JsonResponse(results, safe=False)
+
+class Show_sensitivetext(APIView):
+    """展示事件管理接口"""
+
+    def get(self, request):
+        """
+        展示事件敏感信息
+        格式：{'add_manully':add_manully}
+        """
+        add_manully = request.GET.get('add_manully')
+        result = SensitiveWord.objects.filter(add_manully=add_manully).values('text')
+        if not result.exists():
+            return JsonResponse({"status": 400, "error": "该事件不存在敏感文本，请检查事件是否正确"}, safe=False)
+        else:
+            data = json.dumps(list(result))
+            results = json.loads(data)
+            return JsonResponse(results, safe=False)

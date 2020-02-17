@@ -24,16 +24,17 @@ activeness_weight_dict = { 'activity_geo': 0.5, 'statusnum': 0.5}
 
 ES_HOST = '219.224.135.12'
 ES_PORT = 9211
-
-es = Elasticsearch(hosts=[{'host': ES_HOST, 'port': ES_PORT}], timeout=1000)
-db = pymysql.connect(
-    host='219.224.135.12',
-    port=3306,
-    user='root',
-    passwd='mysql3306',
-    db='PoliticalInfiltration',
-    charset='utf8'
-)
+def connect():
+    es = Elasticsearch(hosts=[{'host': ES_HOST, 'port': ES_PORT}], timeout=1000)
+    db = pymysql.connect(
+        host='219.224.135.12',
+        port=3306,
+        user='root',
+        passwd='mysql3306',
+        db='PoliticalInfiltration',
+        charset='utf8'
+    )
+    return es,db
 '''
 影响力依赖统计
 '''
@@ -381,26 +382,6 @@ def get_domain_topic(uid_list,day_timestamp):
     return domain_topic_dict
 
 
-def search_domain(uid,nowtime,pretime):
-    cursor = db.cursor()
-    sql = "SELECT main_domain FROM  UserDomain  WHERE timestamp between '%d'and '%d'and uid = '%s' order by timestamp desc limit 1" % (pretime,nowtime,uid)#timestamp between '%d'and '%d'，pretime,nowtime,
-    # try:
-    cursor.execute(sql)
-    # 获取所有记录列表
-    results = cursor.fetchall()
-    return results
-
-def search_topic(uid,nowtime,pretime):
-    cursor = db.cursor()
-    sql = "SELECT topics FROM  UserTopic  WHERE timestamp between '%d'and '%d'and uid = '%s' order by timestamp desc limit 1" % (
-    pretime, nowtime, uid)  # timestamp between '%d'and '%d'，pretime,nowtime,
-    # try:
-    cursor.execute(sql)
-    # 获取所有记录列表
-    results = cursor.fetchall()
-    return results
-
-
 def get_max_fansnum():
     query_body = {
         "query": {
@@ -458,14 +439,6 @@ def get_importance_dic(uid_list):
 '''
 计算敏感度和活跃度
 '''
-def search_woordcount(uid,nowtime,pretime):
-    cursor = db.cursor()
-    sql = "SELECT wordcount FROM  WordCount  WHERE timestamp between '%d'and '%d'and uid = '%s' limit 1" % (pretime,nowtime,uid)#timestamp between '%d'and '%d'，pretime,nowtime,
-    # try:
-    cursor.execute(sql)
-    # 获取所有记录列表
-    results = cursor.fetchall()
-    return results
 
 def get_day_activeness(user_day_activeness_geo,weibo_num, uid):
     result = 0
@@ -513,65 +486,30 @@ def get_day_activity_time(user_day_activity_time):
     return results
 
 
-
-
-def search_es(uid):
-    query_body = {
-        "query": {
-            "bool": {
-                "must": [
-                    {
-                        "range": {
-                            "timestamp": {
-                                "gt": pre_time,
-                                "lt": day_time
-                            }
-                        }
-                    }
-                    ,
-                    {
-                        "term": {
-                            "uid": uid
-                        }
-                    }
-                    ,
-                ],
-                "must_not": [],
-                "should": []
-            }
-        },
-        "from": 0,
-        "sort": [],
-        "aggs": {}
-    }
-    query = es.search(index="weibo_all", body=query_body, scroll='5m', size=10000)
-    results = query['hits']['hits']
-    messages = []
-    for line in results:
-        messages.append(line['_source'])
-    return messages
-
-def get_activityness_dict(uid_list):
+def get_activityness_dict(uid_list,date_data):
     for uid in uid_list:
-        data = search_es(uid)
-        # print(data)
-        weibo_num = len(data)
-        user_day_activeness_geo = {}
-        if weibo_num:
-            for weibo in data:
-                geo = weibo['geo']
-                if geo not in user_day_activeness_geo:
-                    user_day_activeness_geo[geo] = 1
-                else:
-                    user_day_activeness_geo[geo] += 1
-            activeness = get_day_activeness(user_day_activeness_geo,weibo_num, uid)
-            result_dict[uid]['activity'] = activeness*100
+        if uid in date_data.keys():
+            data = date_data[uid]
+            # print(data)
+            weibo_num = len(data)
+            user_day_activeness_geo = {}
+            if weibo_num:
+                for weibo in data:
+                    geo = weibo['geo']
+                    if geo not in user_day_activeness_geo:
+                        user_day_activeness_geo[geo] = 1
+                    else:
+                        user_day_activeness_geo[geo] += 1
+                activeness = get_day_activeness(user_day_activeness_geo,weibo_num, uid)
+                result_dict[uid]['activity'] = activeness*100
+            else:
+                result_dict[uid]['activity'] = 0
         else:
             result_dict[uid]['activity'] = 0
 
 
-def get_sensitive_dict(word_dict):
-    uids = word_dict.keys()
+def get_sensitive_dict(uid_list,word_dict):
+    uids = uid_list
     word_score = {}
     with open('word_score.txt', 'r', encoding='utf8') as f:#D:\PycharmProjects\zzst\influence\
         for line in f.readlines():
@@ -583,9 +521,10 @@ def get_sensitive_dict(word_dict):
     for uid in uids:
         sensitiveness = 0
         # for day_dic in word_dict[uid]:
-        for word in word_dict[uid].keys():
-            if word in sensitive_word:
-                sensitiveness += word_score[word]*word_dict[uid][word]
+        if uid in word_dict.keys():
+            for word in word_dict[uid].keys():
+                if word in sensitive_word:
+                    sensitiveness += word_score[word]*word_dict[uid][word]
         # num +=1
         # print(num)
         result_dict[uid]['sensitive'] = sensitiveness
@@ -593,13 +532,18 @@ def get_sensitive_dict(word_dict):
 '''
 存储计算结果
 '''
-def influence_total(uid_list,start_date,end_date,word_count):
+def influence_total(date,uid_list,word_count,data):
+    global store_date
+    store_date = date
+    global es
+    global db
+    es,db = connect()
     global day_time
     # day_time = int(time.mktime(datetime.date.today().timetuple()))+86400
-    day_time =int(time.mktime(time.strptime(end_date, "%Y-%m-%d")))+86400
+    day_time =int(time.mktime(time.strptime(date, "%Y-%m-%d")))+86400
     global pre_time
-    pre_time = int(time.mktime(time.strptime(start_date, "%Y-%m-%d")))
-    # pre_time = day_time - 86400 * 200
+    # pre_time = int(time.mktime(time.strptime(start, "%Y-%m-%d")))
+    pre_time = day_time - 86400 * 14
     global result_dict
     result_dict = {}
     global statistic
@@ -610,10 +554,10 @@ def influence_total(uid_list,start_date,end_date,word_count):
     statistics(uid_list)
     get_influence_dict(uid_list)
     get_importance_dic(uid_list)
-    get_activityness_dict(uid_list)
+    get_activityness_dict(uid_list,data)
 
 
-    get_sensitive_dict(word_count)
+    get_sensitive_dict(uid_list,word_count)
 
     save_sql(result_dict)
 
@@ -624,9 +568,10 @@ def save_sql(dic):
     sql = "INSERT INTO NewUserInfluence(uid_ts,uid,sensitity,activity,importance,influence,timestamp,store_date) VALUE(%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE uid_ts= values(uid_ts" \
           "),uid=values(uid),sensitity=values(sensitity),importance=values(importance),activity=values(activity),influence=values(influence),timestamp=values(timestamp ),store_date = values(store_date)"
     timestamp = int(day_time)
-    store_time = datetime.date.today()
+    store_time = store_date
     for uid in dic.keys():
-        uid_ts = uid + str(int(time.mktime(datetime.date.today().timetuple())))
+        # uid_ts = uid + str(int(time.mktime(datetime.date.today().timetuple())))
+        uid_ts = uid + str(day_time-86400)
         sensitity = dic[uid]['sensitive']
         activity = dic[uid]['activity']
         importance = dic[uid]['importance']

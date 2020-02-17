@@ -16,6 +16,7 @@ class SensitiveWord(models.Model):
 class GlobalParameter(models.Model):
     p_name = models.CharField(max_length=50, primary_key=True)
     p_value = models.CharField(max_length=50, blank=True, null=True)
+    p_instruction = models.CharField(max_length=50, blank=True, null=True)
 
     class Meta():
         db_table = 'GlobalParameter'
@@ -26,6 +27,7 @@ class EventParameter(models.Model):
     p_name = models.CharField(max_length=50, blank=True, null=True)
     p_value = models.CharField(max_length=50, blank=True, null=True)
     e_id = models.CharField(max_length=50, blank=True, null=True)
+    p_instruction = models.CharField(max_length=50, blank=True, null=True)
 
     class Meta():
         db_table = 'EventParameter'

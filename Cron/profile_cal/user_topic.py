@@ -69,7 +69,10 @@ def get_user_topic(word_dict,date):
     topic_dict=topic_tfidf()
     #time2 = time.time()
     #print("读取topic花费：",time2-time1)
-    thedate = datetime.date.today()
+    #thedate = datetime.date.today()
+    td = date + " 00:00:00"
+    ta = time.strptime(td, "%Y-%m-%d %H:%M:%S")
+    ts = int(time.mktime(ta))
     #print(topic_dict)
     user_topic={}
     topic_p= get_p(topic_dict,word_dict)
@@ -78,20 +81,22 @@ def get_user_topic(word_dict,date):
     for k in word_dict.keys():
         topic_json = json.dumps(topic_p[k])
         user_topic["%s_%s" % (str(int(time.time())), k)]={"uid": k,
-                                                          "timestamp": int(time.time()),
+                                                          "timestamp": ts,
                                                           "topics":topic_json,
                                                           "store_date":date}
     sql_insert_many(cursor, "UserTopic", "ut_id", user_topic)
-    time4 = time.time()
-    print("插入topic数据：",time4-time3)
+    # print("插入topic数据：",time4-time3)
     #return category_dict
 
 
 thedate = datetime.date.today()
 thatday = thedate - datetime.timedelta(days=7)
 #print(thedate,thatday)
-def topic_domain_cal(start_date=thatday,end_date=thedate,uid_list):
-    sql = 'select uid,wordcount from WordCount where uid in %s store_date >= %s and store_date <= %s' % (uid_list,start_date,end_date)
+def topic_domain_cal(uid_list,start_ts,end_ts,start_date=thatday,end_date=thedate):
+    uids = ''
+    for uid in uid_list:
+        uids += uid + ','
+    sql = 'select uid,wordcount from WordCount where uid in (%s) and  timestamp >= %s and timestamp <= %s' % (uids[:-1],start_ts,end_ts)
     cursor.execute(sql)
     word_c =defaultdict(dict)
     word = {}

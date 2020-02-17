@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
-
+from django.core import serializers
 from django.http import JsonResponse, HttpResponse
 from django.db.models import Sum
 import time
 import datetime
 from collections import defaultdict
-
+from django.db.models import Q
 from Userprofile.models import *
 from Mainevent.models import *
 from Config.base import *
-
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from rest_framework.views import APIView
 from rest_framework.schemas import ManualSchema
-
+import json
 
 class Test(APIView):
     """测试页面"""
@@ -367,6 +367,9 @@ class Figure_create(APIView):
         domain = request.GET.get("domain")
         #h_id = request.GET.get("wb_id")  # 若该条人工输入事件从微博而来 则需输入来源微博的id
         #result = Task.objects.filter(~Q(mid=''), mid=h_id) #判断从微博得来的事件是否已存在，若微博ID未给出返回一个空值
+        result = Figure.objects.filter(f_id=uid)
+        if result.exists():
+            return JsonResponse({"status":400, "error": "人物已存在"},safe=False,json_dumps_params={'ensure_ascii':False})
         if f_id and nick :
             Figure.objects.create(f_id=f_id, uid=uid, nick_name=nick,user_location=location,fansnum=fans,
                                 friendsnum=friends,political = political,domain=domain)
@@ -397,7 +400,23 @@ class Show_figure(APIView):
         """展示人物,该文档返回Figure表中存在的需要展示的数据，返回字段f_id为用户账号，nick_name为昵称
           fansnum粉丝数,friendsnum关注数,political政治倾向,domain领域,user_location地点"""
         result = Figure.objects.values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')
-        return HttpResponse(result)
+        limit = request.GET.get("limit")
+        page_id = request.GET.get('page_id')
+        if result.exists():
+            page = Paginator(result, limit)
+            if page_id:
+                try:
+                    results = page.page(page_id)
+                except PageNotAnInteger:
+                    results = page.page(1)
+                except EmptyPage:
+                    results = page.page(1)
+            else:
+                results = page.page(1)
+            re = json.dumps(list(results))
+            return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False})
+        else:
+            return JsonResponse({"status":400, "error": "无人物"},safe=False)
 
 
 
@@ -406,7 +425,59 @@ class search_figure(APIView):
     def get(self, request):
         """展示人物,该文档返回Figure表中存在的需要展示的数据，返回字段f_id为用户账号，nick_name为昵称
           fansnum粉丝数,friendsnum关注数,political政治倾向,domain领域,user_location地点"""
-        name = request.GET.get("nick")
-        result = Figure.objects.filter(nick_name__contains = name).values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')
-        return HttpResponse(result)
+        info = request.GET.get("info")
+        result = Figure.objects.filter(Q(nick_name__contains = info) | Q(uid__contains = info)).values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')
+        if result.exists():
+            re = json.dumps(list(result))
+            return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False})
+        else:
+            return JsonResponse({"status":400, "error": "该人物不存在"},safe=False)
 
+
+class User_Sentiment(APIView):
+    """用户情绪特征接口"""
+
+    def get(self, request):
+        """
+        获取uid，返回用户情绪特征详情，根据传入参数n_type 日 周 月 返回相应数据结果，
+        返回数据格式{date1:{positive_s:10,nuetral_s:20,negtive_s:30},
+                    date2:{positive_s:10,nuetral_s:20,negtive_s:30},
+                    ...}
+        """
+        uid = request.GET.get('uid')
+        n_type = request.GET.get('n_type')
+        res_dict = {}
+        # 每日情绪特征，从当前日期往前推7天展示 积极微博数，中性微博数，消极微博数
+        if n_type == "日":
+            new_date = (datetime.datetime.now() + datetime.timedelta(days=-7)).timestamp()
+            result = UserSentiment.objects.filter(uid=uid, timestamp__gte=new_date).values(
+                "timestamp").annotate(positive_s=Sum("positive"), nuetral_s=Sum("nuetral"),
+                                      negtive_s=Sum("negtive"))
+            for item in result:
+                t = item.pop("timestamp") - 24 * 60 * 60
+                res_dict[time.strftime("%Y-%m-%d", time.localtime(t))] = item
+        # 每周情绪特征，从当前日期往前推5周展示 原创微博数、评论数、转发数、敏感微博数
+        if n_type == "周":
+            date_dict = {}
+            for i in range(5):
+                date_dict[i + 1] = (datetime.datetime.now() + datetime.timedelta(weeks=(-1 * (i + 1)))).timestamp()
+            date_dict[0] = time.time()
+            for i in range(5):
+                result = UserBehavior.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
+                                                     timestamp__lt=date_dict[i]).aggregate(positive_s=Sum("positive"), nuetral_s=Sum("nuetral"),
+                                      negtive_s=Sum("negtive"))
+                if list(result.values())[0]:
+                    res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i]) - 24 * 60 * 60))] = result
+        # 每月情绪特征，从当前日期往前推5月展示 原创微博数、评论数、转发数、敏感微博数
+        if n_type == "月":
+            date_dict = {}
+            for i in range(5):
+                date_dict[i + 1] = (datetime.datetime.now() + datetime.timedelta(days=(-30 * (i + 1)))).timestamp()
+            date_dict[0] = time.time()
+            for i in range(5):
+                result = UserBehavior.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
+                                                     timestamp__lt=date_dict[i]).aggregate(positive_s=Sum("positive"), nuetral_s=Sum("nuetral"),
+                                      negtive_s=Sum("negtive"))
+                if list(result.values())[0]:
+                    res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i]) - 24 * 60 * 60))] = result
+        return JsonResponse(res_dict)

@@ -25,5 +25,6 @@ urlpatterns = [
     path('Userprofile/', include('Userprofile.urls')),
     path('Usermanager/', include('Usermanager.urls')),
     path('Informationspread/', include('Informationspread.urls')),
+    path('Systemmanage/', include('Systemmanage.urls')),
     path(r'docs/', get_swagger_view(title='ApiDocs')),
 ]
