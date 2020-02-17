@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 import json
 import time,datetime
+from xpinyin import Pinyin
 from collections import defaultdict
 from django.http import JsonResponse, HttpResponse
 from django.core import serializers
 from django.db.models import Q
+
+from Config.time_utils import *
 from Mainevent.models import Event_Analyze, Event, Figure, Information
+from Systemmanage.models import SensitiveWord
 
 from rest_framework.views import APIView
 from rest_framework.schemas import ManualSchema
@@ -33,6 +37,59 @@ class Show_event_info(APIView):
         else:
             return JsonResponse({"status":400, "error": "无事件详情"},safe=False)
 
+
+class Add_event(APIView):
+    """
+    添加新的事件计算任务
+    """
+    def post(self, request):
+        event_name = request.POST.get("event_name")
+        keywords_dict = request.POST.get("keywords_dict")
+        sensitive_word_white = request.POST.get("sensitive_word_white")
+        sensitive_word_black = request.POST.get("sensitive_word_black")
+        begin_date = request.POST.get("begin_date")
+        end_date = request.POST.get("end_date")
+
+        if not event_name or not keywords_dict:
+            return JsonResponse({"status":400, "info": "添加失败，缺少必填项！"},safe=False)
+
+        if not begin_date:
+            end_date = today()
+        if not begin_date:
+            begin_date = ts2date(date2ts(today()) - 19 * 86400)
+
+        event_name_pinyin = Pinyin().get_pinyin(event_name, '')
+        e_id = "{}_{}".format(event_name_pinyin, str(int(time.time())))
+        Event.objects.create(
+            e_id=e_id,
+            event_name=event_name,
+            keywords_dict=keywords_dict,
+            begin_date=begin_date,
+            end_date=end_date,
+            es_index_name=e_id,
+            cal_status=0,
+            monitor_status=1
+        )
+
+        if sensitive_word_white:
+            for word_white in sensitive_word_white.split("&"):
+                SensitiveWord.objects.create(
+                    s_id=word_white + e_id, 
+                    prototype=word_white, 
+                    e_id=e_id, 
+                    perspective_bias=1
+                )
+
+        if sensitive_word_black:
+            for word_black in sensitive_word_black.split("&"):
+                SensitiveWord.objects.create(
+                    s_id=word_black + e_id, 
+                    prototype=word_black, 
+                    e_id=e_id, 
+                    perspective_bias=2
+                )
+
+        return JsonResponse({"status":200, "info": "添加成功！"},safe=False)
 
 
 class Event_analy(APIView):
@@ -107,73 +164,6 @@ class figure_info(APIView):
             return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "无相关人物和信息"},safe=False)
-
-
-
-import os
-import sys
-import re
-ABS_PATH = os.path.dirname(os.path.abspath(__file__))
-os.environ['DJANGO_SETTINGS_MODULE'] = 'PoliticalInfiltration.settings'
-class Sen_info(APIView):
-    """展示敏感微博内容涉及到的敏感词
-       输入：敏感微博id：id
-       输出：{‘sw(敏感词汇)’:{},…, ‘info’:{‘text’(敏感信息内容)：，‘hazard_index(危险指数)’：，‘keywords(关键词)’: , ‘comment(评论数)’：，‘retweet(转发数)’：}}"""
-    def get(self,request):
-        swords = []
-        for b in open(os.path.abspath(os.path.join(ABS_PATH, '../Cron/profile_cal/sensitive_words.txt')), 'r'):
-            swords.append(b.strip().split('\t')[0])
-        iid = request.GET.get('id')
-        result = Information.objects.filter(i_id=iid).values("uid",'text','keywords_dict','comment','retweeted','date','hazard_index')
-        res = defaultdict(list)
-        #results = json.dumps(result)
-        for i in result:
-            for word in swords:
-            #print(type(word))
-                pattern = re.compile(r".*(%s)" % word)
-                if pattern.search(i['text']): 
-                    res["sw"].append(word)
-            res["info"].append(i)
-        #json_data = serializers.serialize("json",result)
-        #results = json.loads(json_data)
-        return JsonResponse(res,safe=False,json_dumps_params={'ensure_ascii':False})
-
-
-
-class push_Hotpost(APIView):
-    """页面响应,从数据库取热帖展示"""
-    def get(self):
-        hot_posts = Hot_post.objects.all().values_list()  # 取出所有列，QuerySet类型
-        hot_posts = list(hot_posts)  # [(data),(data)]
-        # 元组(data):
-        # (h_id, uid, root_uid, mid, comment, retweeted, text, keywords_dict, timestamp, date, ip, geo, message_type, root_mid, source, store_timestamp, store_date, similar_event)
-        # 例如:
-        # ('h_1', 'user_1', 'user_1', 'm_1', 0, 0, '测试热帖库信息', 't1,t2,t3,t4,t5', 1567923180, datetime.date(2019, 9, 8), '127.0.0.1', '北京市', 1, 'm_1', '微博', 1567925639, datetime.date(2019, 9, 8), None)
-        hot_post_display = []
-        for item in hot_posts:
-            a_post = {}
-            a_post["h_id"] = item[0]
-            a_post["uid"] = item[1]
-            a_post["root_uid"] = item[2]
-            a_post["mid"] = item[3]
-            a_post["comment"] = item[4]
-            a_post["retweeted"] = item[5]
-            a_post["text"] = item[6]
-            a_post["keywords_dict"] = item[7]
-            a_post["timestamp"] = item[8]
-            a_post["date"] = item[9].strftime('%Y-%m-%d')
-            a_post["ip"] = item[10]
-            a_post["geo"] = item[11]
-            a_post["message_type"] = item[12]
-            a_post["root_mid"] = item[13]
-            a_post["source"] = item[14]
-            a_post["store_timestamp"] = item[15]
-            a_post["store_date"] = item[16].strftime('%Y-%m-%d')
-            a_post["similar_event"] = item[17]
-            hot_post_display.append(a_post)
-        results = json.dumps(hot_post_display)
-        return JsonResponse(results, safe=False)  # json [{data},{data}]
-
 
 
 class Person_show(APIView):

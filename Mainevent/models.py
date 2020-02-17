@@ -45,11 +45,12 @@ class Information(models.Model):
         db_table = 'Information'
 
 class Event(models.Model):
-    e_id = models.CharField(max_length=30, primary_key=True)
+    e_id = models.CharField(max_length=100, primary_key=True)
     event_name = models.CharField(max_length=50)
     keywords_dict = models.CharField(max_length=100)   # 为查询表达式
     begin_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
+    es_index_name = models.CharField(max_length=100, null=True)
     cal_status = models.IntegerField(default=0)
     monitor_status = models.IntegerField(default=1)
     information = models.ManyToManyField(Information, related_name="event")

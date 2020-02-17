@@ -430,3 +430,32 @@ class Show_sensitivetext(APIView):
             data = json.dumps(list(result))
             results = json.loads(data)
             return JsonResponse(results, safe=False)
+
+class Recal_event(APIView):
+    """展示事件管理接口"""
+
+    def get(self, request):
+        e_id = request.GET.get("e_id")
+
+        # Event表的迁移
+        event_obj = Event.objects.get(e_id=e_id).values()
+        if not event_name or not keywords_dict:
+            return JsonResponse({"status":400, "info": "添加失败，缺少必填项！"},safe=False)
+
+        if not begin_date:
+            end_date = today()
+        if not begin_date:
+            begin_date = ts2date(date2ts(today()) - 19 * 86400)
+
+        event_name_pinyin = Pinyin().get_pinyin(event_name, '')
+        e_id = "{}_{}".format(event_name_pinyin, str(int(time.time())))
+        Event.objects.create(
+            e_id=e_id,
+            event_name=event_name,
+            keywords_dict=keywords_dict,
+            begin_date=begin_date,
+            end_date=end_date,
+            es_index_name=e_id,
+            cal_status=0,
+            monitor_status=1
+        )
