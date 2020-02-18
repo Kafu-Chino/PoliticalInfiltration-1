@@ -1,11 +1,11 @@
 import os
 import re
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 
 from Config.time_utils import *
 from Config.base import MSG_TYPE_DIC
 from Informationspread.models import Informationspread
-from Mainevent.models import Information
+from Mainevent.models import Information, Event
 
 from rest_framework.views import APIView
 from rest_framework.schemas import ManualSchema
@@ -34,8 +34,11 @@ class Trend(APIView):
     def get(self, request):
         mid = request.GET.get('mid')
         n = 90
-        date = today()
-        date = date2ts("2019-08-20")
+        try:
+            date = Event.objects.filter(information__mid=mid).order_by('end_date')[0].end_date
+        except:
+            date = today()
+        date = date2ts(date.strftime('%Y-%m-%d'))
         date_before = date - n * 86400
         result = Informationspread.objects.filter(mid=mid, timestamp__gte=date_before, timestamp__lte=date).values()
         data_dic = {ts2date(item["timestamp"]): item["comment_count"] + item["retweet_count"] for item in result}

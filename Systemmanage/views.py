@@ -2,6 +2,7 @@ from django.shortcuts import render
 
 # Create your views here.
 import json
+from xpinyin import Pinyin
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import redirect
 from django.core import serializers
@@ -438,24 +439,38 @@ class Recal_event(APIView):
         e_id = request.GET.get("e_id")
 
         # Event表的迁移
-        event_obj = Event.objects.get(e_id=e_id).values()
-        if not event_name or not keywords_dict:
-            return JsonResponse({"status":400, "info": "添加失败，缺少必填项！"},safe=False)
+        event_obj = Event.objects.get(e_id=e_id)
 
-        if not begin_date:
-            end_date = today()
-        if not begin_date:
-            begin_date = ts2date(date2ts(today()) - 19 * 86400)
-
-        event_name_pinyin = Pinyin().get_pinyin(event_name, '')
-        e_id = "{}_{}".format(event_name_pinyin, str(int(time.time())))
+        event_name_pinyin = Pinyin().get_pinyin(event_obj.event_name, '')
+        e_id_new = "{}_{}".format(event_name_pinyin, str(int(time.time())))
         Event.objects.create(
-            e_id=e_id,
-            event_name=event_name,
-            keywords_dict=keywords_dict,
-            begin_date=begin_date,
-            end_date=end_date,
-            es_index_name=e_id,
+            e_id=e_id_new,
+            event_name=event_obj.event_name,
+            keywords_dict=event_obj.keywords_dict,
+            begin_date=event_obj.begin_date,
+            end_date=event_obj.end_date,
+            es_index_name=e_id_new,
             cal_status=0,
             monitor_status=1
         )
+
+        # 敏感词、事件参数、人工扩线信息直接换id和内容
+        sensitiveword = SensitiveWord.objects.filter(e_id=e_id)
+        for item in sensitiveword:
+            item.e_id = e_id_new
+            item.s_id = item.prototype + e_id_new
+            item.save()
+
+        eventparameter = EventParameter.objects.filter(e_id=e_id)
+        for item in eventparameter:
+            item.e_id = e_id_new
+            item.p_id = item.p_name + e_id_new
+            item.save()
+
+        event_obj = Event.objects.get(e_id=e_id)
+        information = event_obj.information.filter(add_manully=1)
+        event_new_obj = Event.objects.get(e_id=e_id_new)
+        for item in information:
+            event_new_obj.information.add(item)
+
+        return JsonResponse({"status": 200, "info": "事件重新计算任务创建成功，请到任务列表查看。"}, safe=False)
