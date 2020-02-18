@@ -56,3 +56,12 @@ def cal_user_emotion(word_dict, thedate):
             user_sentiment_dict['%s_%s' % (str(sentiment_dict['timestamp']), uid)] = sentiment_dict
             print("no data")
     sql_insert_many("UserSentiment", "us_id", user_sentiment_dict)
+
+
+def main():
+    data = {'123456489':[['ifeng', '国有国法', '家有家规']]}
+    cal_user_emotion(data, today())
+
+
+if __name__ == '__main__':
+    main()

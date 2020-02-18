@@ -55,14 +55,14 @@ topic_dict = {'art': '文体类_娱乐',
     'sports': '文体类_体育', 
     'traffic': '民生类_交通',
     'life': '其他类', 
-    'anti_corruption': '政治类_反腐', 
+    'anti-corruption': '政治类_反腐', 
     'employment': '民生类_就业', 
-    'fear_of_violence': '政治类_暴恐',
+    'fear-of-violence': '政治类_暴恐',
     'house': '民生类_住房', 
     'law': '民生类_法律', 
     'peace': '政治类_地区和平', 
     'religion': '政治类_宗教',
-    'social_security': '民生类_社会保障', 
+    'social-security': '民生类_社会保障', 
     'violence': '政治类_暴恐'
 }
 

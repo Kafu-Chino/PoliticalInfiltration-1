@@ -31,4 +31,5 @@ urlpatterns = [
     path('eswshow/',views.Show_eventsensitiveword.as_view()),
     path('epshow/',views.Show_eventparameter.as_view()),
     path('estshow/',views.Show_sensitivetext.as_view()),
+    path('eventrecal/',views.Recal_event.as_view()),
 ]

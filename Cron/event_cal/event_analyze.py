@@ -7,8 +7,9 @@ import json
 import pymysql
 from elasticsearch.helpers import scan
 from collections import defaultdict
-sys.path.append("../")
-from profile_cal.data_get_utils import sql_insert_many
+from data_utils import sql_insert_many
+
+
 
 sys.path.append("../../")
 os.environ['DJANGO_SETTINGS_MODULE'] = 'PoliticalInfiltration.settings'

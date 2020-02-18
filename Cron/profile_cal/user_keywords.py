@@ -48,7 +48,7 @@ def get_p(train_dict,test_dict):
 def get_user_keywords(text_list,word_dict,date, keywords_num=5):
     keywords = []
     hastag_dict=defaultdict(list)
-    hastag = []
+    hastag = {}
     user_kw={}
     keywords_dict=defaultdict(dict)
     text_all=""
@@ -64,7 +64,12 @@ def get_user_keywords(text_list,word_dict,date, keywords_num=5):
                 RE = re.compile(u'#([a-zA-Z-_⺀-⺙⺛-⻳⼀-⿕々〇〡-〩〸-〺〻㐀-䶵一-鿃豈-鶴侮-頻並-龎]+)#', re.UNICODE)
                 #print(RE.findall(text))
                 #RE = re.compile(u"#.[\u4e00-\u9fa5]+#")
-                #hastag.append(RE.findall(text.encode('utf-8').decode('utf-8'))) 
+                ht = RE.findall(text.encode('utf-8').decode('utf-8'))
+                for h in ht:
+                    if h in hastag:
+                        hastag[h] += 1
+                    else:
+                        hastag[h] = 1
                 tr4w.analyze(text=text, lower=True, window=2)   # py2中text必须是utf8编码的str或者unicode对象，py3中必须是utf8编码的bytes或者str对象
                 for item in tr4w.get_keywords(keywords_num, word_min_len= 1):
                     #print(item.word,item.weight)
@@ -78,9 +83,6 @@ def get_user_keywords(text_list,word_dict,date, keywords_num=5):
     #print(hastag_dict)
     #time22 = time.time()
     #print("获取关键词和has花费：",time22-time11)
-    if len(hastag_dict):
-        hastag_dict = wordcount(hastag_dict,date)
-    #keywords_dict=wordcount(keywords_dict)
     #time2 = time.time()
     #print("wordcount花费：",time2-time22)
     sensitive_words_weight = sensitive_word()

@@ -231,42 +231,41 @@ def insertData(e_name, *figure_names):
     e.figure.add(*cour_name)
 
 
-class Show_prefer(APIView):
+class Show_topic(APIView):
     """展示用户的话题和领域
        输入uid
-       输出{“topics”：{“uid”:{“topic1”:p,…}},‘domains’：{‘uid’:{“domain1”:p},…{‘mian_domain’:p}}}"""
+       输出{“topics”：{“uid”:{“topic1”:p,…}}}"""
     def get(self,request):
-        re = defaultdict(list)
-        re2 = defaultdict(list)
-        prefer = defaultdict(dict)
+        #re = defaultdict(list)
+        #re2 = defaultdict(list)
+        #prefer = defaultdict(dict)
         uid = request.GET.get("uid")
         #start_time = request.GET.get("time1")
         #end_time = request.GET.get("time2")
         result1 = UserTopic.objects.filter(uid = uid)  #, store_date__range=(start_time,end_time)
-        result2 = UserDomain.objects.filter(uid = uid)  #, store_date__range=(start_time,end_time)
-        #return HttpResponse(typeof(result))
+        #result2 = UserDomain.objects.filter(uid = uid)  #, store_date__range=(start_time,end_time)
         if result1.exists():
             json_data = serializers.serialize("json",result1)
             results = json.loads(json_data)
             #return JsonResponse(results,safe=False)
             for i in results:
-                uid = i["fields"]["uid"]
-                re[uid].append(i["fields"]["topics"])
-            #re = sorted(re.values()[0],key=lambda x:x[1],reverse=True)[:5]
-            prefer['topic'] = re
-            #result = sorted(result[0], reverse = True)
-            #return HttpResponse(re)
-        #if result2.exists():
-            json_data2 = serializers.serialize("json",result2)
-            results2 = json.loads(json_data2)
-            for i in results2:
-                #re2[i['fields']['uid']].append(i["fields"]["domains"])  #,{"main_domain":i["fields"]["main_domain"]}
-                re2[i['fields']['uid']].append({"main_domain":i["fields"]["main_domain"]})
-            #re2 = sorted(re2.items(),key=lambda x:x[1],reverse=True)[:5]
-            prefer['domain'] = re2
-            return JsonResponse(prefer,safe=False)
+                #uid = i["fields"]["uid"]
+                new_topic={}
+                for item in i["fields"]["topics"]:
+                    #print(topic_dict['anti_corruption'])
+                    #print(i["fields"]["topics"][item])
+                    new_topic[topic_dict[item]]=i["fields"]["topics"][item]
+                    #print(new_topic)
+                #re[uid].append(new_topic)
+            re = dict(sorted(new_topic.items(),key=lambda x:x[1],reverse=True)[:5])
+            print(re)
+            re = json.dumps(re,ensure_ascii=False)
+            #re = json.load(re,ensure_ascii=False)
+            return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "未找到该用户信息"},safe=False,json_dumps_params={'ensure_ascii':False}) 
+
+
 
 
 class Show_keyword(APIView):
@@ -351,7 +350,7 @@ class Show_contact(APIView):
 
 
 class Figure_create(APIView):
-    """添加人物入库和删除人物"""
+    """添加人物入库"""
     def get(self,request):
         """添加人物：获取添加信息，输入uid,nick,location,fans,friends,political,domain
            调取人物id、昵称、注册地、粉丝数、关注数、政治倾向和领域，若没有填写微博ID则wb_id="";输出状态及提示：400 状态错误，201写入成功"""
@@ -399,11 +398,27 @@ class Show_figure(APIView):
     def get(self, request):
         """展示人物,该文档返回Figure表中存在的需要展示的数据，返回字段f_id为用户账号，nick_name为昵称
           fansnum粉丝数,friendsnum关注数,political政治倾向,domain领域,user_location地点"""
-        result = Figure.objects.values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')
+        result = Figure.objects.all()  #values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')
         limit = request.GET.get("limit")
         page_id = request.GET.get('page_id')
+        res_list = []
         if result.exists():
-            page = Paginator(result, limit)
+            for item in result:
+                event_count = 0
+                info_count = 0
+                #sdate = item.begin_date.strftime('%Y-%m-%d %H:%M:%S')
+                #edate = item.end_date.strftime('%Y-%m-%d %H:%M:%S')
+                fid = item.f_id
+                res_event = Figure.objects.get(f_id=fid).event.all()
+                for e in res_event:
+                    #print(e)
+                    event_count += 1
+                #info_count = len(Information.objects.filter(uid=fid))
+                res_info = Information.objects.filter(uid=fid)
+                for i in res_info:
+                    info_count += 1
+                res_list.append({"f_id":fid,"nick_name":item.nick_name,"fansnum":item.fansnum,'friendsnum':item.friendsnum,'create_at':item.create_at,'event_count':event_count,'info_count':info_count,'user_location':item.user_location})
+            page = Paginator(res_list, limit)
             if page_id:
                 try:
                     results = page.page(page_id)
@@ -413,7 +428,8 @@ class Show_figure(APIView):
                     results = page.page(1)
             else:
                 results = page.page(1)
-            re = json.dumps(list(results))
+            re = json.dumps(list(results),ensure_ascii=False)
+            re = json.loads(re)
             return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "无人物"},safe=False)
@@ -426,12 +442,21 @@ class search_figure(APIView):
         """展示人物,该文档返回Figure表中存在的需要展示的数据，返回字段f_id为用户账号，nick_name为昵称
           fansnum粉丝数,friendsnum关注数,political政治倾向,domain领域,user_location地点"""
         info = request.GET.get("info")
+        #results={}
         result = Figure.objects.filter(Q(nick_name__contains = info) | Q(uid__contains = info)).values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')
         if result.exists():
-            re = json.dumps(list(result))
+            #results["result"] = list(result)
+            #print(type(results))
+            #json_data = serializers.serialize("json",results)
+            #re = json.loads(json_data)
+            #print(results)
+            re = json.dumps(list(result),ensure_ascii=False)
+            #re = re.replace("\\","")
+            #re = re.Replace("[","")
+            re = json.loads(re)
             return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
-            return JsonResponse({"status":400, "error": "该人物不存在"},safe=False)
+            return JsonResponse({"status":400, "error": "该人物不存在"},safe=False,json_dumps_params={'ensure_ascii':False})
 
 
 class User_Sentiment(APIView):

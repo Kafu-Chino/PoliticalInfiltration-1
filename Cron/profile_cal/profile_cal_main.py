@@ -41,7 +41,7 @@ def profile_cal_uidlist(uidlist):
         # result_msg_type = get_msg_type_aggs(data)
 
         # 情绪特征（中方）
-        # cal_user_emotion(data,date)
+        #cal_user_emotion(text_dict,date)
 
         # 影响力特征（英汉）
         # influence_total(date,uidlist,word_dict,date_data)

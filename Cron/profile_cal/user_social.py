@@ -40,21 +40,24 @@ def get_user_social(uidlist,date):
         user_list.append(item['_source']["uid"])
         user_list.append(item['_source']["root_uid"])
         data_list.append({'uid':item['_source']["uid"],'root_uid':item['_source']["root_uid"],'message_type':item['_source']["message_type"]})
-    user_list.append(uidlist)
+    #user_list.append(uidlist)
     #user_list = list(set(user_list))
     query_body1 = {
         "query": {
             "bool": {
                         "should": [
                             {"terms": {
-                                "uid": user_list
+                                "u_id": user_list
                                 }
                                 }
                             ]
                         }
-        }
+        },
+        #"size": 2000000
+        "size": 10000
     }
-    r1 = scan(es, index="weibo_user_big", query=query_body1)
+
+    r1 = es.search(index="weibo_user_big", body=query_body1)["hits"]["hits"]
     name_dict = {}
     for item in r1:
         name_dict[item['_source']["u_id"]]=item['_source']["name"]

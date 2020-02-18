@@ -58,13 +58,15 @@ def wordcount(text_dict,date):
                         word_list[item1] = 1 
         word_list["count"] = count
         word_dict[k] = word_list
-
+    td = date + " 00:00:00"
+    ta = time.strptime(td, "%Y-%m-%d %H:%M:%S")
+    ts = int(time.mktime(ta))
     for k in word_dict.keys():
         word_json = json.dumps(word_dict[k])
         id = "%s_%s" % (str(int(time.time())), k)
         user_wc[id] = {
             "uid": k,
-            "timestamp":int(time.time()),
+            "timestamp":ts,
             "wordcount":word_json,
             "store_date":date
         }
