@@ -16,5 +16,7 @@ urlpatterns = [
     path('figure_create/', views.Figure_create.as_view()),
     path('figure_delete/', views.Figure_delete.as_view()),
     path('figure_search/', views.search_figure.as_view()),
+    path('related_info/', views.related_info.as_view()),
+    path('related_event/', views.related_event.as_view()),
     path('user_sentiment/', views.User_Sentiment.as_view()),
 ]

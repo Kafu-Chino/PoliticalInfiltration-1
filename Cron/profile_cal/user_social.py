@@ -37,10 +37,11 @@ def get_user_social(uidlist,date):
 
     r = scan(es, index="weibo_all", query=query_body)
     for item in r:
-        user_list.append(item['_source']["uid"])
-        user_list.append(item['_source']["root_uid"])
+        if item['_source']["root_uid"] in uidlist and item['_source']["uid"] not in user_list:  # & item['_source']["uid"] not in user_list
+            user_list.append(item['_source']["uid"])
+        #user_list.append(item['_source']["root_uid"])
         data_list.append({'uid':item['_source']["uid"],'root_uid':item['_source']["root_uid"],'message_type':item['_source']["message_type"]})
-    #user_list.append(uidlist)
+    user_list.append(uidlist)
     #user_list = list(set(user_list))
     query_body1 = {
         "query": {
