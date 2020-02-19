@@ -46,8 +46,8 @@ def profile_cal_uidlist(uidlist):
         # 影响力特征（英汉）
         # influence_total(date,uidlist,word_dict,date_data)
         #
-        # # 社交特征（梦丽）
-        get_user_social(uidlist,date)
+        # # 社交特征
+        get_user_social(uidlist, date_data)
         #
         #每星期计算一次
         dayOfWeek = datetime.datetime.strptime(date, "%Y-%m-%d").weekday()
