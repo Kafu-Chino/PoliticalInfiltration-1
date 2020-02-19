@@ -33,7 +33,7 @@ class Test(APIView):
         """DELETE方法的功能说明写在这里"""
         return HttpResponse('这是测试的DELETE方法')
 
-
+'''
 class BasicInfo(APIView):
     """用户基本信息接口"""
 
@@ -74,7 +74,7 @@ class BasicInfo(APIView):
     def post(self, request):
         """"""
         return HttpResponse('这是POST方法')
-
+'''
 
 class User_Behavior(APIView):
     """用户活动特征接口"""
@@ -193,29 +193,6 @@ class User_Activity(APIView):
         return JsonResponse(res_dict)
 
 
-class Association(APIView):
-    """用户关联分析接口"""
-
-    def get(self, request):
-        """
-        获取uid，返回用户关联分析详情，包括用户参与的相关事件、相关信息详情,
-        数据格式{
-                    "event":[{"event_name": event_name1, "keywords": keywords_dict1},{}],
-                    "information":[{"text": text1, "hazard_index": hazard_index1, "mid": i.mid},{}]
-                }
-        """
-        res_dict = defaultdict(list)
-        uid = request.GET.get('uid')
-        res_event = Figure.objects.filter(f_id=uid).first().event_set.all()
-        for e in res_event:
-            res_dict["event"].append({"event_name": e.event_name, "keywords": e.keywords_dict})
-        res_information = Information.objects.filter(uid=uid)
-        for i in res_information:
-            res_dict["information"].append({"text": i.text, "hazard_index": i.hazard_index, "mid": i.mid})
-        return JsonResponse(res_dict)
-
-
-
 
 def insertData(e_name, *figure_names):
     cour_name = []
@@ -258,8 +235,8 @@ class Show_topic(APIView):
                     #print(new_topic)
                 #re[uid].append(new_topic)
             re = dict(sorted(new_topic.items(),key=lambda x:x[1],reverse=True)[:5])
-            print(re)
-            re = json.dumps(re,ensure_ascii=False)
+            #print(type(re))
+            #re = json.dumps(re,ensure_ascii=False)
             #re = json.load(re,ensure_ascii=False)
             return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
@@ -397,7 +374,7 @@ class Show_figure(APIView):
     """展示人物列表"""
     def get(self, request):
         """展示人物,该文档返回Figure表中存在的需要展示的数据，返回字段f_id为用户账号，nick_name为昵称
-          fansnum粉丝数,friendsnum关注数,political政治倾向,domain领域,user_location地点"""
+          fansnum粉丝数,friendsnum关注数,event_count为参与事件数，info_count为敏感信息数,user_location地点"""
         result = Figure.objects.all()  #values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')
         limit = request.GET.get("limit")
         page_id = request.GET.get('page_id')
@@ -435,6 +412,100 @@ class Show_figure(APIView):
             return JsonResponse({"status":400, "error": "无人物"},safe=False)
 
 
+class show_figure_info(APIView):
+    """展示人物详细信息"""
+    def get(self,request):
+        """获取uid 返回返回字段f_id为用户账号，nick_name为昵称,event_count为参与事件数，info_count为敏感信息数
+          fansnum粉丝数,friendsnum关注数,political政治倾向,domain领域,user_location地点"""
+        event_count = 0
+        info_count = 0
+        res_dict = {}
+        fid = request.GET.get("uid")
+        res = Figure.objects.filter(f_id=fid).values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location','create_at')
+        if res.exists():
+            res_event = Figure.objects.get(f_id=fid).event.all()
+            for e in res_event:
+                    #print(e)
+                event_count += 1
+                #info_count = len(Information.objects.filter(uid=fid))
+            res_info = Information.objects.filter(uid=fid)
+            for i in res_info:
+                info_count += 1
+            res_dict["uid"] = fid
+            for re in res:
+                res_dict["nick_name"]=re["nick_name"]
+                res_dict["fansnum"]=re["fansnum"]
+                res_dict['friendsnum']=re['friendsnum']
+                #print(re["create_at"])
+                res_dict['create_at']=re['create_at']
+                res_dict['user_location']=re['user_location']
+                res_dict["domain"]=re["domain"]
+                res_dict["political"]=re["political"]
+            res_dict['event_count']=event_count
+            res_dict['info_count']=info_count
+            
+            return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
+        else:
+            return JsonResponse({"status":400, "error": "无人物"},safe=False)
+
+
+
+class Association(APIView):
+    """用户关联分析接口"""
+
+    def get(self, request):
+        """
+        获取uid，返回用户关联分析详情，包括用户参与的相关事件、相关信息详情,
+        数据格式{
+                    "event":[{"event_name": event_name1, "keywords": keywords_dict1},{}],
+                    "information":[{"text": text1, "hazard_index": hazard_index1, "mid": i.mid},{}]
+                }
+        """
+        res_dict = defaultdict(list)
+        uid = request.GET.get('uid')
+        res_event = Figure.objects.filter(f_id=uid).first().event_set.all()
+        for e in res_event:
+            res_dict["event"].append({"event_name": e.event_name, "keywords": e.keywords_dict})
+        res_information = Information.objects.filter(uid=uid)
+        for i in res_information:
+            res_dict["information"].append({"text": i.text, "hazard_index": i.hazard_index, "mid": i.mid})
+        return JsonResponse(res_dict)
+
+
+class related_info(APIView):
+    """人物-信息关联分析"""
+    def get(self,request):
+        res_dict = []
+        fid = request.GET.get('uid')
+        limit = request.GET.get("limit")
+        page_id = request.GET.get('page_id')
+        res = Information.objects.filter(uid=fid)
+        if res.exists():
+            for i in res:
+                lt = time.localtime(i.timestamp)
+                itime = time.strftime('%Y-%m-%d %H:%M:%S',lt)
+                #print(itime)
+                res_dict.append({'text': i.text,'time':itime,'geo':i.geo})
+            if len(res_dict):
+                page = Paginator(res_dict, limit)
+            #page_id = request.GET.get('page_id')
+                if page_id:
+                    try:
+                        results = page.page(page_id)
+                    except PageNotAnInteger:
+                        results = page.page(1)
+                    except EmptyPage:
+                        results = page.page(1)
+                else:
+                    results = page.page(1)
+                re = json.dumps(list(results),ensure_ascii=False)
+                re = json.loads(re)
+            else
+            return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False}) #
+        else:
+            return JsonResponse({"status":400, "error": "无相关信息"},safe=False)
+
+
 
 class search_figure(APIView):
     """展示所搜寻人物信息"""
@@ -459,6 +530,9 @@ class search_figure(APIView):
             return JsonResponse({"status":400, "error": "该人物不存在"},safe=False,json_dumps_params={'ensure_ascii':False})
 
 
+
+
+
 class User_Sentiment(APIView):
     """用户情绪特征接口"""
 
@@ -481,28 +555,28 @@ class User_Sentiment(APIView):
             for item in result:
                 t = item.pop("timestamp") - 24 * 60 * 60
                 res_dict[time.strftime("%Y-%m-%d", time.localtime(t))] = item
-        # 每周情绪特征，从当前日期往前推5周展示 积极微博数，中性微博数，消极微博数
+        # 每周情绪特征，从当前日期往前推5周展示 原创微博数、评论数、转发数、敏感微博数
         if n_type == "周":
             date_dict = {}
             for i in range(5):
                 date_dict[i + 1] = (datetime.datetime.now() + datetime.timedelta(weeks=(-1 * (i + 1)))).timestamp()
             date_dict[0] = time.time()
             for i in range(5):
-                result = UserSentiment.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
+                result = UserBehavior.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
                                                      timestamp__lt=date_dict[i]).aggregate(positive_s=Sum("positive"), nuetral_s=Sum("nuetral"),
                                       negtive_s=Sum("negtive"))
-                if list(result.values())[0] or list(result.values())[1] or list(result.values())[2]:
+                if list(result.values())[0]:
                     res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i]) - 24 * 60 * 60))] = result
-        # 每月情绪特征，从当前日期往前推5月展示 积极微博数，中性微博数，消极微博数
+        # 每月情绪特征，从当前日期往前推5月展示 原创微博数、评论数、转发数、敏感微博数
         if n_type == "月":
             date_dict = {}
             for i in range(5):
                 date_dict[i + 1] = (datetime.datetime.now() + datetime.timedelta(days=(-30 * (i + 1)))).timestamp()
             date_dict[0] = time.time()
             for i in range(5):
-                result = UserSentiment.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
+                result = UserBehavior.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
                                                      timestamp__lt=date_dict[i]).aggregate(positive_s=Sum("positive"), nuetral_s=Sum("nuetral"),
                                       negtive_s=Sum("negtive"))
-                if list(result.values())[0] or list(result.values())[1] or list(result.values())[2]:
+                if list(result.values())[0]:
                     res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i]) - 24 * 60 * 60))] = result
         return JsonResponse(res_dict)

@@ -114,12 +114,16 @@ def get_user_social(uidlist,date):
     if len(info_dict):
         for i,v in info_dict.items():
             for num in v:
+                json_rt = json.dumps(num["retweet_target"],ensure_ascii=False)
+                json_rs =json.dumps(num["retweet_source"],ensure_ascii=False)
+                json_ct = json.dumps(num["comment_target"],ensure_ascii=False)
+                json_cs = json.dumps(num["comment_source"],ensure_ascii=False)
                 user_sc["%s_%s" % (i,str(ts))]={"uid": i,
                                                 "timestamp": ts,
-                                                "retweet_target":num["retweet_target"],
-                                                "retweet_source":num["retweet_source"],
-                                                "comment_target":num["comment_target"],
-                                                "comment_target":num["retweet_target"],
+                                                "retweet_target":json_rt,
+                                                "retweet_source":json_rs,
+                                                "comment_target":json_ct,
+                                                "comment_target":json_cs,
                                                 #"message_type":num["message_type"],
                                                 "store_date":date}
         sql_insert_many(cursor, "UserSocialContact", "uc_id", user_sc)

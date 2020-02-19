@@ -65,11 +65,12 @@ def get_user_keywords(text_list,word_dict,date, keywords_num=5):
                 #print(RE.findall(text))
                 #RE = re.compile(u"#.[\u4e00-\u9fa5]+#")
                 ht = RE.findall(text.encode('utf-8').decode('utf-8'))
-                for h in ht:
-                    if h in hastag:
-                        hastag[h] += 1
-                    else:
-                        hastag[h] = 1
+                if len(ht):
+                    for h in ht:
+                        if h in hastag:
+                            hastag[h] += 1
+                        else:
+                            hastag[h] = 1
                 tr4w.analyze(text=text, lower=True, window=2)   # py2中text必须是utf8编码的str或者unicode对象，py3中必须是utf8编码的bytes或者str对象
                 for item in tr4w.get_keywords(keywords_num, word_min_len= 1):
                     #print(item.word,item.weight)
