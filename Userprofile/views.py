@@ -250,7 +250,7 @@ class Show_keyword(APIView):
        输入uid
        输出{‘uid’:{‘keywords’:{…},’sensitive_words’:{},’hastags’:{}}"""
     def get(self,request):
-        re1 = defaultdict(list)
+        re1 = {}
         uid = request.GET.get("uid")
         #start_time = request.GET.get("time1")
         #end_time = request.GET.get("time2")
@@ -261,9 +261,11 @@ class Show_keyword(APIView):
             results = json.loads(json_data)
             #return JsonResponse(results,safe=False)
             for i in results:
-                uid = i["fields"]["uid"]
+                #uid = i["fields"]["uid"]
                 #re1[uid].append({"keywords":i["fields"]["keywords"],"sensitive_words":i["fields"]["sensitive_words"],"hastags":i["fields"]["hastags"]})
-                re1[uid] = {"keywords":i["fields"]["keywords"],"sensitive_words":i["fields"]["sensitive_words"],"hastags":i["fields"]["hastags"]}
+                re1["keywords"] = i["fields"]["keywords"]
+                re1["sensitive_words"] = i["fields"]["sensitive_words"]
+                re1["hastags"] = i["fields"]["hastags"]
             return JsonResponse(re1,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "未找到该用户信息"},safe=False,json_dumps_params={'ensure_ascii':False})
@@ -443,7 +445,6 @@ class show_figure_info(APIView):
                 res_dict["political"]=re["political"]
             res_dict['event_count']=event_count
             res_dict['info_count']=info_count
-            
             return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "无人物"},safe=False)
@@ -486,24 +487,59 @@ class related_info(APIView):
                 itime = time.strftime('%Y-%m-%d %H:%M:%S',lt)
                 #print(itime)
                 res_dict.append({'text': i.text,'time':itime,'geo':i.geo})
-            if len(res_dict):
-                page = Paginator(res_dict, limit)
+            page = Paginator(res_dict, limit)
             #page_id = request.GET.get('page_id')
-                if page_id:
-                    try:
-                        results = page.page(page_id)
-                    except PageNotAnInteger:
-                        results = page.page(1)
-                    except EmptyPage:
-                        results = page.page(1)
-                else:
+            if page_id:
+                try:
+                    results = page.page(page_id)
+                except PageNotAnInteger:
                     results = page.page(1)
-                re = json.dumps(list(results),ensure_ascii=False)
-                re = json.loads(re)
-            else
+                except EmptyPage:
+                    results = page.page(1)
+            else:
+                results = page.page(1)
+            re = json.dumps(list(results),ensure_ascii=False)
+            re = json.loads(re)
             return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False}) #
         else:
-            return JsonResponse({"status":400, "error": "无相关信息"},safe=False)
+            return JsonResponse({"status":400, "error": "无相关人物和信息"},safe=False)
+
+
+
+class related_event(APIView):
+    """人物-事件相关信息"""
+    def get(self,request):
+        res_dict = []
+        fid = request.GET.get('uid')
+        limit = request.GET.get("limit")
+        page_id = request.GET.get('page_id')
+        res = Figure.objects.filter(uid=fid)
+        if res.exists():
+            res_event = Figure.objects.get(f_id=fid).event.all()
+            for e in res_event:
+                #lt = time.localtime(i.timestamp)
+                #itime = time.strftime('%Y-%m-%d %H:%M:%S',lt)
+                #print(itime)
+                sdate = e.begin_date.strftime('%Y-%m-%d %H:%M:%S')
+                edate = e.end_date.strftime('%Y-%m-%d %H:%M:%S')
+                res_dict.append({'event_name': e.event_name,'keywords':e.keywords_dict,'begin_date':sdate,'end_date':edate})
+            page = Paginator(res_dict, limit)
+            #page_id = request.GET.get('page_id')
+            if page_id:
+                try:
+                    results = page.page(page_id)
+                except PageNotAnInteger:
+                    results = page.page(1)
+                except EmptyPage:
+                    results = page.page(1)
+            else:
+                results = page.page(1)
+            re = json.dumps(list(results),ensure_ascii=False)
+            re = json.loads(re)
+            return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False}) #
+        else:
+            return JsonResponse({"status":400, "error": "无相关人物和信息"},safe=False)
+
 
 
 
