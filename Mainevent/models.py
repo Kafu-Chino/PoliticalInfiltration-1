@@ -66,6 +66,8 @@ class Event_Analyze(models.Model):
     hot_index = JSONField()
     sensitive_index = JSONField()
     negative_index = JSONField()
+    user_count = models.IntegerField(default=0)
+    weibo_count = models.IntegerField(default=0)
     into_date = models.DateField(blank=True, null=True)
     class Meta():
         db_table = 'Event_Analyze'

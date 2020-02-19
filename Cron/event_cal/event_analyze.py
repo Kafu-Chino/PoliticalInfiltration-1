@@ -9,6 +9,8 @@ from elasticsearch.helpers import scan
 from collections import defaultdict
 from data_utils import sql_insert_many
 
+
+
 sys.path.append("../../")
 os.environ['DJANGO_SETTINGS_MODULE'] = 'PoliticalInfiltration.settings'
 
@@ -28,10 +30,15 @@ def event_analyze(index_name,e_id):
     all_dict = {}
     sensitive_dict = {}
     negative_dict = {}
+    '''
     sql = 'select Information.timestamp,Information.i_id from Event_information ei \
             left join Information on ei.information_id = Information.i_id \
             where ei.event_id = %s' % (e_id)
     cursor.execute(sql)
+    '''
+    cursor.execute('select Information.timestamp,Information.i_id from Event_information ei \
+            left join Information on ei.information_id = Information.i_id \
+            where ei.event_id = %s',e_id)
     result = cursor.fetchall()
     for re in result:
         #print(re)
@@ -43,9 +50,14 @@ def event_analyze(index_name,e_id):
         "match_all":{}
         }
     }
-
+    if index_name ==" ":
+        index_name = "weibo_all"
     r = scan(es, index=index_name, query=query_body)
+    weibo_count = 0
+    user_list =[]
+    user_count = 0
     for item in r:
+        weibo_count += 1
         day = item['_source']["time"][0:10]
         if day == " ":
             continue
@@ -53,6 +65,11 @@ def event_analyze(index_name,e_id):
             data_dict[day].append(item['_source'])
             if int(item['_source']["sentiment"])<0:
                 sdata_dict[day].append(item['_source'])
+        if item['_source']["uid"] in user_list:
+            continue
+        else:
+            user_count += 1
+            user_list.append(item['_source']["uid"])
     thedate = datetime.date.today()
     for k in data_dict.keys():
         all_dict[k] = len(data_dict[k])
@@ -77,6 +94,8 @@ def event_analyze(index_name,e_id):
                             "hot_index":all_json,
                             "sensitive_index":sensitive_json,
                             "negative_index":negative_json,
+                            "user_count":user_count,
+                            "weibo_count":weibo_count,
                             "into_date":thedate}
     sql_insert_many(cursor, "Event_Analyze", "e_id", analyze_dict)
 '''
@@ -99,4 +118,12 @@ def event_analyze(index_name,e_id):
 '''
 if __name__ == '__main__':
     #thedate = datetime.date.today()
-    event_analyze('weibo_xianggang_original',3)
+    '''
+    sql = 'select e_id,es_index_name from Event'
+    cursor.execute(sql)
+    result = cursor.fetchall()
+    for re in result:
+        event_analyze(re['es_index_name'],re['e_id'])
+        '''
+    eid = 'xianggangshijian_1581919160'
+    event_analyze("weibo_all",eid)

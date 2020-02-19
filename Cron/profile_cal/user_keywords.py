@@ -48,20 +48,29 @@ def get_p(train_dict,test_dict):
 def get_user_keywords(text_list,word_dict,date, keywords_num=5):
     keywords = []
     hastag_dict=defaultdict(list)
-    hastag = []
+    hastag = {}
     user_kw={}
     keywords_dict=defaultdict(dict)
     text_all=""
     thedate = datetime.date.today()
     tr4w = TextRank4Keyword()
-    time11 = time.time()
+    #time11 = time.time()
+    td = date + " 00:00:00"
+    ta = time.strptime(td, "%Y-%m-%d %H:%M:%S")
+    ts = int(time.mktime(ta))
     for k,v in text_list.items():
         for text in v:
             if isinstance(text, str):
                 RE = re.compile(u'#([a-zA-Z-_⺀-⺙⺛-⻳⼀-⿕々〇〡-〩〸-〺〻㐀-䶵一-鿃豈-鶴侮-頻並-龎]+)#', re.UNICODE)
                 #print(RE.findall(text))
                 #RE = re.compile(u"#.[\u4e00-\u9fa5]+#")
-                #hastag.append(RE.findall(text.encode('utf-8').decode('utf-8'))) 
+                ht = RE.findall(text.encode('utf-8').decode('utf-8'))
+                if len(ht):
+                    for h in ht:
+                        if h in hastag:
+                            hastag[h] += 1
+                        else:
+                            hastag[h] = 1
                 tr4w.analyze(text=text, lower=True, window=2)   # py2中text必须是utf8编码的str或者unicode对象，py3中必须是utf8编码的bytes或者str对象
                 for item in tr4w.get_keywords(keywords_num, word_min_len= 1):
                     #print(item.word,item.weight)
@@ -75,9 +84,6 @@ def get_user_keywords(text_list,word_dict,date, keywords_num=5):
     #print(hastag_dict)
     #time22 = time.time()
     #print("获取关键词和has花费：",time22-time11)
-    if len(hastag_dict):
-        hastag_dict = wordcount(hastag_dict,date)
-    #keywords_dict=wordcount(keywords_dict)
     #time2 = time.time()
     #print("wordcount花费：",time2-time22)
     sensitive_words_weight = sensitive_word()
@@ -95,12 +101,12 @@ def get_user_keywords(text_list,word_dict,date, keywords_num=5):
         #if len(stw_dict):
         stw_json = json.dumps(stw_dict[k],ensure_ascii=False)
         user_kw["%s_%s" % (str(int(time.time())), k)]={"uid": k,
-                                                        "timestamp": int(time.time()),
+                                                        "timestamp": ts,
                                                         "keywords":keyword_json,
                                                         "hastags":hastag_json,
                                                         "sensitive_words":stw_json,
                                                         "store_date":date}
     sql_insert_many(cursor, "UserKeyWord", "ukw_id", user_kw)
-    time5 = time.time()
+    #time5 = time.time()
     # print("插入kw花费：",time5-time4)
     #return keywords_dict,hastag_dict'''

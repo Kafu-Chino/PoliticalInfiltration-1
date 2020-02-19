@@ -65,11 +65,14 @@ def get_p(train_dict,test_dict):
 #用户分类函数 计算用户话题和领域并保存至数据库
 #输入为结巴分词后的字典{uid:词列表}
 def get_user_topic(word_dict,date):
-    time1 = time.time()
+    #time1 = time.time()
     topic_dict=topic_tfidf()
     #time2 = time.time()
     #print("读取topic花费：",time2-time1)
-    thedate = datetime.date.today()
+    #thedate = datetime.date.today()
+    td = date + " 00:00:00"
+    ta = time.strptime(td, "%Y-%m-%d %H:%M:%S")
+    ts = int(time.mktime(ta))
     #print(topic_dict)
     user_topic={}
     topic_p= get_p(topic_dict,word_dict)
@@ -78,11 +81,10 @@ def get_user_topic(word_dict,date):
     for k in word_dict.keys():
         topic_json = json.dumps(topic_p[k])
         user_topic["%s_%s" % (str(int(time.time())), k)]={"uid": k,
-                                                          "timestamp": int(time.time()),
+                                                          "timestamp": ts,
                                                           "topics":topic_json,
                                                           "store_date":date}
     sql_insert_many(cursor, "UserTopic", "ut_id", user_topic)
-    time4 = time.time()
     # print("插入topic数据：",time4-time3)
     #return category_dict
 

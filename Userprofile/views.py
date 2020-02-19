@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
-
+from django.core import serializers
 from django.http import JsonResponse, HttpResponse
 from django.db.models import Sum
 import time
 import datetime
 from collections import defaultdict
-
+from django.db.models import Q
 from Userprofile.models import *
 from Mainevent.models import *
 from Config.base import *
-
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from rest_framework.views import APIView
 from rest_framework.schemas import ManualSchema
-
+import json
 
 class Test(APIView):
     """测试页面"""
@@ -33,7 +33,7 @@ class Test(APIView):
         """DELETE方法的功能说明写在这里"""
         return HttpResponse('这是测试的DELETE方法')
 
-
+'''
 class BasicInfo(APIView):
     """用户基本信息接口"""
 
@@ -74,7 +74,7 @@ class BasicInfo(APIView):
     def post(self, request):
         """"""
         return HttpResponse('这是POST方法')
-
+'''
 
 class User_Behavior(APIView):
     """用户活动特征接口"""
@@ -193,29 +193,6 @@ class User_Activity(APIView):
         return JsonResponse(res_dict)
 
 
-class Association(APIView):
-    """用户关联分析接口"""
-
-    def get(self, request):
-        """
-        获取uid，返回用户关联分析详情，包括用户参与的相关事件、相关信息详情,
-        数据格式{
-                    "event":[{"event_name": event_name1, "keywords": keywords_dict1},{}],
-                    "information":[{"text": text1, "hazard_index": hazard_index1, "mid": i.mid},{}]
-                }
-        """
-        res_dict = defaultdict(list)
-        uid = request.GET.get('uid')
-        res_event = Figure.objects.filter(f_id=uid).first().event_set.all()
-        for e in res_event:
-            res_dict["event"].append({"event_name": e.event_name, "keywords": e.keywords_dict})
-        res_information = Information.objects.filter(uid=uid)
-        for i in res_information:
-            res_dict["information"].append({"text": i.text, "hazard_index": i.hazard_index, "mid": i.mid})
-        return JsonResponse(res_dict)
-
-
-
 
 def insertData(e_name, *figure_names):
     cour_name = []
@@ -231,42 +208,41 @@ def insertData(e_name, *figure_names):
     e.figure.add(*cour_name)
 
 
-class Show_prefer(APIView):
+class Show_topic(APIView):
     """展示用户的话题和领域
        输入uid
-       输出{“topics”：{“uid”:{“topic1”:p,…}},‘domains’：{‘uid’:{“domain1”:p},…{‘mian_domain’:p}}}"""
+       输出{“topics”：{“uid”:{“topic1”:p,…}}}"""
     def get(self,request):
-        re = defaultdict(list)
-        re2 = defaultdict(list)
-        prefer = defaultdict(dict)
+        #re = defaultdict(list)
+        #re2 = defaultdict(list)
+        #prefer = defaultdict(dict)
         uid = request.GET.get("uid")
         #start_time = request.GET.get("time1")
         #end_time = request.GET.get("time2")
         result1 = UserTopic.objects.filter(uid = uid)  #, store_date__range=(start_time,end_time)
-        result2 = UserDomain.objects.filter(uid = uid)  #, store_date__range=(start_time,end_time)
-        #return HttpResponse(typeof(result))
+        #result2 = UserDomain.objects.filter(uid = uid)  #, store_date__range=(start_time,end_time)
         if result1.exists():
             json_data = serializers.serialize("json",result1)
             results = json.loads(json_data)
             #return JsonResponse(results,safe=False)
             for i in results:
-                uid = i["fields"]["uid"]
-                re[uid].append(i["fields"]["topics"])
-            #re = sorted(re.values()[0],key=lambda x:x[1],reverse=True)[:5]
-            prefer['topic'] = re
-            #result = sorted(result[0], reverse = True)
-            #return HttpResponse(re)
-        #if result2.exists():
-            json_data2 = serializers.serialize("json",result2)
-            results2 = json.loads(json_data2)
-            for i in results2:
-                #re2[i['fields']['uid']].append(i["fields"]["domains"])  #,{"main_domain":i["fields"]["main_domain"]}
-                re2[i['fields']['uid']].append({"main_domain":i["fields"]["main_domain"]})
-            #re2 = sorted(re2.items(),key=lambda x:x[1],reverse=True)[:5]
-            prefer['domain'] = re2
-            return JsonResponse(prefer,safe=False)
+                #uid = i["fields"]["uid"]
+                new_topic={}
+                for item in i["fields"]["topics"]:
+                    #print(topic_dict['anti_corruption'])
+                    #print(i["fields"]["topics"][item])
+                    new_topic[topic_dict[item]]=i["fields"]["topics"][item]
+                    #print(new_topic)
+                #re[uid].append(new_topic)
+            re = dict(sorted(new_topic.items(),key=lambda x:x[1],reverse=True)[:5])
+            #print(type(re))
+            #re = json.dumps(re,ensure_ascii=False)
+            #re = json.load(re,ensure_ascii=False)
+            return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "未找到该用户信息"},safe=False,json_dumps_params={'ensure_ascii':False}) 
+
+
 
 
 class Show_keyword(APIView):
@@ -351,7 +327,7 @@ class Show_contact(APIView):
 
 
 class Figure_create(APIView):
-    """添加人物入库和删除人物"""
+    """添加人物入库"""
     def get(self,request):
         """添加人物：获取添加信息，输入uid,nick,location,fans,friends,political,domain
            调取人物id、昵称、注册地、粉丝数、关注数、政治倾向和领域，若没有填写微博ID则wb_id="";输出状态及提示：400 状态错误，201写入成功"""
@@ -367,6 +343,9 @@ class Figure_create(APIView):
         domain = request.GET.get("domain")
         #h_id = request.GET.get("wb_id")  # 若该条人工输入事件从微博而来 则需输入来源微博的id
         #result = Task.objects.filter(~Q(mid=''), mid=h_id) #判断从微博得来的事件是否已存在，若微博ID未给出返回一个空值
+        result = Figure.objects.filter(f_id=uid)
+        if result.exists():
+            return JsonResponse({"status":400, "error": "人物已存在"},safe=False,json_dumps_params={'ensure_ascii':False})
         if f_id and nick :
             Figure.objects.create(f_id=f_id, uid=uid, nick_name=nick,user_location=location,fansnum=fans,
                                 friendsnum=friends,political = political,domain=domain)
@@ -395,9 +374,136 @@ class Show_figure(APIView):
     """展示人物列表"""
     def get(self, request):
         """展示人物,该文档返回Figure表中存在的需要展示的数据，返回字段f_id为用户账号，nick_name为昵称
+          fansnum粉丝数,friendsnum关注数,event_count为参与事件数，info_count为敏感信息数,user_location地点"""
+        result = Figure.objects.all()  #values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')
+        limit = request.GET.get("limit")
+        page_id = request.GET.get('page_id')
+        res_list = []
+        if result.exists():
+            for item in result:
+                event_count = 0
+                info_count = 0
+                #sdate = item.begin_date.strftime('%Y-%m-%d %H:%M:%S')
+                #edate = item.end_date.strftime('%Y-%m-%d %H:%M:%S')
+                fid = item.f_id
+                res_event = Figure.objects.get(f_id=fid).event.all()
+                for e in res_event:
+                    #print(e)
+                    event_count += 1
+                #info_count = len(Information.objects.filter(uid=fid))
+                res_info = Information.objects.filter(uid=fid)
+                for i in res_info:
+                    info_count += 1
+                res_list.append({"f_id":fid,"nick_name":item.nick_name,"fansnum":item.fansnum,'friendsnum':item.friendsnum,'create_at':item.create_at,'event_count':event_count,'info_count':info_count,'user_location':item.user_location})
+            page = Paginator(res_list, limit)
+            if page_id:
+                try:
+                    results = page.page(page_id)
+                except PageNotAnInteger:
+                    results = page.page(1)
+                except EmptyPage:
+                    results = page.page(1)
+            else:
+                results = page.page(1)
+            re = json.dumps(list(results),ensure_ascii=False)
+            re = json.loads(re)
+            return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False})
+        else:
+            return JsonResponse({"status":400, "error": "无人物"},safe=False)
+
+
+class show_figure_info(APIView):
+    """展示人物详细信息"""
+    def get(self,request):
+        """获取uid 返回返回字段f_id为用户账号，nick_name为昵称,event_count为参与事件数，info_count为敏感信息数
           fansnum粉丝数,friendsnum关注数,political政治倾向,domain领域,user_location地点"""
-        result = Figure.objects.values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')
-        return HttpResponse(result)
+        event_count = 0
+        info_count = 0
+        res_dict = {}
+        fid = request.GET.get("uid")
+        res = Figure.objects.filter(f_id=fid).values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location','create_at')
+        if res.exists():
+            res_event = Figure.objects.get(f_id=fid).event.all()
+            for e in res_event:
+                    #print(e)
+                event_count += 1
+                #info_count = len(Information.objects.filter(uid=fid))
+            res_info = Information.objects.filter(uid=fid)
+            for i in res_info:
+                info_count += 1
+            res_dict["uid"] = fid
+            for re in res:
+                res_dict["nick_name"]=re["nick_name"]
+                res_dict["fansnum"]=re["fansnum"]
+                res_dict['friendsnum']=re['friendsnum']
+                #print(re["create_at"])
+                res_dict['create_at']=re['create_at']
+                res_dict['user_location']=re['user_location']
+                res_dict["domain"]=re["domain"]
+                res_dict["political"]=re["political"]
+            res_dict['event_count']=event_count
+            res_dict['info_count']=info_count
+            
+            return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
+        else:
+            return JsonResponse({"status":400, "error": "无人物"},safe=False)
+
+
+
+class Association(APIView):
+    """用户关联分析接口"""
+
+    def get(self, request):
+        """
+        获取uid，返回用户关联分析详情，包括用户参与的相关事件、相关信息详情,
+        数据格式{
+                    "event":[{"event_name": event_name1, "keywords": keywords_dict1},{}],
+                    "information":[{"text": text1, "hazard_index": hazard_index1, "mid": i.mid},{}]
+                }
+        """
+        res_dict = defaultdict(list)
+        uid = request.GET.get('uid')
+        res_event = Figure.objects.filter(f_id=uid).first().event_set.all()
+        for e in res_event:
+            res_dict["event"].append({"event_name": e.event_name, "keywords": e.keywords_dict})
+        res_information = Information.objects.filter(uid=uid)
+        for i in res_information:
+            res_dict["information"].append({"text": i.text, "hazard_index": i.hazard_index, "mid": i.mid})
+        return JsonResponse(res_dict)
+
+
+class related_info(APIView):
+    """人物-信息关联分析"""
+    def get(self,request):
+        res_dict = []
+        fid = request.GET.get('uid')
+        limit = request.GET.get("limit")
+        page_id = request.GET.get('page_id')
+        res = Information.objects.filter(uid=fid)
+        if res.exists():
+            for i in res:
+                lt = time.localtime(i.timestamp)
+                itime = time.strftime('%Y-%m-%d %H:%M:%S',lt)
+                #print(itime)
+                res_dict.append({'text': i.text,'time':itime,'geo':i.geo})
+            if len(res_dict):
+                page = Paginator(res_dict, limit)
+            #page_id = request.GET.get('page_id')
+                if page_id:
+                    try:
+                        results = page.page(page_id)
+                    except PageNotAnInteger:
+                        results = page.page(1)
+                    except EmptyPage:
+                        results = page.page(1)
+                else:
+                    results = page.page(1)
+                re = json.dumps(list(results),ensure_ascii=False)
+                re = json.loads(re)
+            else
+            return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False}) #
+        else:
+            return JsonResponse({"status":400, "error": "无相关信息"},safe=False)
 
 
 
@@ -406,9 +512,25 @@ class search_figure(APIView):
     def get(self, request):
         """展示人物,该文档返回Figure表中存在的需要展示的数据，返回字段f_id为用户账号，nick_name为昵称
           fansnum粉丝数,friendsnum关注数,political政治倾向,domain领域,user_location地点"""
-        name = request.GET.get("nick")
-        result = Figure.objects.filter(nick_name__contains = name).values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')
-        return HttpResponse(result)
+        info = request.GET.get("info")
+        #results={}
+        result = Figure.objects.filter(Q(nick_name__contains = info) | Q(uid__contains = info)).values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')
+        if result.exists():
+            #results["result"] = list(result)
+            #print(type(results))
+            #json_data = serializers.serialize("json",results)
+            #re = json.loads(json_data)
+            #print(results)
+            re = json.dumps(list(result),ensure_ascii=False)
+            #re = re.replace("\\","")
+            #re = re.Replace("[","")
+            re = json.loads(re)
+            return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False})
+        else:
+            return JsonResponse({"status":400, "error": "该人物不存在"},safe=False,json_dumps_params={'ensure_ascii':False})
+
+
+
 
 
 class User_Sentiment(APIView):
@@ -433,28 +555,28 @@ class User_Sentiment(APIView):
             for item in result:
                 t = item.pop("timestamp") - 24 * 60 * 60
                 res_dict[time.strftime("%Y-%m-%d", time.localtime(t))] = item
-        # 每周情绪特征，从当前日期往前推5周展示 积极微博数，中性微博数，消极微博数
+        # 每周情绪特征，从当前日期往前推5周展示 原创微博数、评论数、转发数、敏感微博数
         if n_type == "周":
             date_dict = {}
             for i in range(5):
                 date_dict[i + 1] = (datetime.datetime.now() + datetime.timedelta(weeks=(-1 * (i + 1)))).timestamp()
             date_dict[0] = time.time()
             for i in range(5):
-                result = UserSentiment.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
+                result = UserBehavior.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
                                                      timestamp__lt=date_dict[i]).aggregate(positive_s=Sum("positive"), nuetral_s=Sum("nuetral"),
                                       negtive_s=Sum("negtive"))
-                if list(result.values())[0] or list(result.values())[1] or list(result.values())[2]:
+                if list(result.values())[0]:
                     res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i]) - 24 * 60 * 60))] = result
-        # 每月情绪特征，从当前日期往前推5月展示 积极微博数，中性微博数，消极微博数
+        # 每月情绪特征，从当前日期往前推5月展示 原创微博数、评论数、转发数、敏感微博数
         if n_type == "月":
             date_dict = {}
             for i in range(5):
                 date_dict[i + 1] = (datetime.datetime.now() + datetime.timedelta(days=(-30 * (i + 1)))).timestamp()
             date_dict[0] = time.time()
             for i in range(5):
-                result = UserSentiment.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
+                result = UserBehavior.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
                                                      timestamp__lt=date_dict[i]).aggregate(positive_s=Sum("positive"), nuetral_s=Sum("nuetral"),
                                       negtive_s=Sum("negtive"))
-                if list(result.values())[0] or list(result.values())[1] or list(result.values())[2]:
+                if list(result.values())[0]:
                     res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i]) - 24 * 60 * 60))] = result
         return JsonResponse(res_dict)
