@@ -624,28 +624,80 @@ class User_Sentiment(APIView):
             for item in result:
                 t = item.pop("timestamp") - 24 * 60 * 60
                 res_dict[time.strftime("%Y-%m-%d", time.localtime(t))] = item
-        # 每周情绪特征，从当前日期往前推5周展示 原创微博数、评论数、转发数、敏感微博数
+        # 每周情绪特征，从当前日期往前推5周展示 积极微博数，中性微博数，消极微博数
         if n_type == "周":
             date_dict = {}
             for i in range(5):
                 date_dict[i + 1] = (datetime.datetime.now() + datetime.timedelta(weeks=(-1 * (i + 1)))).timestamp()
             date_dict[0] = time.time()
             for i in range(5):
-                result = UserBehavior.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
+                result = UserSentiment.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
                                                      timestamp__lt=date_dict[i]).aggregate(positive_s=Sum("positive"), nuetral_s=Sum("nuetral"),
                                       negtive_s=Sum("negtive"))
-                if list(result.values())[0]:
+                if list(result.values())[0] or list(result.values())[1] or list(result.values())[2]:
                     res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i]) - 24 * 60 * 60))] = result
-        # 每月情绪特征，从当前日期往前推5月展示 原创微博数、评论数、转发数、敏感微博数
+        # 每月情绪特征，从当前日期往前推5月展示 积极微博数，中性微博数，消极微博数
         if n_type == "月":
             date_dict = {}
             for i in range(5):
                 date_dict[i + 1] = (datetime.datetime.now() + datetime.timedelta(days=(-30 * (i + 1)))).timestamp()
             date_dict[0] = time.time()
             for i in range(5):
-                result = UserBehavior.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
+                result = UserSentiment.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
                                                      timestamp__lt=date_dict[i]).aggregate(positive_s=Sum("positive"), nuetral_s=Sum("nuetral"),
                                       negtive_s=Sum("negtive"))
-                if list(result.values())[0]:
+                if list(result.values())[0] or list(result.values())[1] or list(result.values())[2]:
+                    res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i]) - 24 * 60 * 60))] = result
+        return JsonResponse(res_dict)
+
+class User_Influence(APIView):
+    """用户影响力特征接口"""
+
+    def get(self, request):
+        """
+        获取uid，返回用户影响力特征详情，根据传入参数n_type 日 周 月 返回相应数据结果，
+        返回数据格式{date1:{positive_s:10,nuetral_s:20,negtive_s:30},
+                    date2:{positive_s:10,nuetral_s:20,negtive_s:30},
+                    ...}
+        """
+        uid = request.GET.get('uid')
+        n_type = request.GET.get('n_type')
+        print (uid)
+        print (NewUserInfluence.objects.filter(uid=uid).exists())
+        res_dict = {}
+        # 每日影响力特征，从当前日期往前推7天展示 影响力 活跃度 重要度 敏感度
+        if n_type == "日":
+            new_date = (datetime.datetime.now() + datetime.timedelta(days=-7)).timestamp()
+            result = NewUserInfluence.objects.filter(uid=uid, timestamp__gte=new_date).values(
+                "timestamp","influence","importance","sensitity","activity")
+            for item in result:
+                t = item.pop("timestamp") - 24 * 60 * 60
+                res_dict[time.strftime("%Y-%m-%d", time.localtime(t))] = item
+        # 每周影响力特征，从当前日期往前推5周展示
+        if n_type == "周":
+            date_dict = {}
+            for i in range(5):
+                date_dict[i + 1] = (datetime.datetime.now() + datetime.timedelta(weeks=(-1 * (i + 1)))).timestamp()
+            date_dict[0] = time.time()
+            for i in range(5):
+                print (date_dict[i + 1],date_dict[i])
+                result =NewUserInfluence.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
+                                                      timestamp__lt=date_dict[i]).aggregate(
+                    influence=Avg("influence"), importance=Avg("importance"),
+                    sensitity=Avg("sensitity"),activity=Avg("activity"))
+                if list(result.values())[0] or list(result.values())[1] or list(result.values())[2]:
+                    res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i]) - 24 * 60 * 60))] = result
+        # 每月情绪特征，从当前日期往前推5月展示
+        if n_type == "月":
+            date_dict = {}
+            for i in range(5):
+                date_dict[i + 1] = (datetime.datetime.now() + datetime.timedelta(days=(-30 * (i + 1)))).timestamp()
+            date_dict[0] = time.time()
+            for i in range(5):
+                result = NewUserInfluence.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
+                                                      timestamp__lt=date_dict[i]).aggregate(
+                    influence=Avg("influence"), importance=Avg("importance"),
+                    sensitity=Avg("sensitity"),activity=Avg("activity"))
+                if list(result.values())[0] or list(result.values())[1] or list(result.values())[2]:
                     res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i]) - 24 * 60 * 60))] = result
         return JsonResponse(res_dict)
