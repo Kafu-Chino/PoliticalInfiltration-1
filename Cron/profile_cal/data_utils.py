@@ -8,7 +8,7 @@ from Config.time_utils import *
 # 每天定时从人物库获取uid_list
 def get_uid_list():
     cursor = pi_cur()
-    sql = 'select %s from %s' % ("uid", "Figure")
+    sql = 'SELECT %s from %s order by uid' % ("uid", "Figure")
     cursor.execute(sql)
     result = cursor.fetchall()
     uidlist = [item["uid"] for item in result]
@@ -68,10 +68,13 @@ def sql_insert_many(table_name, primary_key, data_dict):
     values_sql = ",".join(values)
     sql = 'replace into %s (%s) values (%s)' % (table_name, columns_sql, values_sql)
 
-    n = cursor.executemany(sql, params)
     m = len(params)
+    if m == 0:
+        print("empty data")
+        return
+    n = cursor.executemany(sql, params)
     if n == m:
         print("insert %d success" % m)
         conn.commit()
     else:
-        print("failed")
+        print("%d success, %d failed" % (n, m - n))

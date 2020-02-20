@@ -35,10 +35,10 @@ class Trend(APIView):
         mid = request.GET.get('mid')
         n = 90
         try:
-            date = Event.objects.filter(information__mid=mid).order_by('end_date')[0].end_date
+            date = Event.objects.filter(information__mid=mid).order_by('end_date')[0].end_date.strftime('%Y-%m-%d')
         except:
             date = today()
-        date = date2ts(date.strftime('%Y-%m-%d'))
+        date = date2ts(date)
         date_before = date - n * 86400
         result = Informationspread.objects.filter(mid=mid, timestamp__gte=date_before, timestamp__lte=date).values()
         data_dic = {ts2date(item["timestamp"]): item["comment_count"] + item["retweet_count"] for item in result}

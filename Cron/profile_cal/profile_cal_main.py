@@ -27,12 +27,10 @@ from user_msg_type import get_msg_type_aggs
 # 批量计算用户
 def profile_cal_uidlist(uidlist):
     data = get_uidlist_data(uidlist)
-    for date in data:
+    for date in sorted(list(data.keys())):
         print(date)
-        if date != '2019-08-12':
-            continue
         date_data = data[date]
-        word_dict, text_list, text_dict = get_processed_data(date_data, date)
+        # word_dict, text_list, text_dict = get_processed_data(date_data, date)
 
         # 地域特征（文娟）
         # result_position = get_user_activity_aggs(data)
@@ -47,10 +45,10 @@ def profile_cal_uidlist(uidlist):
         # influence_total(date,uidlist,word_dict,date_data)
         #
         # # 社交特征
-        get_user_social(uidlist, date_data)
+        get_user_social(uidlist, date_data, date)
         #
         #每星期计算一次
-        dayOfWeek = datetime.datetime.strptime(date, "%Y-%m-%d").weekday()
+        # dayOfWeek = datetime.datetime.strptime(date, "%Y-%m-%d").weekday()
         # if  dayOfWeek == 0:
         #     # 话题和领域特征
         #     print('开始周计算')
