@@ -22,15 +22,31 @@ from user_position import get_user_activity_aggs
 from user_msg_type import get_msg_type_aggs
 
 
-
+def getEveryDay(begin_date,end_date):
+    date_list = []
+    begin_date = datetime.datetime.strptime(begin_date, "%Y-%m-%d")
+    end_date = datetime.datetime.strptime(end_date,"%Y-%m-%d")
+    while begin_date <= end_date:
+        date_str = begin_date.strftime("%Y-%m-%d")
+        date_list.append(date_str)
+        begin_date += datetime.timedelta(days=1)
+    return date_list
 
 # 批量计算用户
-def profile_cal_uidlist(uidlist):
-    data = get_uidlist_data(uidlist)
-    for date in data:
-        print(date)
-        if date != '2019-08-12':
-            continue
+def profile_cal_uidlist(uidlist,n):
+    if n == 0:
+        end_date = datetime.datetime.today()
+        start_date = datetime.datetime.strptime(str(datetime.datetime.today() - datetime.timedelta(days=20))[:10],
+                                                "%Y-%m-%d")
+        date_list = getEveryDay(str(start_date)[:10], str(end_date)[:10])
+    else:
+        today = datetime.date.today()
+        oneday = datetime.timedelta(days=1)
+        yesterday = today - oneday
+        date_list = [str(yesterday)[:10]]
+    for date in date_list:
+        index = 'flow_text_'+ date
+        data = get_uidlist_data(uidlist,index)
         date_data = data[date]
         word_dict, text_list, text_dict = get_processed_data(date_data, date)
 
@@ -41,13 +57,13 @@ def profile_cal_uidlist(uidlist):
         # result_msg_type = get_msg_type_aggs(data)
 
         # 情绪特征（中方）
-        #cal_user_emotion(text_dict,date)
+        # cal_user_emotion(text_dict,date)
 
         # 影响力特征（英汉）
         # influence_total(date,uidlist,word_dict,date_data)
         #
         # # 社交特征（梦丽）
-        get_user_social(uidlist,date)
+        get_user_social(date_data,date)
         #
         #每星期计算一次
         dayOfWeek = datetime.datetime.strptime(date, "%Y-%m-%d").weekday()
@@ -68,21 +84,24 @@ def profile_cal_uidlist(uidlist):
 
 
 
-def main():
-    uidlist = get_uid_list()
+def profile_cal_main(n):
+    if n==0:
+        uidlist = get_uid_list(n)
+    else:
+        uidlist = get_uid_list(n)
     batch_num = 1000
     batch_all = math.ceil(len(uidlist) / batch_num)
     for batch_epoch in range(batch_all):
         uidlist_batch = uidlist[batch_epoch * batch_num: (batch_epoch + 1) * batch_num]
         print("用户{}至{}， 共{}".format(batch_epoch * batch_num, (batch_epoch + 1) * batch_num, len(uidlist)))
 
-        profile_cal_uidlist(uidlist_batch)
+        profile_cal_uidlist(uidlist_batch,n)
 
         # break
 
 
 if __name__ == '__main__':
-    main()
+    profile_cal_main(1)
 
 
 

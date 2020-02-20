@@ -1,137 +1,125 @@
-#-*-coding=utf-8-*-
 import sys
+sys.path.append("../../")
+
 import os
 import time
 import datetime
-from collections import defaultdict
-from data_get_utils import sql_select,sql_insert_many
-from Config.db_utils import es
+from data_utils import sql_insert_many, get_uid_list
+from Config.db_utils import es, pi_cur#, es_floww
+from Config.time_utils import *
 from elasticsearch.helpers import scan
-#cursor = pi_cur()
 
-
-#计算用户上下游关系
-#输入直接得到微博全字段信息
-def get_user_social(uidlist,date):
-    #cur = conn.cursor(cursor=pymysql.cursors.DictCursor)
-    time1 = time.time()
-    data_list = []
-    user_list=[]
-    comment_target=[]
-    comment_source = []
-    retweet_target = []
-    retweet_source = []
-    #info_list = sql_select(cursor, "Figure", field_name="*")
+def get_user_social(uidlist, date_data, date):
+    """
+    result_dic格式：
+    {
+        (source_uid, target_uid): {
+            2: 评论数,
+            3: 转发数,
+        }
+    }
+    """
+    # 上游数据补充查询
+    list_all = set(get_uid_list())
     query_body = {
-        "query": {
-            "bool": {
-                        "should": [
-                            {"terms": {
-                                "message_type": [2,3]
-                                }
-                                }
-                            ]
-                        }
+        "query":{
+            "bool":{
+                "must":[
+                    {"terms": {"root_uid": uidlist}}
+                ]
+            }
         }
     }
 
-    r = scan(es, index="weibo_all", query=query_body)
-    for item in r:
-        if item['_source']["root_uid"] in uidlist and item['_source']["uid"] not in user_list:  # & item['_source']["uid"] not in user_list
-            user_list.append(item['_source']["uid"])
-        #user_list.append(item['_source']["root_uid"])
-        data_list.append({'uid':item['_source']["uid"],'root_uid':item['_source']["root_uid"],'message_type':item['_source']["message_type"]})
-    user_list.append(uidlist)
-    #user_list = list(set(user_list))
-    query_body1 = {
-        "query": {
-            "bool": {
-                        "should": [
-                            {"terms": {
-                                "u_id": user_list
-                                }
-                                }
-                            ]
-                        }
-        },
-        #"size": 2000000
-        "size": 10000
+    # 本地weibo_all
+    start_ts = date2ts(date)
+    end_ts = date2ts(date) + 86400
+    query_body["query"]["bool"]["must"].append({"range": {"timestamp": {"gte": start_ts, "lt": end_ts}}})
+    es_scan_iter = scan(es, index="weibo_all", query=query_body)
+    append_data = [item["_source"] for item in es_scan_iter]
+
+    # 流数据，部署时注释本地代码，使用该段代码
+    # es_scan_iter = scan(es_flow, index="flow_text_{}".format(date), query=query_body)
+    # append_data = [item["_source"] for item in es_scan_iter]
+
+
+    # 上下游数据遍历计数
+    result_dic = {}
+    date_data_new = []
+    for uid in date_data:
+        for item in date_data[uid]:
+            date_data_new.append(item)
+    date_data_new.extend(append_data)
+    uidlist_append = []
+
+    mid_set = set([])
+    for item in date_data_new:
+        mid = item["mid"]
+        if mid in mid_set:
+            continue
+        else:
+            mid_set.add(mid)
+
+        uid = item["uid"]
+        root_uid = item["root_uid"]
+        message_type = item["message_type"]
+        key = (root_uid, uid)
+        uidlist_append.append(uid)
+        if root_uid:
+            uidlist_append.append(root_uid)
+
+        if key not in result_dic:
+            result_dic[key] = {
+                2: 0,
+                3: 0
+            }
+
+        if message_type == 2:
+            result_dic[key][2] += 1
+        elif message_type == 3:
+            result_dic[key][3] += 1
+
+    # 用户昵称es库查询
+    cursor = pi_cur()
+    sql = "SELECT uid, nick_name from Figure where uid in ({})".format(",".join(uidlist))
+    cursor.execute(sql)
+    result = cursor.fetchall()
+    nick_name_dic = {item["uid"]: item["nick_name"] for item in result}
+    
+    uidlist_append = list(set(uidlist_append) - set(uidlist))
+    query_body = {
+        "query":{
+            "terms": {
+                "u_id": uidlist_append
+            }
+        }
     }
+    es_scan_iter = scan(es, index='weibo_user_big', query=query_body)
+    for item in es_scan_iter:
+        nick_name_dic[str(item["_source"]["u_id"])] = item["_source"]["name"]
 
-    r1 = es.search(index="weibo_user_big", body=query_body1)["hits"]["hits"]
-    name_dict = {}
-    for item in r1:
-        name_dict[item['_source']["u_id"]]=item['_source']["name"]
+    # 数据存储入社交统计库，只有大库中存在的相关用户的关系才会被存储，只有数量多于2的边才会存储
+    insert_dic = {}
+    for key in result_dic:
+        if key[0] in nick_name_dic and key[1] in nick_name_dic:
+            for message_type in result_dic[key]:
+                if result_dic[key][message_type] >= 2:
+                    uc_id = "{}_{}_{}_{}".format(date2ts(date), key[0], key[1], message_type)
+                    insert_dic[uc_id] = {
+                        "target": key[1],
+                        "target_name": nick_name_dic[key[1]],
+                        "source": key[0],
+                        "source_name": nick_name_dic[key[0]],
+                        "message_type": message_type,
+                        "count": result_dic[key][message_type],
+                        "timestamp": date2ts(date),
+                        "store_date": date,
+                    }
+    sql_insert_many("UserSocialContact", "uc_id", insert_dic)
 
-    #time2 = time.time()
-    #print("mysql遍历花费：",time2-time1)
-    #print(info_list)
-    user_sc={}
-    thedate = datetime.date.today()
-    #info_all_dict = defaultdict(list)
-    info_dict=defaultdict(list)
-    for k in uidlist:
-        for data in data_list:
-            if data["message_type"]==2:
-                if data['uid'] == k:
-                    comment_source.append({'uid':data["root_uid"],'nick_name':name_dict[data["root_uid"]]})
-                if data['root_uid'] == k:
-                    comment_target.append({'uid':data["uid"],'nick_name':name_dict[data["uid"]]})
-                #info_dict[k].append({"source":data["root_uid"],"source_name":name_dict[data["root_uid"]],"target":k,"target_name":name_dict[k],"message_type":data["message_type"]})
-            if data["message_type"]==3:
-                #print(name_dict[k])
-                if data['uid'] == k:
-                    retweet_source.append({'uid':data["root_uid"],'nick_name':name_dict[data["root_uid"]]})
-                if data['root_uid'] == k:
-                    retweet_target.append({'uid':data["uid"],'nick_name':name_dict[data["uid"]]})
-        info_dict[k].append({"retweet_source":retweet_source,"retweet_target":retweet_target,"comment_target":comment_target,"comment_source":comment_source})
-            
-        '''
-        for item in v:
-            #print(item)
-            if item["message_type"]==2 or item["message_type"]==3:
-                #print("项",item)
-                #info_dict[k].append({"source":item["root_uid"],"source_name":" ","target":k,"target_name":" ","message_type":item["message_type"]})
-                for info in data:
-                    if info["root_uid"] == k:
-                        #print("用户",info["uid"])
-                        if info["uid"]==k:
-                            info_dict[k].append({"source":info["uid"],"source_name":info["nick_name"],"target":k,"target_name":info["nick_name"],"message_type":item["message_type"]})
-                        else:
-                            info_dict[k].append({"source":item["root_uid"],"source_name":info["nick_name"],"target":k,"target_name":k,"message_type":item["message_type"]})
-                        #info_dict[k]["source_name"] = info["nick_name"]
-                    else:
-                        if info["uid"]==k: 
-                            info_dict[k].append({"source":item["root_uid"],"source_name":item["root_uid"],"target":k,"target_name":info["nick_name"],"message_type":item["message_type"]})
-                        else:
-                            info_dict[k].append({"source":item["root_uid"],"source_name":item["root_uid"],"target":k,"target_name":k,"message_type":item["message_type"]})
-        #print(info_dict)
-    time3 = time.time()
-    print("获取social花费：",time3-time2)
-    '''
-    td = date + " 00:00:00"
-    ta = time.strptime(td, "%Y-%m-%d %H:%M:%S")
-    ts = int(time.mktime(ta))
-    if len(info_dict):
-        for i,v in info_dict.items():
-            for num in v:
-                json_rt = json.dumps(num["retweet_target"],ensure_ascii=False)
-                json_rs =json.dumps(num["retweet_source"],ensure_ascii=False)
-                json_ct = json.dumps(num["comment_target"],ensure_ascii=False)
-                json_cs = json.dumps(num["comment_source"],ensure_ascii=False)
-                user_sc["%s_%s" % (i,str(ts))]={"uid": i,
-                                                "timestamp": ts,
-                                                "retweet_target":json_rt,
-                                                "retweet_source":json_rs,
-                                                "comment_target":json_ct,
-                                                "comment_target":json_cs,
-                                                #"message_type":num["message_type"],
-                                                "store_date":date}
-        sql_insert_many(cursor, "UserSocialContact", "uc_id", user_sc)
-        time4 = time.time()
-        print("插入social花费：",time4-time1)
-    else:
-        print("没有转发或评论数据")
-
-
-
+if __name__ == "__main__":
+    cursor = pi_cur()
+    sql = "SELECT uid, nick_name from Figure where uid in ({})".format(",".join(["1000124571", "1002383394"]))
+    cursor.execute(sql)
+    result = cursor.fetchall()
+    print(result)

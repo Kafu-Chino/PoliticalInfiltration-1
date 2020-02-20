@@ -6,16 +6,19 @@ from Config.db_utils import es, pi_cur, conn
 from Config.time_utils import *
 
 # 每天定时从人物库获取uid_list
-def get_uid_list():
+def get_uid_list(n):
     cursor = pi_cur()
-    sql = 'select %s from %s' % ("uid", "Figure")
+    if n ==0:
+        sql = 'select %s from %s where computestatus=0' % ("uid", "Figure")
+    else:
+        sql = 'select %s from %s where computestatus=1' % ("uid", "Figure")
     cursor.execute(sql)
     result = cursor.fetchall()
     uidlist = [item["uid"] for item in result]
     return uidlist
 
 # 根据uidlist获取数据
-def get_uidlist_data(uidlist):#, start_date, end_date
+def get_uidlist_data(uidlist,index):#, start_date, end_date
     # start_ts = date2ts(start_date)
     # end_ts = date2ts(end_date)
     query_body = {
@@ -29,7 +32,7 @@ def get_uidlist_data(uidlist):#, start_date, end_date
         }
     }
 
-    result = scan(es, index="weibo_all", query=query_body)
+    result = scan(es, index=index, query=query_body)
 
     data = {}
     for item in result:
@@ -75,3 +78,4 @@ def sql_insert_many(table_name, primary_key, data_dict):
         conn.commit()
     else:
         print("failed")
+

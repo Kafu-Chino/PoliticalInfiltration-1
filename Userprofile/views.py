@@ -9,6 +9,7 @@ from django.db.models import Q
 from Userprofile.models import *
 from Mainevent.models import *
 from Config.base import *
+from Config.time_utils import *
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from rest_framework.views import APIView
 from rest_framework.schemas import ManualSchema
@@ -271,61 +272,93 @@ class Show_keyword(APIView):
             return JsonResponse({"status":400, "error": "未找到该用户信息"},safe=False,json_dumps_params={'ensure_ascii':False})
 
 class Show_contact(APIView):
-    """输入uid=&time=终止时间&days=从该终止时间往前的天数
-       输出{"in": [{"uid": , "intarget": {"comment":[评论该uid的用户列表],"retweet":[转发该uid的用户列表]}, "insource": {"comment":[该uid评论的用户列表],"retweet":[该uid转发的用户列表]}}], 
-           "out": [{"uid": , "outtarget": {"comment":[评论该uid的用户列表],"retweet":[转发该uid的用户列表]}, "outsource": {"comment":[该uid评论的用户列表],"retweet":[该uid转发的用户列表]}}]}"""
     def get(self,request):
-        user_source=defaultdict(list)
-        user_target=defaultdict(list)
-        insource = defaultdict(list)
-        outsource = defaultdict(list)
-        intarget = defaultdict(list)
-        outtarget = defaultdict(list)
         uid = request.GET.get("uid")
-        end_time = request.GET.get("time")
-        stime = datetime.datetime.strptime(end_time, '%Y-%m-%d')
-        #end_time = request.GET.get("time2")
-        days = request.GET.get("days")
-        du = datetime.timedelta(days=int(days))
-        result1 = UserSocialContact.objects.filter(target = uid, store_date__range=(stime-du,end_time)) \
-                   .values('source','message_type')  #.annotate(c=Count('uid')).filter(c__gte=1)
-        result2 = UserSocialContact.objects.filter(source = uid, store_date__range=(stime-du,end_time)) \
-                   .values('target','message_type')  #.annotate(c=Count('uid')).filter(c__gte=1)
-        if result1.exists():
-            for re in result1:
-                test = Figure.objects.filter(uid=re['source'])
-                if re['message_type']==2:
-                    if test.exists():
-                        insource['comment'].append(re['source'])
-                    #user_source["in"].append({'uid':re['uid'],'insource':re['source']})
-                    else:
-                        outsource['comment'].append(re['source'])
-                if re['message_type']==3:
-                    if test.exists():
-                        insource['retweet'].append(re['source'])
-                    #user_source["in"].append({'uid':re['uid'],'insource':re['source']})
-                    else:
-                        outsource['retweet'].append(re['source'])
-        if result2.exists():
-            for re in result2:
-                test = Figure.objects.filter(uid=re['target'])
-                if re['message_type']==2:
-                    if test.exists():
-                        intarget['comment'].append(re['target'])
-                    #user_source["in"].append({"uid":re["uid"],'intarget':re['target']})
-                    else:
-                        outtarget['comment'].append(re['target'])
-                if re['message_type']==3:
-                    if test.exists():
-                        intarget['retweet'].append(re['target'])
-                    #user_source["in"].append({"uid":re["uid"],'intarget':re['target']})
-                    else:
-                        outtarget['retweet'].append(re['target'])
-                    #user_source["out"].append({'uid':re['uid'],'outtarget':re['target']})
-        user_source["in"].append({"uid":uid,'intarget':intarget,'insource':insource})
-        user_source["out"].append({"uid":uid,'outtarget':outtarget,'outsource':outsource})
-        return JsonResponse(user_source,safe=False)
+        date_window = int(request.GET.get("date_window", 30))
+        min_count = int(request.GET.get("min_count", 1))
+        max_count = int(request.GET.get("max_count", 9999999999))
 
+        # 时间范围内的数据获取，该用户上游和下游的节点连接
+        try:
+            end_date = Event.objects.filter(figure__uid=uid).order_by('end_date')[0].end_date.strftime('%Y-%m-%d')
+        except:
+            end_date = today()
+        end_ts = date2ts(end_date)
+        start_ts = end_ts - date_window * 86400
+
+        result = UserSocialContact.objects.filter((Q(source=uid) | Q(target=uid)) & Q(timestamp__gte=start_ts) & Q(timestamp__lte=end_ts)).values()
+
+        # 对用户多日的数据进行聚合
+        result_sta = {}
+        for item in result:
+            key = (item['source'], item['target'])
+            source_name = item['source_name'] if item['source_name'] else item['source']
+            target_name = item['target_name'] if item['target_name'] else item['target']
+            if key not in result_sta:
+                result_sta[key] = {
+                    "message_type":{
+                        2: 0,
+                        3: 0
+                    },
+                    "name": (source_name, target_name)
+                }
+            result_sta[key]["message_type"][item['message_type']] += item["count"]
+
+        # 形成节点、边的列表，展示节点和边的属性
+        node_list = []
+        link_list = []
+        max_num = 0
+        min_num = 9999999999
+        node_set = set([])
+        for key in result_sta:
+            # 去掉自环节点
+            if key[0] == key[1]:
+                continue
+
+            for message_type in result_sta[key]["message_type"]:
+                count = result_sta[key]["message_type"][message_type]
+                if count:
+                    max_num = max(count, max_num)
+                    min_num = min(count, min_num)
+                if count >= min_count and count <= max_count:
+                    node_link = {
+                        'source': key[0],
+                        'target': key[1],
+                        'message_type': message_type,
+                        'count': result_sta[key]["message_type"][message_type]
+                    }
+                    link_list.append(node_link)
+
+                    if key[0] not in node_set:
+                        source_node = {'id': key[0], 'name': result_sta[key]["name"][0]}
+                        node_list.append(source_node)
+                        node_set.add(key[0])
+
+                    if key[1] not in node_set:
+                        target_node = {'id': key[1], 'name': result_sta[key]["name"][1]}
+                        node_list.append(target_node)
+                        node_set.add(key[1])
+
+        # 标记节点属性，如果为节点自身，标记为1，如果节点在敏感库内，标记为2，其他标记为3
+        node_set.remove(uid)
+        contain_result = Figure.objects.filter(uid__in=list(node_set)).values()
+        contain_set = set([item["uid"] for item in contain_result])
+        for node in node_list:
+            if node["id"] == uid:
+                node["contain_status"] = 1
+            elif node["id"] in contain_set:
+                node["contain_status"] = 2
+            else:
+                node["contain_status"] = 3
+
+        social_contact = {
+            'node': node_list, 
+            'link': link_list, 
+            'max_num': max_num, 
+            'min_num': min_num
+        }
+
+        return JsonResponse(social_contact, safe=False)
 
 
 class Figure_create(APIView):
@@ -591,28 +624,80 @@ class User_Sentiment(APIView):
             for item in result:
                 t = item.pop("timestamp") - 24 * 60 * 60
                 res_dict[time.strftime("%Y-%m-%d", time.localtime(t))] = item
-        # 每周情绪特征，从当前日期往前推5周展示 原创微博数、评论数、转发数、敏感微博数
+        # 每周情绪特征，从当前日期往前推5周展示 积极微博数，中性微博数，消极微博数
         if n_type == "周":
             date_dict = {}
             for i in range(5):
                 date_dict[i + 1] = (datetime.datetime.now() + datetime.timedelta(weeks=(-1 * (i + 1)))).timestamp()
             date_dict[0] = time.time()
             for i in range(5):
-                result = UserBehavior.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
+                result = UserSentiment.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
                                                      timestamp__lt=date_dict[i]).aggregate(positive_s=Sum("positive"), nuetral_s=Sum("nuetral"),
                                       negtive_s=Sum("negtive"))
-                if list(result.values())[0]:
+                if list(result.values())[0] or list(result.values())[1] or list(result.values())[2]:
                     res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i]) - 24 * 60 * 60))] = result
-        # 每月情绪特征，从当前日期往前推5月展示 原创微博数、评论数、转发数、敏感微博数
+        # 每月情绪特征，从当前日期往前推5月展示 积极微博数，中性微博数，消极微博数
         if n_type == "月":
             date_dict = {}
             for i in range(5):
                 date_dict[i + 1] = (datetime.datetime.now() + datetime.timedelta(days=(-30 * (i + 1)))).timestamp()
             date_dict[0] = time.time()
             for i in range(5):
-                result = UserBehavior.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
+                result = UserSentiment.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
                                                      timestamp__lt=date_dict[i]).aggregate(positive_s=Sum("positive"), nuetral_s=Sum("nuetral"),
                                       negtive_s=Sum("negtive"))
-                if list(result.values())[0]:
+                if list(result.values())[0] or list(result.values())[1] or list(result.values())[2]:
+                    res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i]) - 24 * 60 * 60))] = result
+        return JsonResponse(res_dict)
+
+class User_Influence(APIView):
+    """用户影响力特征接口"""
+
+    def get(self, request):
+        """
+        获取uid，返回用户影响力特征详情，根据传入参数n_type 日 周 月 返回相应数据结果，
+        返回数据格式{date1:{positive_s:10,nuetral_s:20,negtive_s:30},
+                    date2:{positive_s:10,nuetral_s:20,negtive_s:30},
+                    ...}
+        """
+        uid = request.GET.get('uid')
+        n_type = request.GET.get('n_type')
+        print (uid)
+        print (NewUserInfluence.objects.filter(uid=uid).exists())
+        res_dict = {}
+        # 每日影响力特征，从当前日期往前推7天展示 影响力 活跃度 重要度 敏感度
+        if n_type == "日":
+            new_date = (datetime.datetime.now() + datetime.timedelta(days=-7)).timestamp()
+            result = NewUserInfluence.objects.filter(uid=uid, timestamp__gte=new_date).values(
+                "timestamp","influence","importance","sensitity","activity")
+            for item in result:
+                t = item.pop("timestamp") - 24 * 60 * 60
+                res_dict[time.strftime("%Y-%m-%d", time.localtime(t))] = item
+        # 每周影响力特征，从当前日期往前推5周展示
+        if n_type == "周":
+            date_dict = {}
+            for i in range(5):
+                date_dict[i + 1] = (datetime.datetime.now() + datetime.timedelta(weeks=(-1 * (i + 1)))).timestamp()
+            date_dict[0] = time.time()
+            for i in range(5):
+                print (date_dict[i + 1],date_dict[i])
+                result =NewUserInfluence.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
+                                                      timestamp__lt=date_dict[i]).aggregate(
+                    influence=Avg("influence"), importance=Avg("importance"),
+                    sensitity=Avg("sensitity"),activity=Avg("activity"))
+                if list(result.values())[0] or list(result.values())[1] or list(result.values())[2]:
+                    res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i]) - 24 * 60 * 60))] = result
+        # 每月情绪特征，从当前日期往前推5月展示
+        if n_type == "月":
+            date_dict = {}
+            for i in range(5):
+                date_dict[i + 1] = (datetime.datetime.now() + datetime.timedelta(days=(-30 * (i + 1)))).timestamp()
+            date_dict[0] = time.time()
+            for i in range(5):
+                result = NewUserInfluence.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
+                                                      timestamp__lt=date_dict[i]).aggregate(
+                    influence=Avg("influence"), importance=Avg("importance"),
+                    sensitity=Avg("sensitity"),activity=Avg("activity"))
+                if list(result.values())[0] or list(result.values())[1] or list(result.values())[2]:
                     res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i]) - 24 * 60 * 60))] = result
         return JsonResponse(res_dict)

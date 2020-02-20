@@ -8,11 +8,14 @@
 @file: SentimentalPolarities.py
 """
 
+import sys
 import re
 import numpy as np
 import jieba
 import pickle
 import joblib
+sys.path.append("../../")
+from Config.db_utils import es, pi_cur, conn
 
 
 # 对得到的微博文本进行去除链接、符号、空格等操作
@@ -77,13 +80,13 @@ def get_vector(text, word_dic):
         return article_vector
 
 
-def triple_classifier(mid, weibo, weibo_dic, l_m):
+def triple_classifier(mid, weibo, weibo_dic, l_m, SENTIMENT_POS, SENTIMENT_NEG):
     X = [get_vector(i, weibo_dic) for i in weibo]
     result = {}
     for i, j in zip(l_m.predict_proba(X),mid):
-        if i[1] < 0.2:
+        if i[1] < SENTIMENT_NEG:
             result[j] = '-1'
-        elif i[1] > 0.7:
+        elif i[1] > SENTIMENT_POS:
             result[j] = '1'
         else:
             result[j] = '0'
@@ -91,14 +94,14 @@ def triple_classifier(mid, weibo, weibo_dic, l_m):
 
 
 # 情感极性计算
-def sentiment_polarities(data):
+def sentiment_polarities(data, SENTIMENT_POS, SENTIMENT_NEG):
     mid, cut_list = data_process(data)
     # 加载词向量
     with open('../profile_cal/sentiment_model_data/weibo_vector.pkl', 'rb') as f:
         weibo_dic = pickle.load(f)
     # 加载模型
     l_m = joblib.load('../profile_cal/sentiment_model_data/sentiment_logical.model')
-    result = triple_classifier(mid, cut_list, weibo_dic, l_m)
+    result = triple_classifier(mid, cut_list, weibo_dic, l_m, SENTIMENT_POS, SENTIMENT_NEG)
     return result
 
 
