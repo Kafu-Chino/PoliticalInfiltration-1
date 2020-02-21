@@ -18,12 +18,12 @@ from Config.db_utils import es, pi_cur, conn
 
 cursor = pi_cur()
 
-geo_list=['北京','天津','重庆','上海','河北','山西','辽宁','吉林','黑龙江','江苏','浙江','安徽','福建','江西','山东','河南','湖北','湖南','广东','海南','四川','贵州','云南','陕西','甘肃','青海','台湾','内蒙古','广西','西藏','宁夏','新疆','香港','澳门']
+#geo_list=['北京','天津','重庆','上海','河北','山西','辽宁','吉林','黑龙江','江苏','浙江','安徽','福建','江西','山东','河南','湖北','湖南','广东','海南','四川','贵州','云南','陕西','甘肃','青海','台湾','内蒙古','广西','西藏','宁夏','新疆','香港','澳门']
 thedate = datetime.date.today()
 def event_analyze(index_name,e_id,date=thedate):
     #end_time = int(time.mktime(datetime.date.today().timetuple()))
     #start_time = end_time - 24 * 60 * 60
-    td = date + " 00:00:00"
+    td = str(date) + " 00:00:00"
     data_dict = defaultdict(list)
     sdata_dict = defaultdict(list)
     idata_dict = defaultdict(list)
@@ -135,9 +135,11 @@ def event_analyze(index_name,e_id,date=thedate):
                             "hot_index":all_json,
                             "sensitive_index":sensitive_json,
                             "negative_index":negative_json,
+                            "geo_inland":in_json,
+                            "geo_outland":out_json,
                             "user_count":user_count,
                             "weibo_count":weibo_count,
-                            "into_date":thedate}
+                            "into_date":date}
     sql_insert_many(cursor, "Event_Analyze", "e_id", analyze_dict)
 
 
