@@ -57,7 +57,7 @@ def querry(e_index,start_es,end_es):
 
 def get_notsensitive_word(e_id):
     cusor = pi_cur()
-    sql = 'select prototype from SensitiveWord where e_id = %s and perspective_bias = 1'%e_id
+    sql = "select prototype from SensitiveWord where e_id = '{}' and perspective_bias = 1".format(e_id)
     cusor.execute(sql)
     results = cusor.fetchall()
     with open('not_sensitive_word.txt','w',encoding='utf-8') as wf:

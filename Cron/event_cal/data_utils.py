@@ -59,11 +59,10 @@ def sql_insert_many(cursor, table_name, primary_key, data_dict):
 
 
 def get_event_info(e_id):
-    sql = "select keywords_dict,begin_date,end_date,es_index_name from Event where e_id = %s"%e_id
-    db = conn
-    cusor = db.cursor()
-    cusor.execute(sql)
-    results = cusor.fetchall()[0]
+    sql = "select keywords_dict,begin_date,end_date,es_index_name from Event where e_id = '{}'".format(e_id)
+    cursor = pi_cur()
+    cursor.execute(sql)
+    results = cursor.fetchall()[0]
     return results['keywords_dict'],results['begin_date'],results['end_date'],results['es_index_name']
 
 def getEveryDay(begin_date,end_date):
