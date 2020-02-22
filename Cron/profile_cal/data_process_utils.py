@@ -24,10 +24,12 @@ def weibo_move(field_dict):
         text_list = defaultdict(list)
         for k,v in field_dict.items():
             for item in v:
+                #print(item)
                 result = Weibo_utils()
-                result.remove_c_t(item)
+                text1 = result.remove_c_t(item)
                 text = result.remove_nochn(item)
-                text_list[k].append(text)
+                #print(text)
+                text_list[k].append(text1)
                 text_dict[k].append(jieba.lcut(text,cut_all=False))
         return text_list,text_dict
     else:

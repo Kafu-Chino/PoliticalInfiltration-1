@@ -87,7 +87,7 @@ def get_user_topic(word_dict,date):
     #print("获取概率花费：",time3-time1)
     for k in word_dict.keys():
         topic_json = json.dumps(topic_p[k])
-        user_topic["%s_%s" % (str(int(time.time())), k)]={"uid": k,
+        user_topic["%s_%s" % (str(ts), k)]={"uid": k,
                                                           "timestamp": ts,
                                                           "topics":topic_json,
                                                           "store_date":date}
