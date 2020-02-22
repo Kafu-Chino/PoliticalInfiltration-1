@@ -60,7 +60,7 @@ def profile_cal_uidlist(uidlist,n):
         # cal_user_emotion(text_dict,date)
 
         # 影响力特征（英汉）
-        # influence_total(date,uidlist,word_dict,date_data)
+        # influence_total(date,uidlist,word_dict,date_data,index)
         #
         # # 社交特征（梦丽）
         # get_user_social(date_data,date)
