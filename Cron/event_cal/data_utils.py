@@ -309,7 +309,7 @@ def get_event_data(e_index, start_date, end_date):
     if end_date == None:
         end_ts = time.time()
     else:
-        end_ts = date2ts(str(end_date))
+        end_ts = date2ts(str(end_date)) + 86400
 
     query_body = {
         "query": {
