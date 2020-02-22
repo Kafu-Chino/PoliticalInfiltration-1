@@ -85,8 +85,9 @@ def event_cal_main(info, n, start_date, end_date):
 
 
 def main():
-    pass
-
+    data_dict = get_event_data("weibo_all", "2019-08-20", "2019-08-20")
+    print(len(data_dict["2019-08-20"]))
+    event_hashtag_senwords("xianggangshijian_1581919160", data_dict["2019-08-20"], "2019-08-20")
 
 if __name__ == '__main__':
     main()
