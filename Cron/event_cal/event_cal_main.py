@@ -49,35 +49,37 @@ def event_cal_main(info, n, start_date, end_date):
 
     print('获取事件相关微博')
     # 获取事件相关微博，计算情感极性，并存入事件索引（没有索引就创建一个）
-    save_event_data(e_id, n, SENTIMENT_POS, SENTIMENT_NEG)
+    # save_event_data(e_id, n, SENTIMENT_POS, SENTIMENT_NEG)
 
     print('敏感词过滤')
     # 对新获取的事件相关微博进行敏感词过滤
-    data_dict = sensitive_word_filter(n, e_id)
+    # data_dict = sensitive_word_filter(n, e_id)
 
     print('敏感词过滤')
     # 对过滤后的结果进行敏感计算
-    data_dict = sensitivity(e_id, data_dict, e_index, POS_NUM, NEG_NUM)
+    # data_dict = sensitivity(e_id, data_dict, e_index, POS_NUM, NEG_NUM)
+    # print(data_dict)
 
-    print('敏感信息入库')
-    # 敏感信息入库,敏感信息和事件关联入库
-    sensitivity_store(data_dict)
-    event_sensitivity(e_id, data_dict)
+    # if data_dict != {}:
+    #     print('敏感信息入库')
+    #     # 敏感信息入库,敏感信息和事件关联入库
+    #     sensitivity_store(data_dict)
+    #     event_sensitivity(e_id, data_dict)
 
-    print('敏感人物入库')
-    # 敏感人物入库,敏感人物和事件关联入库
-    figure_add(data_dict, e_id)
+    #     print('敏感人物入库')
+    #     # 敏感人物入库,敏感人物和事件关联入库
+    #     figure_add(data_dict, e_id)
 
     print('事件计算')
     # 获取微博文本数据进行分析
-    data_dict = get_event_data(e_index, start_date, end_date)
+    # data_dict = get_event_data(e_index, start_date, end_date)
 
     # 事件态势分析
-    event_analyze(e_index, e_id)
+    # event_analyze(e_index, e_id)
 
-    for date in data_dict:
-        # 事件语义分析
-        event_semantic(e_id, e_name, data_dict[date], date, WEIBO_NUM)
+    # for date in data_dict:
+    #     # 事件语义分析
+    #     event_semantic(e_id, e_name, data_dict[date], date, WEIBO_NUM)
 
 
 def main():

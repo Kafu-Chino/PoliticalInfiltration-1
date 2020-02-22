@@ -45,7 +45,7 @@ def event_add():
         event_cal_main(e_item, 0, start_date, end_date)
 
         # 更新为“计算完成”
-        update_cal_status(e_id, 2)
+        update_cal_status([e_item], 2)
 
         # 更新为“监测中”
         update_monitor_status(e_id, 1)

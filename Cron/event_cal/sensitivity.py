@@ -53,7 +53,7 @@ def jinghua(text1):
 # 数据处理
 def data_process(data):
     # 输入dict{mid:text}
-    for mid in data.items():
+    for mid in data:
         data[mid]['text'] = jinghua(data[mid]['text'])
     return data
 
@@ -61,13 +61,13 @@ def data_process(data):
 # 转换bert向量
 def bert_vec(texts):
     with BertClient(port=5555, port_out=5556) as bc:
-        vec = bc.encode(list(texts))
+        vec = bc.encode(texts)
         vec = list(vec)
     return vec
 
 
 def ANN_cal(e_id, vec, y):
-    index = ngtpy.Index('ANN_data/'+str(e_id)+'.anng')
+    index = ngtpy.Index(str(e_id)+'.anng')
     label = []
     for i in vec:
         results = index.search(i, size=8)
@@ -93,8 +93,8 @@ def ANN_cal(e_id, vec, y):
 
 
 def create_ANN(e_id, pos_data, neg_data):
-    ngtpy.create(path='ANN_data/'+str(e_id)+'.anng', dimension=768, distance_type="L2")
-    index = ngtpy.Index('ANN_data/'+str(e_id)+'.anng')
+    ngtpy.create(path=str(e_id)+'.anng', dimension=768, distance_type="L2")
+    index = ngtpy.Index(str(e_id)+'.anng')
     nX1 = np.array(list(pos_data['vec']))
     nX2 = np.array(list(neg_data['vec']))
     objects = np.concatenate((nX1, nX2))
@@ -125,7 +125,7 @@ def get_pos_data(e_id, POS_NUM):
         pos_data = pd.read_pickle(e_id+'.pkl')
     else:
         pos_data = pd.DataFrame(columns=('mid', 'vec'))
-        mid, texts = get_pos(POS_NUM)
+        mid, texts = get_pos(int(POS_NUM))
         pos_data['mid'] = mid
         pos_data['vec'] = bert_vec(texts)
         pos_data.to_pickle(e_id+'.pkl')
@@ -133,6 +133,7 @@ def get_pos_data(e_id, POS_NUM):
 
 
 def get_neg_data(e_index, NEG_NUM):
+    NEG_NUM = int(NEG_NUM)
     query_body = {
         'query': {
             'match_all': {}
@@ -148,6 +149,7 @@ def get_neg_data(e_index, NEG_NUM):
     neg_data = pd.DataFrame(columns=('mid', 'vec'))
     mid = []
     vec = []
+    es_result = list(es_result)
     if len(es_result) > 100000:
         index_list = set(np.random.choice(range(len(es_result)),size=NEG_NUM,replace=False))
         for index, item in enumerate(es_result):
@@ -177,7 +179,7 @@ def sensitivity(e_id,data,e_index,POS_NUM,NEG_NUM):
     neg_data = get_neg_data(e_index,NEG_NUM)
     y = create_ANN(e_id, pos_data, neg_data)
     label = ANN_cal(e_id, vec, y)
-    for i, j in zip(data.keys(), label):
+    for i, j in zip(list(data.keys()), label):
         if j == 0:
             del data[i]
     return data
