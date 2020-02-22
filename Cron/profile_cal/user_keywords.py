@@ -53,7 +53,7 @@ def get_user_keywords(text_list,word_dict,date, keywords_num=5):
     user_kw={}
     keywords_dict=defaultdict(dict)
     text_all=""
-    thedate = datetime.date.today()
+    #thedate = datetime.date.today()
     tr4w = TextRank4Keyword()
     #time11 = time.time()
     td = date + " 00:00:00"
@@ -65,6 +65,7 @@ def get_user_keywords(text_list,word_dict,date, keywords_num=5):
                 RE = re.compile(r'#([a-zA-Z-_⺀-⺙⺛-⻳⼀-⿕々〇〡-〩〸-〺〻㐀-䶵一-鿃豈-鶴侮-頻並-龎]+)#', re.UNICODE)
                 #print(RE.findall(text))
                 #RE = re.compile(u"#.[\u4e00-\u9fa5]+#")
+                #print(text)
                 ht = RE.findall(text.encode('utf-8').decode('utf-8'))
                 if len(ht):
                     for h in ht:
@@ -81,6 +82,7 @@ def get_user_keywords(text_list,word_dict,date, keywords_num=5):
                         keywords_dict[k][item['word']] = item['weight']
                 #print(json.dumps(keywords_dict[k],ensure_ascii=False))
         hastag_dict[k] = hastag
+        #print(hastag)
         #keywords_dict[k] = keywords
     #print(hastag_dict)
     #time22 = time.time()
@@ -101,7 +103,7 @@ def get_user_keywords(text_list,word_dict,date, keywords_num=5):
         hastag_json = json.dumps(hastag_dict[k],ensure_ascii=False)
         #if len(stw_dict):
         stw_json = json.dumps(stw_dict[k],ensure_ascii=False)
-        user_kw["%s_%s" % (str(int(time.time())), k)]={"uid": k,
+        user_kw["%s_%s" % (str(ts), k)]={"uid": k,
                                                         "timestamp": ts,
                                                         "keywords":keyword_json,
                                                         "hastags":hastag_json,

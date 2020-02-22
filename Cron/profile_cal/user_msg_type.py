@@ -33,7 +33,7 @@ def get_msg_type_aggs(data_dict,date):
         behavior_dict["uid"] = uid
         behavior_dict["store_date"] = date
         #print(behavior_dict)
-        user_behavior_dict["%s_%s" % (str(int(time.time())), uid)] = behavior_dict
+        user_behavior_dict["%s_%s" % (str(ts), uid)] = behavior_dict
     sql_insert_many(cursor, "UserBehavior", "ub_id", user_behavior_dict)
 
     #return user_behavior_dict
