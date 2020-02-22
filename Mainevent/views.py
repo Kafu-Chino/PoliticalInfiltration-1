@@ -8,7 +8,7 @@ from django.core import serializers
 from django.db.models import Q
 
 from Config.time_utils import *
-from Mainevent.models import Event_Analyze, Event, Figure, Information
+from Mainevent.models import Event_Analyze, Event, Figure, Information, Event_Hashtag_Senwords
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from Systemmanage.models import SensitiveWord
 from rest_framework.views import APIView
@@ -501,3 +501,33 @@ class Person_show(APIView):
             }
             results.append(dic)
         return JsonResponse(results, safe=False)
+
+class Event_Spetial(APIView):
+    def get(self, request):
+        e_id = request.GET.get('e_id')
+
+        results = Event_Hashtag_Senwords.objects.filter(e_id=e_id, show_status=1)
+
+        result = {
+            'hashtag':{},
+            'global_senword':{},
+            'event_senword':{}
+        }
+        if results.exists():
+            hashtag = results[0].hashtag
+            global_senword = results[0].global_senword
+            event_senword = results[0].event_senword
+
+            hashtag = sorted(hashtag.items(), key=lambda x:x[1], reverse=True)[:100]
+            global_senword = sorted(global_senword.items(), key=lambda x:x[1], reverse=True)[:10]
+            event_senword = sorted(event_senword.items(), key=lambda x:x[1], reverse=True)[:10]
+
+            hashtag = {item[0]: item[1] for item in hashtag}
+            global_senword = {item[0]: item[1] for item in global_senword}
+            event_senword = {item[0]: item[1] for item in event_senword}
+
+            result['hashtag'] = hashtag
+            result['global_senword'] = global_senword
+            result['event_senword'] = event_senword
+
+        return JsonResponse(result, safe=False)

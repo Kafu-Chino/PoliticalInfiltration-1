@@ -95,8 +95,8 @@ def ANN_cal(e_id, vec, y):
 def create_ANN(e_id, pos_data, neg_data):
     ngtpy.create(path='ANN_data/'+str(e_id)+'.anng', dimension=768, distance_type="L2")
     index = ngtpy.Index('ANN_data/'+str(e_id)+'.anng')
-    nX1 = np.array(list(pos_data['vector']))
-    nX2 = np.array(list(neg_data['vector']))
+    nX1 = np.array(list(pos_data['vec']))
+    nX2 = np.array(list(neg_data['vec']))
     objects = np.concatenate((nX1, nX2))
     index.batch_insert(objects)
     index.build_index()
@@ -170,6 +170,7 @@ def get_neg_data(e_index, NEG_NUM):
 
 
 def sensitivity(e_id,data,e_index,POS_NUM,NEG_NUM):
+    data = dict_slice(data,0,1)
     data = data_process(data)
     vec = bert_vec([i['text'] for i in data.values()])
     pos_data = get_pos_data(e_id,POS_NUM)
@@ -180,3 +181,22 @@ def sensitivity(e_id,data,e_index,POS_NUM,NEG_NUM):
         if j == 0:
             del data[i]
     return data
+
+
+
+
+
+
+
+
+
+def dict_slice(ori_dict, start, end):
+    """
+    字典类切片
+    :param ori_dict: 字典
+    :param start: 起始
+    :param end: 终点
+    :return:
+    """
+    slice_dict = {k: ori_dict[k] for k in list(ori_dict.keys())[start:end]}
+    return slice_dict

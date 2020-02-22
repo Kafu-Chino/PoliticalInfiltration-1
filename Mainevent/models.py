@@ -84,3 +84,15 @@ class Event_Semantic(models.Model):
     into_date = models.DateField(blank=True, null=True)
     class Meta():
         db_table = 'Event_Semantic'
+
+class Event_Hashtag_Senwords(models.Model):
+    ehs_id = models.CharField(max_length=100, primary_key=True)
+    e_id = models.CharField(max_length=100, blank=True, null=True)
+    hashtag = JSONField()
+    global_senword = JSONField()
+    event_senword = JSONField()
+    timestamp = models.BigIntegerField(blank=True, null=True)
+    into_date = models.DateField(blank=True, null=True)
+    show_status = models.IntegerField(default=0)
+    class Meta():
+        db_table = 'Event_Hashtag_Senwords'
