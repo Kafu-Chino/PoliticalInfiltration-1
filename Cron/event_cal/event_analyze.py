@@ -64,8 +64,9 @@ def event_analyze(index_name,e_id,date=thedate):
     weibo_count = 0
     user_list ={}
     user_count = 0
-    pattern1 = re.compile(r'(\u9999\u6e2f|\u6fb3\u95e8|\u5b81\u590f|\u5e7f\u897f|\u65b0\u7586|\u897f\u85cf|\u5185\u8499\u53e4|\u9ed1\u9f99\u6c5f)')
-    pattern2 = re.compile(r'([\u4e00-\u9fa5]{2,5}?(\u7701|\u5e02|\u81ea\u6cbb\u533a))')  #\u7701省   \u5e02市     \u81ea\u6cbb\u533a自治区
+    pattern = re.compile(r'(\u4e2d\u56fd)')
+    #pattern1 = re.compile(r'(\u9999\u6e2f|\u6fb3\u95e8|\u5b81\u590f|\u5e7f\u897f|\u65b0\u7586|\u897f\u85cf|\u5185\u8499\u53e4|\u9ed1\u9f99\u6c5f)')
+    #pattern2 = re.compile(r'([\u4e00-\u9fa5]{2,5}?(\u7701|\u5e02|\u81ea\u6cbb\u533a))')  #\u7701省   \u5e02市     \u81ea\u6cbb\u533a自治区
     for item in r:
         weibo_count += 1
         day = item['_source']["time"][0:10]
@@ -79,7 +80,18 @@ def event_analyze(index_name,e_id,date=thedate):
             user_list[item['_source']["uid"]] = 1
         except:
             continue
-        
+        k = pattern.match(item['_source']["geo"])
+        if k is None:
+            try:
+                out_dict[item['_source']["geo"]] += 1
+            except:
+                out_dict[item['_source']["geo"]] = 1
+        else:
+            try:
+                in_dict[item['_source']["geo"]] += 1
+            except:
+                in_dict[item['_source']["geo"]] = 1
+        '''
         #print(item['_source']["geo"])
         k1 = pattern1.match(item['_source']["geo"])
         if k1 is None:
@@ -109,6 +121,7 @@ def event_analyze(index_name,e_id,date=thedate):
                 in_dict[k1.group()] += 1
             except:
                 in_dict[k1.group()] = 1
+            '''
     user_count = len(user_list.keys())
     #print(user_count,weibo_count)
     #thedate = datetime.date.today()
