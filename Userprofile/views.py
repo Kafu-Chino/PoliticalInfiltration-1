@@ -89,42 +89,49 @@ class User_Behavior(APIView):
         """
         uid = request.GET.get('uid')
         n_type = request.GET.get('n_type')
+        date = request.GET.get('date')
         res_dict = {}
+        t=datetime.datetime.strptime(date+ " 23:59:59", '%Y-%m-%d %H:%M:%S')
+        #t = time.mktime(time.strptime(date, '%Y-%m-%d'))
         # 每日活动特征，从当前日期往前推7天展示 原创微博数、评论数、转发数、敏感微博数
         if n_type == "日":
-            new_date = (datetime.datetime.now() + datetime.timedelta(days=-7)).timestamp()
-            result = UserBehavior.objects.filter(uid=uid, timestamp__gte=new_date).values(
-                "timestamp").annotate(originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"),
+            new_date = (t + datetime.timedelta(days=-7)).timestamp()
+            result = UserBehavior.objects.filter(uid=uid, timestamp__gte=new_date,timestamp__lte=t.timestamp()).values(
+                "store_date").annotate(originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"),
                                       retweetnum_s=Sum("retweetnum"), sensitivenum_s=Sum("sensitivenum"))
-            for item in result:
-                t = item.pop("timestamp") - 24 * 60 * 60
-                res_dict[time.strftime("%Y-%m-%d", time.localtime(t))] = item
+            if result.exists():
+                for item in result:
+                    td = item["store_date"]  #pop("timestamp") - 24 * 60 * 60
+                    #res_dict[time.strftime("%Y-%m-%d", time.localtime(t))] = item
+                    res_dict[str(td)] = item
+            else:
+                return JsonResponse({"status":400, "error": "未找到该用户活动信息"},safe=False,json_dumps_params={'ensure_ascii':False}) 
         # 每周活动特征，从当前日期往前推5周展示 原创微博数、评论数、转发数、敏感微博数
         if n_type == "周":
             date_dict = {}
             for i in range(5):
-                date_dict[i + 1] = (datetime.datetime.now() + datetime.timedelta(weeks=(-1 * (i + 1)))).timestamp()
-            date_dict[0] = time.time()
+                date_dict[i + 1] = (t + datetime.timedelta(weeks=(-1 * (i + 1)))).timestamp()
+            date_dict[0] = t.timestamp()
             for i in range(5):
                 result = UserBehavior.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
                                                      timestamp__lt=date_dict[i]).aggregate(
                     originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"), retweetnum_s=Sum("retweetnum"),
                     sensitivenum_s=Sum("sensitivenum"))
                 if list(result.values())[0]:
-                    res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i]) - 24 * 60 * 60))] = result
+                    res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result
         # 每月活动特征，从当前日期往前推5月展示 原创微博数、评论数、转发数、敏感微博数
         if n_type == "月":
             date_dict = {}
             for i in range(5):
-                date_dict[i + 1] = (datetime.datetime.now() + datetime.timedelta(days=(-30 * (i + 1)))).timestamp()
-            date_dict[0] = time.time()
+                date_dict[i + 1] = (t + datetime.timedelta(days=(-30 * (i + 1)))).timestamp()
+            date_dict[0] = t.timestamp()
             for i in range(5):
                 result = UserBehavior.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
                                                      timestamp__lt=date_dict[i]).aggregate(
                     originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"), retweetnum_s=Sum("retweetnum"),
                     sensitivenum_s=Sum("sensitivenum"))
                 if list(result.values())[0]:
-                    res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i]) - 24 * 60 * 60))] = result
+                    res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result
         return JsonResponse(res_dict)
 
 
@@ -144,22 +151,24 @@ class User_Activity(APIView):
         """
         uid = request.GET.get('uid')
         n_type = request.GET.get('n_type') if request.GET.get('n_type') else 3
+        date = request.GET.get('date')
+        t=datetime.datetime.strptime(date+ " 23:59:59", '%Y-%m-%d %H:%M:%S')
         res_dict = {}
-        cal_date = (datetime.datetime.now() + datetime.timedelta(days=-30)).timestamp()
+        cal_date = (t + datetime.timedelta(days=-30)).timestamp()
         if n_type == 1:
-            cal_date = (datetime.datetime.now() + datetime.timedelta(days=-1)).timestamp()
+            cal_date = (t + datetime.timedelta(days=-1)).timestamp()
         elif n_type == 2:
-            cal_date = (datetime.datetime.now() + datetime.timedelta(days=-7)).timestamp()
+            cal_date = (t + datetime.timedelta(days=-7)).timestamp()
         elif n_type == 3:
-            cal_date = (datetime.datetime.now() + datetime.timedelta(days=-30)).timestamp()
+            cal_date = (t + datetime.timedelta(days=-30)).timestamp()
         elif n_type == 4:
-            cal_date = (datetime.datetime.now() + datetime.timedelta(days=-90)).timestamp()
+            cal_date = (t + datetime.timedelta(days=-90)).timestamp()
 
-        day_result = UserActivity.objects.filter(uid=uid, timestamp__gte=cal_date).values("geo", "send_ip").annotate(
+        day_result = UserActivity.objects.filter(uid=uid, timestamp__gte=cal_date,timestamp__lte=t.timestamp()).values("geo", "send_ip").annotate(
             statusnum_s=Sum("statusnum"), sensitivenum_s=Sum("sensitivenum")).order_by("-sensitivenum_s")
         res_dict["day_result"] = list(day_result)
         # 活动轨迹部分，如展示有问题可去掉
-        geo_dict = UserActivity.objects.filter(uid=uid, timestamp__gte=cal_date).values("timestamp", "geo").annotate(
+        geo_dict = UserActivity.objects.filter(uid=uid, timestamp__gte=cal_date,timestamp__lte=t.timestamp()).values("timestamp", "geo").annotate(
             statusnum_s=Sum("statusnum"))
         route_dict = defaultdict(dict)
         for item in geo_dict:
@@ -187,9 +196,12 @@ class User_Activity(APIView):
         res_dict["route_list"] = route_list
 
         # 热度展示
+        '''
         geo_map_result = UserActivity.objects.filter(uid=uid, timestamp__gte=cal_date).values("geo").annotate(
-            statusnum_s=Sum("statusnum")).order_by("-statusnum_s")
+            statusnum_s=Sum("statusnum"),sensitivenum_s=Sum("sensitivenum")).order_by("-sensitivenum_s")
         res_dict["geo_map_result"] = list(geo_map_result)
+        '''
+
 
         return JsonResponse(res_dict)
 
@@ -410,9 +422,14 @@ class Show_figure(APIView):
     def get(self, request):
         """展示人物,该文档返回Figure表中存在的需要展示的数据，返回字段f_id为用户账号，nick_name为昵称
           fansnum粉丝数,friendsnum关注数,event_count为参与事件数，info_count为敏感信息数,user_location地点"""
-        result = Figure.objects.all()  #values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')
+        #result = Figure.objects.all()  #values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')
         limit = request.GET.get("limit")
         page_id = request.GET.get('page_id')
+        if page_id is None:
+            page_id = 1
+        if limit is None:
+            limit = 10
+        result = Figure.objects.all()[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
         res_list = []
         if result.exists():
             for item in result:
@@ -421,15 +438,16 @@ class Show_figure(APIView):
                 #sdate = item.begin_date.strftime('%Y-%m-%d %H:%M:%S')
                 #edate = item.end_date.strftime('%Y-%m-%d %H:%M:%S')
                 fid = item.f_id
-                res_event = Figure.objects.get(f_id=fid).event.all()
-                for e in res_event:
+                event_count = Figure.objects.get(f_id=fid).event.all().count()
+                #for e in res_event:
                     #print(e)
-                    event_count += 1
+                    #event_count += 1
                 #info_count = len(Information.objects.filter(uid=fid))
-                res_info = Information.objects.filter(uid=fid)
-                for i in res_info:
-                    info_count += 1
+                info_count = Information.objects.filter(uid=fid).count()
+                #for i in res_info:
+                    #info_count += 1
                 res_list.append({"f_id":fid,"nick_name":item.nick_name,"fansnum":item.fansnum,'friendsnum':item.friendsnum,'create_at':item.create_at,'event_count':event_count,'info_count':info_count,'user_location':item.user_location})
+            '''
             page = Paginator(res_list, limit)
             if page_id:
                 try:
@@ -440,9 +458,10 @@ class Show_figure(APIView):
                     results = page.page(1)
             else:
                 results = page.page(1)
-            re = json.dumps(list(results),ensure_ascii=False)
-            re = json.loads(re)
-            return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False})
+            '''
+            #re = json.dumps(list(results),ensure_ascii=False)
+            #re = json.loads(re)
+            return JsonResponse(res_list,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "无人物"},safe=False)
 
@@ -583,7 +602,13 @@ class search_figure(APIView):
           fansnum粉丝数,friendsnum关注数,political政治倾向,domain领域,user_location地点"""
         info = request.GET.get("info")
         #results={}
-        result = Figure.objects.filter(Q(nick_name__contains = info) | Q(uid__contains = info)).values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')
+        limit = request.GET.get("limit")
+        page_id = request.GET.get('page_id')
+        if page_id is None:
+            page_id = 1
+        if limit is None:
+            limit = 10
+        result = Figure.objects.filter(Q(nick_name__contains = info) | Q(uid__contains = info)).values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
         if result.exists():
             #results["result"] = list(result)
             #print(type(results))
