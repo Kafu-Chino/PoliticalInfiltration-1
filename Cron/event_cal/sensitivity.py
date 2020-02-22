@@ -95,8 +95,8 @@ def ANN_cal(e_id, vec, y):
 def create_ANN(e_id, pos_data, neg_data):
     ngtpy.create(path='ANN_data/'+str(e_id)+'.anng', dimension=768, distance_type="L2")
     index = ngtpy.Index('ANN_data/'+str(e_id)+'.anng')
-    nX1 = np.array(list(pos_data['vector']))
-    nX2 = np.array(list(neg_data['vector']))
+    nX1 = np.array(list(pos_data['vec']))
+    nX2 = np.array(list(neg_data['vec']))
     objects = np.concatenate((nX1, nX2))
     index.batch_insert(objects)
     index.build_index()

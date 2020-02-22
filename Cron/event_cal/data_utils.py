@@ -119,7 +119,7 @@ def event_es_save(save,e_index):
     elasticsearch.helpers.bulk(es, actions=actions)
 
 
-def create_event_index():
+def create_event_index(e_index):
     event_data = {
         'settings': {
             'number_of_replicas': 0,
@@ -162,7 +162,7 @@ def create_event_index():
                     'geo': {
                         'type': 'keyword',
                     },
-                    'net_way': {
+                    'net_type': {
                         'type': 'text',
                         'index':True,
                     },
@@ -230,7 +230,7 @@ def create_event_index():
             },
         }
     }
-    result = es.indices.create(index='weibo_all', ignore=400, body=event_data)
+    result = es.indices.create(index=e_index, ignore=400, body=event_data)
     print(result)
 
 
@@ -264,11 +264,12 @@ def save_event_data(e_id, n, SENTIMENT_POS, SENTIMENT_NEG):
             save = []
             for message in messages:
                 message['sentiment_polarity'] = sentiment_dict[message['mid']]
+                message['source'] = '新浪'
                 save.append(message)
             if es.indices.exists(index=e_index):
                 event_es_save(save,e_index)
             else:
-                create_event_index()
+                create_event_index(e_index)
                 event_es_save(save, e_index)
 
 
@@ -303,8 +304,8 @@ def event_sensitivity(e_id,data_dict):
     conn.commit()
 
 
-# 时间计算时获取数据
-def get_event_data(e_index,start_date,end_date):
+# 事件计算时获取数据
+def get_event_data(e_index, start_date, end_date):
     start_ts = date2ts(str(start_date))
     if end_date == None:
         end_ts = time.time()
