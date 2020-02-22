@@ -35,21 +35,26 @@ def topic_tfidf():
 def get_p(train_dict,test_dict):
     result_p={}
     #train_new = []
-    p_dict=defaultdict(list)
+    p_dict=defaultdict(dict)
     #print(train_df)
     train_word = set(train_dict.keys())
     for k,v in test_dict.items():
+        result_p={}
         train_new = defaultdict(dict)
         test_word = set(v.keys())
         c_set = test_word & train_word
         #print(len(c_set))
         #print(c_set)
+        #print(v['count'])
         test_new = np.zeros(len(c_set))
         i = 0
         for n in c_set:
             train_new[n] = train_dict[n]
             test_new[i] = v[n]/v['count']
+            #print(v[n])
             i = i+1
+        #print(train_new)
+        #print(test_new)
         df = pd.DataFrame(train_new.values()).fillna(0)
         #print(df)
         df_m = np.dot(test_new,df.values)
@@ -59,6 +64,7 @@ def get_p(train_dict,test_dict):
             result_p[i] = df_m[j]
             j=j+1
         p_dict[k] = result_p
+    #print(p_dict)
     return p_dict
 
 
@@ -70,10 +76,11 @@ def get_user_topic(word_dict,date):
     #time2 = time.time()
     #print("读取topic花费：",time2-time1)
     #thedate = datetime.date.today()
-    td = date + " 00:00:00"
-    ta = time.strptime(td, "%Y-%m-%d %H:%M:%S")
-    ts = int(time.mktime(ta))
+    #td = date + " 00:00:00"
+    #ta = time.strptime(td, "%Y-%m-%d %H:%M:%S")
+    #ts = int(time.mktime(ta))
     #print(topic_dict)
+    ts = date.timestamp()
     user_topic={}
     topic_p= get_p(topic_dict,word_dict)
     #time3 = time.time()
@@ -104,6 +111,7 @@ def topic_domain_cal(uid_list,start_ts,end_ts,start_date=thatday,end_date=thedat
     #result1 = json.loads(result)
     for i in result:
         item = json.loads(i['wordcount'])
+        #print(item)
         #print(type(i[wordcount]))
         for k,v in item.items():
             try:

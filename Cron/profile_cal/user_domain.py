@@ -31,11 +31,12 @@ def domain_tfidf():
 
 #输入为训练字典已有文件中读出的权重字典和测试字典{uid:{词：词频} 
 def get_p(train_dict,test_dict):
-    result_p={}
-    p_dict=defaultdict(list)
+    
+    p_dict=defaultdict(dict)
     #print(train_df)
     train_word = set(train_dict.keys())
     for k,v in test_dict.items():
+        result_p={}
         train_new = defaultdict(dict)
         test_word = set(v.keys())
         c_set = test_word & train_word
