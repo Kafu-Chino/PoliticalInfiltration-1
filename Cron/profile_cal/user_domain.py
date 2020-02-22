@@ -63,15 +63,16 @@ def get_p(train_dict,test_dict):
 
 
 def get_user_domain(word_dict,date):
-    time1 = time.time()
+    #time1 = time.time()
     domain_dict = domain_tfidf()
-    time2 = time.time()
-    print("获取domain",time2-time1)
+    #time2 = time.time()
+    #print("获取domain",time2-time1)
     user_domain={}
-    thedate = datetime.date.today()
+    ts = date.timestamp()
+    #thedate = datetime.date.today()
     domain_p = get_p(domain_dict,word_dict)
-    time3 = time.time()
-    print("获取概率",time3-time2)
+    #time3 = time.time()
+    #print("获取概率",time3-time2)
     for k in word_dict.keys():
         domain_json = json.dumps(domain_p[k])
         if len(domain_p[k]):
@@ -79,8 +80,8 @@ def get_user_domain(word_dict,date):
             #print(md)
         else:
             md = "other"
-        user_domain["%s_%s" % (str(int(time.time())), k)]={"uid": k,
-                                                           "timestamp": int(time.time()),
+        user_domain["%s_%s" % (str(ts), k)]={"uid": k,
+                                                           "timestamp": ts,
                                                            "main_domain":md,
                                                            "domains":domain_json,
                                                            "store_date":date}

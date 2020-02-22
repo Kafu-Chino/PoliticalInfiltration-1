@@ -40,7 +40,7 @@ def get_user_activity_aggs(data_dict,date):
             #print(geo_dict[k])
             sensitivenum = Information.objects.filter(uid=uid, timestamp__gte=start_time,
                                                       timestamp__lt=end_time, geo=k).count()
-            user_activity_dict["%s_%s_%s" % (int(time.time()), uid, k)] = {"uid": uid,
+            user_activity_dict["%s_%s_%s" % (str(end_time), uid, k)] = {"uid": uid,
                                                                         "timestamp": end_time,
                                                                         "geo": k, "send_ip": None,
                                                                         "statusnum": statusnum,
