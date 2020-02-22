@@ -15,11 +15,10 @@ sys.path.append("../../")
 from Config.db_utils import es, pi_cur, conn
 import time
 from Config.time_utils import date2ts,today
-WEIBO_NUM = 100000
 cursor = pi_cur()
 
 
-#对得到的微博文本进行去除链接、符号、空格等操作
+# 对得到的微博文本进行去除链接、符号、空格等操作
 def weibo_move(data):
     if len(data):
         cut_list = []
@@ -60,7 +59,7 @@ class Weibo_utils:
 
 
 # 处理输入数据
-def data_process(data):
+def data_process(data, WEIBO_NUM):
     if len(data) > WEIBO_NUM:
         data = random.choices(data, k=WEIBO_NUM)
     # 预处理,分词
@@ -91,8 +90,8 @@ def lda_analyze(corpusTfidf, dictionary, num_topics=10, iterations=50, workers=6
 
 
 # 事件语义分析
-def event_semantic(e_id, e_name, data, thedate):
-    corpus_tfidf, dictionary = data_process(data)
+def event_semantic(e_id, e_name, data, thedate, WEIBO_NUM):
+    corpus_tfidf, dictionary = data_process(data, WEIBO_NUM)
     result = lda_analyze(corpus_tfidf, dictionary, num_topics=5)
     result = json.dumps(result)
     timestamp = date2ts(thedate)
