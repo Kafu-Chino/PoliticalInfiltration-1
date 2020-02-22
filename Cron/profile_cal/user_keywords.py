@@ -24,10 +24,11 @@ def sensitive_word():
 
 #输入为训练字典已有文件中读出的权重字典和测试字典{uid:{词：词频} 
 def get_p(train_dict,test_dict):
-    result_p={}
-    p_dict=defaultdict(list)
+    
+    p_dict=defaultdict(dict)
     train_word = set(train_dict.keys())
     for k,v in test_dict.items():
+        result_p={}
         test_word = set(v.keys())
         #for i,j in train_dict.items():
             #train_word = set(j.keys())
@@ -61,7 +62,7 @@ def get_user_keywords(text_list,word_dict,date, keywords_num=5):
     for k,v in text_list.items():
         for text in v:
             if isinstance(text, str):
-                RE = re.compile(u'#([a-zA-Z-_⺀-⺙⺛-⻳⼀-⿕々〇〡-〩〸-〺〻㐀-䶵一-鿃豈-鶴侮-頻並-龎]+)#', re.UNICODE)
+                RE = re.compile(r'#([a-zA-Z-_⺀-⺙⺛-⻳⼀-⿕々〇〡-〩〸-〺〻㐀-䶵一-鿃豈-鶴侮-頻並-龎]+)#', re.UNICODE)
                 #print(RE.findall(text))
                 #RE = re.compile(u"#.[\u4e00-\u9fa5]+#")
                 ht = RE.findall(text.encode('utf-8').decode('utf-8'))
