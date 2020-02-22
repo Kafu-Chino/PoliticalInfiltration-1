@@ -53,9 +53,14 @@ def jinghua(text1):
 # 数据处理
 def data_process(data):
     # 输入dict{mid:text}
-    for mid in data:
-        data[mid]['text'] = jinghua(data[mid]['text'])
-    return data
+    texts = []
+    for mid in list(data.keys()):
+        text = jinghua(data[mid]['text']).strip()
+        if text != '':
+            texts.append(text)
+        else:
+            del data[mid]
+    return data, texts
 
 
 # 转换bert向量
@@ -172,9 +177,9 @@ def get_neg_data(e_index, NEG_NUM):
 
 
 def sensitivity(e_id,data,e_index,POS_NUM,NEG_NUM):
-    data = dict_slice(data,0,1)
-    data = data_process(data)
-    vec = bert_vec([i['text'] for i in data.values()])
+    data = dict_slice(data,0,25)
+    data, texts = data_process(data)
+    vec = bert_vec(texts)
     pos_data = get_pos_data(e_id,POS_NUM)
     neg_data = get_neg_data(e_index,NEG_NUM)
     y = create_ANN(e_id, pos_data, neg_data)
