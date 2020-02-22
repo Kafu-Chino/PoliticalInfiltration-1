@@ -5,6 +5,7 @@ sys.path.append("../../")
 from Config.db_utils import get_event_para
 from Cron.event_cal.event_analyze import event_analyze
 from Cron.event_cal.event_semantic import event_semantic
+from Cron.event_cal.event_hashtag_senwords import event_hashtag_senwords
 from Cron.event_cal.data_utils import get_event_data, save_event_data, sensitivity_store, \
     event_sensitivity
 from Cron.event_cal.sensitive_word_filter import sensitive_word_filter
@@ -72,6 +73,9 @@ def event_cal_main(info, n, start_date, end_date):
     for date in data_dict:
         # 事件语义分析
         event_semantic(e_id, e_name, data_dict[date], date, WEIBO_NUM)
+
+        # 事件特殊分析（hashtag、敏感词分布）
+        event_hashtag_senwords(e_id, data, date)
 
 
 def main():
