@@ -238,8 +238,8 @@ def save_event_data(e_id, n, SENTIMENT_POS, SENTIMENT_NEG):
 
     if n==0:
         key_words,start_date,end_date,e_index = get_event_info(e_id)
-        if datetime.datetime.strptime(str(start_date), "%Y-%m-%d")<datetime.datetime.strptime(str(datetime.datetime.today() - datetime.timedelta(days=20))[:10],"%Y-%m-%d"):
-            start_date = datetime.datetime.strptime(str(datetime.datetime.today() - datetime.timedelta(days=20))[:10],"%Y-%m-%d")
+        # if datetime.datetime.strptime(str(start_date), "%Y-%m-%d")<datetime.datetime.strptime(str(datetime.datetime.today() - datetime.timedelta(days=20))[:10],"%Y-%m-%d"):
+        #     start_date = datetime.datetime.strptime(str(datetime.datetime.today() - datetime.timedelta(days=20))[:10],"%Y-%m-%d")
         key_words_list = key_words.split('、')
         if end_date == None:
             end_date = datetime.datetime.today()

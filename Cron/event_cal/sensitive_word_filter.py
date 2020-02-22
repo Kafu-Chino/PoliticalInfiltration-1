@@ -88,7 +88,7 @@ def sensitive_word_filter(n,e_id):
                 data_dict[message['mid']]['root_uid'] = message['root_uid']
                 data_dict[message['mid']]['root_mid'] = message['root_mid']
                 data_dict[message['mid']]['timestamp'] = message['timestamp']
-                data_dict[message['mid']]['send_ip'] = message['send_ip']
+                data_dict[message['mid']]['send_ip'] = message['ip']
                 data_dict[message['mid']]['geo'] = message['geo']
                 data_dict[message['mid']]['message_type'] = message['message_type']
                 data_dict[message['mid']]['source'] = message['source']

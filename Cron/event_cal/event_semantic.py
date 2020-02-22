@@ -22,7 +22,7 @@ cursor = pi_cur()
 def weibo_move(data):
     if len(data):
         cut_list = []
-        stopwords = set([line.strip() for line in open('stop_words.txt', 'r', encoding='utf-8').readlines()])
+        stopwords = set([line.strip() for line in open('../event_cal/stop_words.txt', 'r', encoding='utf-8').readlines()])
         for item in data:
             result = Weibo_utils()
             result.remove_c_t(item)
@@ -95,7 +95,7 @@ def event_semantic(e_id, e_name, data, thedate, WEIBO_NUM):
     result = lda_analyze(corpus_tfidf, dictionary, num_topics=5)
     result = json.dumps(result)
     timestamp = date2ts(thedate)
-    es_id = timestamp + e_id
+    es_id = str(timestamp) + e_id
     # sql = "insert into Event_Semantic set es_id=%s,e_id=%s,e_name=%s,topics=%s,timestamp=%s,into_date=%s" % (es_id,e_id,e_name,result,timestamp,thedate)
     sql = "insert into Event_Semantic values(%s,%s,%s,%s,%s,%s)"
     val = [(es_id,e_id,e_name,result,timestamp,thedate)]
