@@ -50,7 +50,7 @@ class UserKeyWord(models.Model):
 
 
 class UserActivity(models.Model):
-    ua_id = models.CharField(max_length=50, primary_key=True)
+    ua_id = models.CharField(max_length=100, primary_key=True)
     uid = models.CharField(max_length=30, blank=True, null=True)
     statusnum = models.IntegerField(blank=True, null=True)
     sensitivenum = models.IntegerField(blank=True, null=True)

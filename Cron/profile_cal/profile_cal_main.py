@@ -51,10 +51,10 @@ def profile_cal_uidlist(uidlist,n):
         word_dict, text_list, text_dict = get_processed_data(date_data, date)
 
         # 地域特征（文娟）
-        # result_position = get_user_activity_aggs(data)
+        # get_user_activity_aggs(data)
 
         # 活动特征（文娟）
-        # result_msg_type = get_msg_type_aggs(data)
+        # get_msg_type_aggs(date_data,date)
 
         # 情绪特征（中方）
         # cal_user_emotion(text_dict,date)
@@ -63,7 +63,7 @@ def profile_cal_uidlist(uidlist,n):
         # influence_total(date,uidlist,word_dict,date_data)
         #
         # # 社交特征（梦丽）
-        get_user_social(date_data,date)
+        # get_user_social(date_data,date)
         #
         #每星期计算一次
         dayOfWeek = datetime.datetime.strptime(date, "%Y-%m-%d").weekday()

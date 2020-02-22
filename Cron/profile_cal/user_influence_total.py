@@ -6,6 +6,8 @@ import json
 import math
 import time
 
+from Config.db_utils import es,conn,pi_cur
+
 # from influence.Config import *
 TOPIC_WEIGHT_DICT = {'topic_art': 0.2, 'topic_computer': 0.3*1, 'topic_economic': 0.5, \
                      'topic_education': 0.5, 'topic_environment': 0.3, 'topic_medicine': 0.3, \
@@ -88,6 +90,8 @@ def querry(field,root_uid,type,days):
             list.append(line['_source'])
         yield list
 
+def get_mid_list(uid_list):
+    cursor = pi_cur()
 def get_queue_index(timestamp):
     time_struc = time.gmtime(float(timestamp))
     hour = time_struc.tm_hour
@@ -111,7 +115,7 @@ def statistics(uid_list):
     uid_o_mid = {}
     for uid in uid_list:
         uid_o_mid[uid] = []
-    for list in querry("uid", uid_list, 1,30):
+    for list in querry("uid", uid_list, 1,1):
         for message in list:
             # if message['uid'] in uid_o_mid.keys():
             uid_o_mid[message['uid']].append((message['mid'], message['timestamp'], message['time']))

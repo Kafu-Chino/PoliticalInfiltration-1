@@ -12,4 +12,7 @@ urlpatterns = [
     path('esearch/',views.search_event.as_view()),
     path('related_info/',views.related_info.as_view()),
     path('related_figure/',views.related_figure.as_view()),
+    path('geo_out/',views.event_geo_out.as_view()),
+    path('geo_in/',views.event_geo_in.as_view()),
+    path('geo_info/',views.geo_info.as_view()),
 ]
