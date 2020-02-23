@@ -82,14 +82,13 @@ def event_cal_main(info, n, start_date, end_date):
         # 事件语义分析
         # event_semantic(e_id, e_name, data_dict[date], date, WEIBO_NUM)
 
-        # 事件特殊分析（hashtag、敏感词分布）
-        # event_hashtag_senwords(e_id, data_dict[date], date)
+    # 事件特殊分析（hashtag、敏感词分布）
+    # event_hashtag_senwords(e_id, data_dict, n)
 
 
 def main():
-    data_dict = get_event_data("weibo_all", "2019-08-20", "2019-08-20")
-    print(len(data_dict["2019-08-20"]))
-    event_hashtag_senwords("xianggangshijian_1581919160", data_dict["2019-08-20"], "2019-08-20")
+    data_dict = get_event_data("weibo_all", "2019-08-25", "2019-08-25")
+    event_hashtag_senwords("xianggangshijian_1581919160", data_dict, 1)
 
 if __name__ == '__main__':
     main()
