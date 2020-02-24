@@ -35,8 +35,11 @@ def getEveryDay(begin_date,end_date):
 # 批量计算用户
 def profile_cal_uidlist(uidlist,n):
     if n == 0:
-        end_date = datetime.datetime.today()
-        start_date = datetime.datetime.strptime(str(datetime.datetime.today() - datetime.timedelta(days=20))[:10],
+        # end_date = datetime.datetime.today()- datetime.timedelta(days=1)
+        # start_date = datetime.datetime.strptime(str(datetime.datetime.today() - datetime.timedelta(days=20))[:10],
+        #                                         "%Y-%m-%d")
+        end_date = '2019-08-15'
+        start_date = datetime.datetime.strptime(str(datetime.datetime.strptime(end_date,"%Y-%m-%d") - datetime.timedelta(days=1))[:10],
                                                 "%Y-%m-%d")
         date_list = getEveryDay(str(start_date)[:10], str(end_date)[:10])
     else:
@@ -44,14 +47,16 @@ def profile_cal_uidlist(uidlist,n):
         oneday = datetime.timedelta(days=1)
         yesterday = today - oneday
         date_list = [str(yesterday)[:10]]
+    print(date_list)
     for date in date_list:
         index = 'flow_text_'+ date
+        print(index)
         data = get_uidlist_data(uidlist,index)
         date_data = data[date]
         word_dict, text_list, text_dict = get_processed_data(date_data, date)
 
         # 地域特征（文娟）
-        # get_user_activity_aggs(data)
+        # get_user_activity_aggs(date_data,date)
 
         # 活动特征（文娟）
         # get_msg_type_aggs(date_data,date)
@@ -64,6 +69,8 @@ def profile_cal_uidlist(uidlist,n):
         #
         # # 社交特征（梦丽）
         # get_user_social(date_data,date)
+        #     # 偏好特征（梦丽）
+        # get_user_keywords(text_list, word_dict, date, 5)
         #
         #每星期计算一次
         dayOfWeek = datetime.datetime.strptime(date, "%Y-%m-%d").weekday()
@@ -75,10 +82,6 @@ def profile_cal_uidlist(uidlist,n):
         #     thatdate = thedate - datetime.timedelta(days=7)
         #     thatday = theday - 86400*7
         #     topic_domain_cal(uidlist,thatday,theday,thatdate,thedate)
-        #
-        #     # 偏好特征（梦丽）
-        #     get_user_keywords(text_list, word_dict, date, 5)
-        #
         #     #政治倾向（中方）
         #     get_user_political(uidlist,thatday,theday)
 
@@ -101,7 +104,7 @@ def profile_cal_main(n):
 
 
 if __name__ == '__main__':
-    profile_cal_main(1)
+    profile_cal_main(0)
 
 
 
