@@ -16,7 +16,6 @@ class Show_Info(APIView):
     def get(self,request):
         mid = request.GET.get('mid')
         result = Information.objects.filter(mid=mid).values("uid",'text','timestamp','geo','message_type','hazard_index')
-        print(result)
         res = {
             "uid": result[0]["uid"],
             "text": result[0]["text"],

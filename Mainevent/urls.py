@@ -15,5 +15,5 @@ urlpatterns = [
     path('geo_out/',views.event_geo_out.as_view()),
     path('geo_in/',views.event_geo_in.as_view()),
     path('geo_info/',views.geo_info.as_view()),
-    path('event_spetial/',views.Event_Spetial.as_view()),
+    path('event_special/',views.Event_Special.as_view()),
 ]
