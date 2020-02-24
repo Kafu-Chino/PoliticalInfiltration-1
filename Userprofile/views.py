@@ -439,13 +439,7 @@ class Show_figure(APIView):
                 #edate = item.end_date.strftime('%Y-%m-%d %H:%M:%S')
                 fid = item.f_id
                 event_count = Figure.objects.get(f_id=fid).event.all().count()
-                #for e in res_event:
-                    #print(e)
-                    #event_count += 1
-                #info_count = len(Information.objects.filter(uid=fid))
                 info_count = Information.objects.filter(uid=fid).count()
-                #for i in res_info:
-                    #info_count += 1
                 res_list.append({"f_id":fid,"nick_name":item.nick_name,"fansnum":item.fansnum,'friendsnum':item.friendsnum,'create_at':item.create_at,'event_count':event_count,'info_count':info_count,'user_location':item.user_location})
             '''
             page = Paginator(res_list, limit)
@@ -478,13 +472,8 @@ class show_figure_info(APIView):
         res = Figure.objects.filter(f_id=fid).values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location','create_at')
         if res.exists():
             res_event = Figure.objects.get(f_id=fid).event.all()
-            for e in res_event:
-                    #print(e)
-                event_count += 1
-                #info_count = len(Information.objects.filter(uid=fid))
-            res_info = Information.objects.filter(uid=fid)
-            for i in res_info:
-                info_count += 1
+            event_count = Figure.objects.get(f_id=fid).event.all().count()
+            info_count = Information.objects.filter(uid=fid).count()
             res_dict["uid"] = fid
             for re in res:
                 res_dict["nick_name"]=re["nick_name"]

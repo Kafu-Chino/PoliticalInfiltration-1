@@ -62,55 +62,6 @@ class Show_event(APIView):
                 else:
                     jre.append({"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
                                 "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':None,'sensitive_info_ratio':None})
-                '''
-                index_name = item.index_name
-                if index_name in index_list:
-                    weibo_count = index_list[index_name]['weibo_count']
-                    user_count = index_list[index_name]['user_count']
-                else:
-                    query_body = {
-                            "query": {
-                            "match_all":{}
-                                 }
-                             }
-                    r = scan(es, index=index_name, query=query_body)
-                    weibo_count = 0
-                    user_list =[]
-                    user_count = 0
-                    for item in r:
-                        weibo_count += 1
-                        if item['_source']["uid"] in user_list:
-                            continue
-                        else:
-                            user_count += 1
-                            user_list.append(item['_source']["uid"])
-                
-                
-            #t2 = time.time()
-            #print(t2-t1)
-            #jre = json.dumps(list(result))
-            #jre = list(result)
-            page = Paginator(jre, limit)
-            #page_id = request.GET.get('page_id')
-            if page_id:
-                try:
-                    results = page.page(page_id)
-                except PageNotAnInteger:
-                    results = page.page(1)
-                except EmptyPage:
-                    results = page.page(1)
-            else:
-                results = page.page(1)
-            
-            pageData = serializers.serialize("json", results)
-            pageData = json.loads(pageData, encoding='utf-8')
-            jre['result']=pageData
-            '''
-            #re = json.dumps(list(results),ensure_ascii=False)
-            
-            #print(type(re))
-            #json_data2 = serializers.serialize("json",results)
-            #results2 = json.loads(re)
             return JsonResponse(jre,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "无事件"},safe=False)
@@ -177,7 +128,13 @@ class search_event(APIView):
     def get(self, request):
         jre = []
         name = request.GET.get("title")
-        result = Event.objects.filter(event_name__contains = name).values('e_id','event_name','keywords_dict','begin_date','end_date')
+        limit = request.GET.get("limit")
+        page_id = request.GET.get('page_id')
+        if page_id is None:
+            page_id = 1
+        if limit is None:
+            limit = 10
+        result = Event.objects.filter(event_name__contains = name).values('e_id','event_name','keywords_dict','begin_date','end_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
         if result.exists():
             for item in result:
                 sdate = item['begin_date'].strftime('%Y-%m-%d %H:%M:%S')
@@ -408,7 +365,7 @@ class event_geo_out(APIView):
         #print(type(result))
         if result.exists():
             for re in result:
-                geo_dict=dict(sorted(re['geo_outland'].items(),key=lambda x:x[1],reverse=True)[:5])
+                geo_dict=dict(sorted(re['geo_outland'].items(),key=lambda x:x[1],reverse=True)[:10])
             return JsonResponse(geo_dict,safe=False,json_dumps_params={'ensure_ascii':False}) #
         else:
             return JsonResponse({"status":400, "error": "无该事件地域分布信息"},safe=False)
@@ -423,7 +380,7 @@ class event_geo_in(APIView):
         #print(type(result))
         if result.exists():
             for re in result:
-                geo_dict=dict(sorted(re['geo_inland'].items(),key=lambda x:x[1],reverse=True)[:5])
+                geo_dict=dict(sorted(re['geo_inland'].items(),key=lambda x:x[1],reverse=True)[:10])
             return JsonResponse(geo_dict,safe=False,json_dumps_params={'ensure_ascii':False}) #
         else:
             return JsonResponse({"status":400, "error": "无该事件地域分布信息"},safe=False)
@@ -431,11 +388,12 @@ class event_geo_in(APIView):
 
 
 class geo_info(APIView):
-    """事件国内地域分布"""
+    """事件地域代表敏感信息分布"""
     def get(self,request):
         geo = request.GET.get('geo')
+        eid = request.GET.get('eid')
         info_dict=[]
-        result = Information.objects.filter(geo__contains=geo).order_by("-hazard_index")[:5]
+        result = Event.objects.filter(e_id=eid).first().information.all().filter(geo__contains=geo).order_by("-hazard_index")[:5]
         if result.exists():
             for i in result:
                 lt = time.localtime(i.timestamp)
