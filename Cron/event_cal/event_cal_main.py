@@ -50,7 +50,7 @@ def event_cal_main(info, n, start_date, end_date):
 
     print('获取事件相关微博')
     # 获取事件相关微博，计算情感极性，并存入事件索引（没有索引就创建一个）
-    # save_event_data(e_id, n, SENTIMENT_POS, SENTIMENT_NEG)
+    save_event_data(e_id, n, SENTIMENT_POS, SENTIMENT_NEG)
 
     print('敏感词过滤')
     # 对新获取的事件相关微博进行敏感词过滤
@@ -73,28 +73,25 @@ def event_cal_main(info, n, start_date, end_date):
 
     print('事件计算')
     # 获取微博文本数据进行分析
-    # data_dict,all_data_dict = get_event_data(e_index, start_date, end_date)
+    data_dict = get_event_data(e_index, start_date, end_date)
 
     
 
-    # for date in data_dict:
-    #     # 事件语义分析
-    #     event_semantic(e_id, e_name, data_dict[date], date, WEIBO_NUM)
-    #       事件态势分析
-    #     event_analyze(e_id,all_data_dict[date],date)
+    for date in data_dict:
         # 事件语义分析
-        # event_semantic(e_id, e_name, data_dict[date], date, WEIBO_NUM)
+        event_semantic(e_id, e_name, data_dict[date], date, WEIBO_NUM)
+        # 事件态势分析
+        event_analyze(e_id, data_dict[date], date)
 
     # 事件特殊分析（hashtag、敏感词分布）
-    # event_hashtag_senwords(e_id, data_dict, n)
+    event_hashtag_senwords(e_id, data_dict, n)
 
 
 def main():
-    data_dict,all_data_dict = get_event_data("weibo_all", "2019-07-01", "2019-08-15")
-    #event_hashtag_senwords("xianggangshijian_1581919160", data_dict, 1)
-    for date in all_data_dict:
-        #print(all_data_dict)
-        event_analyze("xianggangshijian_1581919160", all_data_dict[date],date)
+    data_dict = get_event_data("xianggang_1582357500", "2019-08-08", "2019-08-08")
+    # event_hashtag_senwords("xianggang_1582357500", data_dict, 1)
+    for date in data_dict:
+        event_semantic("xianggang_1582357500", '香港', data_dict[date],date,100000)
 
 if __name__ == '__main__':
     main()

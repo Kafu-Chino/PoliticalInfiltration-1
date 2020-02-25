@@ -23,7 +23,8 @@ def get_edic_add():
 
 
 # 向mysql数据库一次存入多条数据，数据输入为data_dict 格式{id1:{item1},id2:{item2},}
-def sql_insert_many(cursor, table_name, primary_key, data_dict):
+def sql_insert_many(table_name, primary_key, data_dict):
+    cursor = pi_cur()
     columns = []
     params = []
     columns.append(primary_key)
@@ -41,15 +42,15 @@ def sql_insert_many(cursor, table_name, primary_key, data_dict):
     for i in range(len(columns)):
         values.append("%s")
     values_sql = ",".join(values)
-    sql = 'insert into %s (%s) values (%s)' % (table_name, columns_sql, values_sql)
-    # print(sql)
-    n = cursor.executemany(sql, params)
-    m = len(params)
-    if n == m:
-        print("insert %d success" % m)
+    sql = 'replace into %s (%s) values (%s)' % (table_name, columns_sql, values_sql)
+
+    if len(params):
+        n = cursor.executemany(sql, params)
+        m = len(params)
+        print("insert {} success, {} failed".format(m, m - n))
         conn.commit()
-    else:
-        print("failed")
+    else:  
+        print('empty data')
 
 
 
@@ -323,14 +324,9 @@ def get_event_data(e_index,start_date,end_date):
 
     result = elasticsearch.helpers.scan(es, index=e_index, query=query_body)
 
-    data = {}
-    all_data= defaultdict(list)
+    data= defaultdict(list)
     for item in result:
         item = item["_source"]
         date = ts2date(item["timestamp"])
-        if date in data:
-            data[date].append(item["text"])
-        else:
-            data[date] = [item["text"]]
-        all_data[date].append(item)
-    return data,all_data
+        data[date].append(item)
+    return data
