@@ -36,6 +36,7 @@ def event_hashtag_senwords(e_id, data_dict, n):
         event_senwords_dic[date] = {}
 
         for text in data_dict[date]:
+            text = text['text']
             for hashtag in re_hashtag.findall(text):
                 if hashtag in hashtag_dic[date]:
                     hashtag_dic[date][hashtag] += 1
@@ -83,7 +84,7 @@ def event_hashtag_senwords(e_id, data_dict, n):
     # 每日更新时，取出最后更新的日期与当前计算日期之间的所有数据，与原更新日期进行合并统计
     elif n == 1:
         # 取出历史计算的记录，将内容和日期添加至计算字典内
-        sql_all = "SELECT * from Event_Hashtag_Senwords where ehs_id = '{}'".format(e_id)
+        sql_all = "SELECT * from Event_Hashtag_Senwords where e_id = '{}'".format(e_id)
         cursor = pi_cur()
         cursor.execute(sql_all)
         result = cursor.fetchone()
