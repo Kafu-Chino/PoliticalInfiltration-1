@@ -460,7 +460,7 @@ class Person_show(APIView):
             results.append(dic)
         return JsonResponse(results, safe=False)
 
-class Event_Spetial(APIView):
+class Event_Special(APIView):
     def get(self, request):
         e_id = request.GET.get('e_id')
 

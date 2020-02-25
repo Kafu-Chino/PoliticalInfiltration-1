@@ -19,8 +19,8 @@ def update_cal_status(eid, cal_status):
 # 对库中已有计算好的事件进行计算，在bash里定义每日凌晨运行
 def event_daily(date):
     # 定时间范围为当前计算日期前一天日期（当天凌晨更新计算前一天的数据）
-    end_date = date
-    start_date = ts2date(int(date2ts(date)) - 86400)
+    end_date = ts2date(int(date2ts(date)) - 86400)
+    start_date = end_date
 
     # 获取监测中，计算已完成的事件信息
     eid_dic = get_edic_daily()

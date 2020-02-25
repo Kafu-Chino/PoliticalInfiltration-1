@@ -9,7 +9,6 @@ from elasticsearch.helpers import scan
 from collections import defaultdict
 import re
 
-
 sys.path.append("../../")
 os.environ['DJANGO_SETTINGS_MODULE'] = 'PoliticalInfiltration.settings'
 
@@ -20,7 +19,8 @@ cursor = pi_cur()
 #geo_list=['北京','天津','重庆','上海','河北','山西','辽宁','吉林','黑龙江','江苏','浙江','安徽','福建','江西','山东','河南','湖北','湖南','广东','海南','四川','贵州','云南','陕西','甘肃','青海','台湾','内蒙古','广西','西藏','宁夏','新疆','香港','澳门']
 thedate = datetime.date.today()
 def event_analyze(e_id,data,date=thedate):
-    end_time = int(time.mktime(date.timetuple()))
+    end_time=datetime.datetime.strptime(date+ " 23:59:59", '%Y-%m-%d %H:%M:%S').timestamp()
+    #end_time = int(time.mktime(date.timetuple()))
     start_time = end_time - 24 * 60 * 60
     #td = str(date) + " 23:59:59"
     #data_dict = defaultdict(list)
@@ -30,6 +30,8 @@ def event_analyze(e_id,data,date=thedate):
     geo_dict = {}
     out_dict={}
     in_dict = {}
+    in_info_dict = {}
+    out_info_dict = {}
     sensitive = 0
     negative = 0
     weibo_count = len(data)
@@ -55,35 +57,73 @@ def event_analyze(e_id,data,date=thedate):
         index_name = "weibo_all"
     r = scan(es, index=index_name, query=query_body)
     '''
-    sensitive = Event.objects.filter(e_id=eid).first().information.all().count()
     user_list ={}
     user_count = 0
     pattern = re.compile(r'(\u4e2d\u56fd)')
     #pattern1 = re.compile(r'(\u9999\u6e2f|\u6fb3\u95e8|\u5b81\u590f|\u5e7f\u897f|\u65b0\u7586|\u897f\u85cf|\u5185\u8499\u53e4|\u9ed1\u9f99\u6c5f)')
     #pattern2 = re.compile(r'([\u4e00-\u9fa5]{2,5}?(\u7701|\u5e02|\u81ea\u6cbb\u533a))')  #\u7701省   \u5e02市     \u81ea\u6cbb\u533a自治区
+    #result = Event.objects.filter(e_id=eid).first().information.all().filter(timestamp__range=(start_time,end_time))  #.count()
+    cursor.execute('select Information.geo from Event_information ei \
+            left join Information on ei.information_id = Information.i_id \
+            where ei.event_id = %s and Information.timestamp<=%s and Information.timestamp>=%s',(e_id,end_time,start_time))
+    result = cursor.fetchall()
+    if len(result):
+        for i in result:
+            #print(i['geo'])
+            sensitive += 1
+            p = pattern.match(i['geo'])
+            if p is None:
+                try:
+                    out_info_dict[i['geo']] += 1
+                except:
+                    out_info_dict[i['geo']] = 1
+            else:
+                try:
+                    in_info_dict[i['geo']] += 1
+                except:
+                    in_info_dict[i['geo']] = 1
+
     for item in data:
         #weibo_count += 1
         #day = item['_source']["time"][0:10]
-        if data["sentiment_polarity"]<0:
+            #  后期使用if item["sentiment_polarity"]<0:
+        if int(item["sentiment"])<0:
             negative += 1
         try:
             user_list[item["uid"]] = 1
         except:
             continue
-        k = pattern.match(item['_source']["geo"])
+        k = pattern.match(item["geo"])
         if k is None:
             try:
-                out_dict[item['_source']["geo"]] += 1
+                out_dict[item["geo"]] += 1
             except:
-                out_dict[item['_source']["geo"]] = 1
+                out_dict[item["geo"]] = 1
         else:
             try:
-                in_dict[item['_source']["geo"]] += 1
+                in_dict[item["geo"]] += 1
             except:
-                in_dict[item['_source']["geo"]] = 1
+                in_dict[item["geo"]] = 1
     user_count = len(user_list.keys())
-        '''
+    in_json = json.dumps(in_dict)
+    out_json = json.dumps(out_dict)
+    in_info_json = json.dumps(in_info_dict)
+    out_info_json = json.dumps(out_info_dict)
+    analyze_dict["%s_%s" %(str(end_time),e_id)] = {"event_name":e_id,
+                            "hot_index":weibo_count,
+                            "sensitive_index":sensitive,
+                            "negative_index":negative,
+                            "geo_weibo_inland":in_json,
+                            "geo_weibo_outland":out_json,
+                            "geo_info_inland":in_info_json,
+                            "geo_info_outland":out_info_json,
+                            "user_count":user_count,
+                            "weibo_count":weibo_count,
+                            "into_date":date,
+                            "timestamp":end_time}
+    sql_insert_many(cursor,"Event_Analyze", "e_id", analyze_dict)
         #print(item['_source']["geo"])
+'''
         k1 = pattern1.match(item['_source']["geo"])
         if k1 is None:
             k2 = pattern2.match(item['_source']["geo"])
@@ -127,23 +167,13 @@ def event_analyze(e_id,data,date=thedate):
     all_json = json.dumps(all_dict)
     sensitive_json = json.dumps(sensitive_dict)
     negative_json = json.dumps(negative_dict)
-    '''
-    in_json = json.dumps(in_dict)
-    out_json = json.dumps(out_dict)
+'''
+    #in_info_json = json.dumps(in_info_dict)
+    #out_info_json = json.dumps(out_info_dict)
     #sql = 'insert into Event_analyze values (%s,%s,%s,%s,%s,%s)' % (e_id,e_id,all_json,sensitive_json,negative_json,thedate)
     #sql = 'insert into Event_analyze values (%s,%s,%s,%s,%s,%s)' % (e_id,e_id,pymysql.escape_string(all_json),pymysql.escape_string(sensitive_json),pymysql.escape_string(negative_json),thedate)
     #'insert into Event_Analyze(e_id,event_name,hot_index,sensitive_index,negative_index,into_date) values ("{}","{}","{}","{}","{}","{}")'.format(e_id,e_id,all_json,sensitive_json,negative_json,thedate))
 
-    analyze_dict[e_id] = {"event_name":e_id,
-                            "hot_index":weibo_count,
-                            "sensitive_index":sensitive,
-                            "negative_index":negative,
-                            "geo_inland":in_json,
-                            "geo_outland":out_json,
-                            "user_count":user_count,
-                            "weibo_count":weibo_count,
-                            "into_date":date}
-    sql_insert_many(cursor,"Event_Analyze", "e_id", analyze_dict)
 
 
 if __name__ == '__main__':

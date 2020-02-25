@@ -4,7 +4,7 @@ sys.path.append("../../")
 from Config.db_utils import es, pi_cur, conn
 from Cron.event_cal.SentimentalPolarities import sentiment_polarities
 from Config.time_utils import *
-
+from collections import defaultdict
 
 def get_edic_daily():
     cursor = pi_cur()
@@ -324,14 +324,13 @@ def get_event_data(e_index,start_date,end_date):
     result = elasticsearch.helpers.scan(es, index=e_index, query=query_body)
 
     data = {}
-    all_data={}
+    all_data= defaultdict(list)
     for item in result:
         item = item["_source"]
         date = ts2date(item["timestamp"])
         if date in data:
             data[date].append(item["text"])
-            all_data[date].append(item)
         else:
             data[date] = [item["text"]]
-            all_data[date] = item
+        all_data[date].append(item)
     return data,all_data

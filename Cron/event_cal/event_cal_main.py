@@ -54,22 +54,22 @@ def event_cal_main(info, n, start_date, end_date):
 
     print('敏感词过滤')
     # 对新获取的事件相关微博进行敏感词过滤
-    # data_dict = sensitive_word_filter(n, e_id)
+    data_dict = sensitive_word_filter(n, e_id)
 
     print('敏感词过滤')
     # 对过滤后的结果进行敏感计算
-    # data_dict = sensitivity(e_id, data_dict, e_index, POS_NUM, NEG_NUM)
+    data_dict = sensitivity(e_id, data_dict, e_index, POS_NUM, NEG_NUM)
     # print(data_dict)
 
-    # if data_dict != {}:
-    #     print('敏感信息入库')
-    #     # 敏感信息入库,敏感信息和事件关联入库
-    #     sensitivity_store(data_dict)
-    #     event_sensitivity(e_id, data_dict)
+    if data_dict != {}:
+        print('敏感信息入库')
+        # 敏感信息入库,敏感信息和事件关联入库
+        sensitivity_store(data_dict)
+        event_sensitivity(e_id, data_dict)
 
-    #     print('敏感人物入库')
-    #     # 敏感人物入库,敏感人物和事件关联入库
-    #     figure_add(data_dict, e_id)
+        print('敏感人物入库')
+        # 敏感人物入库,敏感人物和事件关联入库
+        figure_add(data_dict, e_id)
 
     print('事件计算')
     # 获取微博文本数据进行分析
@@ -82,15 +82,19 @@ def event_cal_main(info, n, start_date, end_date):
     #     event_semantic(e_id, e_name, data_dict[date], date, WEIBO_NUM)
     #       事件态势分析
     #     event_analyze(e_id,all_data_dict[date],date)
+        # 事件语义分析
+        # event_semantic(e_id, e_name, data_dict[date], date, WEIBO_NUM)
 
-        # 事件特殊分析（hashtag、敏感词分布）
-        event_hashtag_senwords(e_id, data, date)
+    # 事件特殊分析（hashtag、敏感词分布）
+    # event_hashtag_senwords(e_id, data_dict, n)
 
 
 def main():
-    data_dict = get_event_data("weibo_all", "2019-08-20", "2019-08-20")
-    print(len(data_dict["2019-08-20"]))
-    event_hashtag_senwords("xianggangshijian_1581919160", data_dict["2019-08-20"], "2019-08-20")
+    data_dict,all_data_dict = get_event_data("weibo_all", "2019-07-01", "2019-08-15")
+    #event_hashtag_senwords("xianggangshijian_1581919160", data_dict, 1)
+    for date in all_data_dict:
+        #print(all_data_dict)
+        event_analyze("xianggangshijian_1581919160", all_data_dict[date],date)
 
 if __name__ == '__main__':
     main()

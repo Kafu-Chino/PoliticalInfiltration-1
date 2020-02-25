@@ -9,7 +9,7 @@ from Config.db_utils import es, pi_cur#, es_floww
 from Config.time_utils import *
 from elasticsearch.helpers import scan
 
-def get_user_social(uidlist, date_data, date):
+def get_user_social(uidlist, date_data, date,n):
     """
     result_dic格式：
     {
@@ -20,7 +20,7 @@ def get_user_social(uidlist, date_data, date):
     }
     """
     # 上游数据补充查询
-    list_all = set(get_uid_list())
+    list_all = set(get_uid_list(n))
     query_body = {
         "query":{
             "bool":{
@@ -35,12 +35,12 @@ def get_user_social(uidlist, date_data, date):
     start_ts = date2ts(date)
     end_ts = date2ts(date) + 86400
     query_body["query"]["bool"]["must"].append({"range": {"timestamp": {"gte": start_ts, "lt": end_ts}}})
-    es_scan_iter = scan(es, index="weibo_all", query=query_body)
-    append_data = [item["_source"] for item in es_scan_iter]
+    # es_scan_iter = scan(es, index="weibo_all", query=query_body)
+    # append_data = [item["_source"] for item in es_scan_iter]
 
     # 流数据，部署时注释本地代码，使用该段代码
-    # es_scan_iter = scan(es_flow, index="flow_text_{}".format(date), query=query_body)
-    # append_data = [item["_source"] for item in es_scan_iter]
+    es_scan_iter = scan(es, index="flow_text_{}".format(date), query=query_body)#es_flow
+    append_data = [item["_source"] for item in es_scan_iter]
 
 
     # 上下游数据遍历计数
