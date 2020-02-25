@@ -73,12 +73,15 @@ def event_cal_main(info, n, start_date, end_date):
 
     print('事件计算')
     # 获取微博文本数据进行分析
-    # data_dict = get_event_data(e_index, start_date, end_date)
+    # data_dict,all_data_dict = get_event_data(e_index, start_date, end_date)
 
-    # 事件态势分析
-    # event_analyze(e_index, e_id)
+    
 
     # for date in data_dict:
+    #     # 事件语义分析
+    #     event_semantic(e_id, e_name, data_dict[date], date, WEIBO_NUM)
+    #       事件态势分析
+    #     event_analyze(e_id,all_data_dict[date],date)
         # 事件语义分析
         # event_semantic(e_id, e_name, data_dict[date], date, WEIBO_NUM)
 
@@ -87,8 +90,11 @@ def event_cal_main(info, n, start_date, end_date):
 
 
 def main():
-    data_dict = get_event_data("weibo_all", "2019-08-25", "2019-08-25")
-    event_hashtag_senwords("xianggangshijian_1581919160", data_dict, 1)
+    data_dict,all_data_dict = get_event_data("weibo_all", "2019-07-01", "2019-08-15")
+    #event_hashtag_senwords("xianggangshijian_1581919160", data_dict, 1)
+    for date in all_data_dict:
+        #print(all_data_dict)
+        event_analyze("xianggangshijian_1581919160", all_data_dict[date],date)
 
 if __name__ == '__main__':
     main()

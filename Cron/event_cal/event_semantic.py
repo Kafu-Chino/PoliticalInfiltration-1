@@ -83,8 +83,8 @@ def lda_analyze(corpusTfidf, dictionary, num_topics=10, iterations=50, workers=6
         item = i[1].split('+')
         probability = [p.split('*')[0].strip() for p in item]
         word = [w.split('*')[1].strip().strip('"') for w in item]
-        json_data[i[0]]['概率'] = probability
-        json_data[i[0]]['主题词'] = word
+        for w, p in zip(word, probability):
+        	json_data[i[0]][w] = p
         # print(word)
     return json_data
 
@@ -118,7 +118,7 @@ def main():
         data.append(i['text'])
     print(len(data))
     # data = ['置顶疫情蔓延，面对生活给我们如此严肃的提问，应该如何回答？我们以#VOGUE三月号# @李宇春 封面告诉大家，只要心里保存热爱，希望便不可摧毁。和所有中国人一样面临命运新考验的李宇春，决定以歌唱来回应，她写下心系疫区的《岁岁平安》，委婉温情中透着刚强，启发每个人以自己的方式去继续。对音乐、时尚、艺术、创意都充满热爱的李宇春，对未来还有很多梦想和憧憬，我们和她一样相信，#有坚持有希望#。💪 #VOGUE战疫进行时#  摄影：Nick Knight 造型：Daniela Paudice', '如果可以和未来的你通一个电话，你想和他（她）说什么？#陈飞宇情人节电话打给谁# ？想知道他说了什么吗？敬请期待 2月14日正式上线的芭莎珠宝电子刊“陈飞宇 2020的未知来电”！预售已开启，这个非常时期的0214情人节“宇”爱同行，愿这份温暖驱散寒冷和阴霾。@陈飞宇Arthur @陈飞宇工作室 @陈飞宇全国后援会 陈飞宇珠宝//@Pomellato宝曼兰朵']
-    event_semantic(3,'香港事件',data,today())
+    event_semantic('3','香港事件',data,today(),100000)
     et = time.time()
     print(et-st)
 

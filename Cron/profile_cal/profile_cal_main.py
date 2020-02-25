@@ -38,6 +38,8 @@ def profile_cal_uidlist(uidlist,n):
         # end_date = datetime.datetime.today()- datetime.timedelta(days=1)
         # start_date = datetime.datetime.strptime(str(datetime.datetime.today() - datetime.timedelta(days=20))[:10],
         #                                         "%Y-%m-%d")
+        #end_date = '2019-08-15'
+        #start_date = datetime.datetime.strptime(str(datetime.datetime.strptime(end_date,"%Y-%m-%d") - datetime.timedelta(days=1))[:10],
         end_date = '2019-08-25'
         start_date = datetime.datetime.strptime(str(datetime.datetime.strptime(end_date,"%Y-%m-%d") - datetime.timedelta(days=20))[:10],
                                                 "%Y-%m-%d")
@@ -57,6 +59,7 @@ def profile_cal_uidlist(uidlist,n):
         word_dict, text_list, text_dict = get_processed_data(date_data, date)
         time4 = time.time()
         # 地域特征（文娟）
+        # get_user_activity_aggs(date_data,date)
         get_user_activity_aggs(date_data,date)
         time2=time.time()
         print('地域：',time2-start_time)
@@ -72,6 +75,12 @@ def profile_cal_uidlist(uidlist,n):
         print('情绪：', time4 - time3)
 
         # 影响力特征（英汉）
+        # influence_total(date,uidlist,word_dict,date_data,index)
+        #
+        # # 社交特征（梦丽）
+        # get_user_social(date_data,date)
+        #     # 偏好特征（梦丽）
+        # get_user_keywords(text_list, word_dict, date, 5)
         influence_total(date,uidlist,word_dict,date_data,index)
         time5 = time.time()
         print('影响：', time5 - time4)
@@ -83,6 +92,14 @@ def profile_cal_uidlist(uidlist,n):
         # #
         #每星期计算一次
         dayOfWeek = datetime.datetime.strptime(date, "%Y-%m-%d").weekday()
+        # if  dayOfWeek == 0:
+        #     # 话题和领域特征
+        #     print('开始周计算')
+        #     thedate = datetime.datetime.strptime(date, "%Y-%m-%d")
+        #     theday = int(time.mktime(time.strptime(date, "%Y-%m-%d")))
+        #     thatdate = thedate - datetime.timedelta(days=7)
+        #     thatday = theday - 86400*7
+        #     topic_domain_cal(uidlist,thatday,theday,thatdate,thedate)
         if  dayOfWeek == 1:
             # 话题和领域特征
             print('开始周计算')
@@ -125,7 +142,6 @@ def profile_cal_main(n):
 
 
 if __name__ == '__main__':
-
     profile_cal_main(0)
 
 

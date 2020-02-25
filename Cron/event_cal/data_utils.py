@@ -4,7 +4,7 @@ sys.path.append("../../")
 from Config.db_utils import es, pi_cur, conn
 from Cron.event_cal.SentimentalPolarities import sentiment_polarities
 from Config.time_utils import *
-
+from collections import defaultdict
 
 def get_edic_daily():
     cursor = pi_cur()
@@ -23,8 +23,7 @@ def get_edic_add():
 
 
 # 向mysql数据库一次存入多条数据，数据输入为data_dict 格式{id1:{item1},id2:{item2},}
-def sql_insert_many(table_name, primary_key, data_dict):
-    cursor = pi_cur()
+def sql_insert_many(cursor, table_name, primary_key, data_dict):
     columns = []
     params = []
     columns.append(primary_key)
@@ -42,15 +41,17 @@ def sql_insert_many(table_name, primary_key, data_dict):
     for i in range(len(columns)):
         values.append("%s")
     values_sql = ",".join(values)
-    sql = 'replace into %s (%s) values (%s)' % (table_name, columns_sql, values_sql)
-
-    if len(params):
-        n = cursor.executemany(sql, params)
-        m = len(params)
-        print("insert {} success, {} failed".format(m, m - n))
+    sql = 'insert into %s (%s) values (%s)' % (table_name, columns_sql, values_sql)
+    # print(sql)
+    n = cursor.executemany(sql, params)
+    m = len(params)
+    if n == m:
+        print("insert %d success" % m)
         conn.commit()
-    else:  
-        print('empty data')
+    else:
+        print("failed")
+
+
 
 
 
@@ -58,10 +59,11 @@ def sql_insert_many(table_name, primary_key, data_dict):
 
 
 def get_event_info(e_id):
-    sql = "select keywords_dict,begin_date,end_date,es_index_name from Event where e_id = '{}'".format(e_id)
-    cursor = pi_cur()
-    cursor.execute(sql)
-    results = cursor.fetchall()[0]
+    sql = "select keywords_dict,begin_date,end_date,es_index_name from Event where e_id = %s"%e_id
+    db = conn
+    cusor = db.cursor()
+    cusor.execute(sql)
+    results = cusor.fetchall()[0]
     return results['keywords_dict'],results['begin_date'],results['end_date'],results['es_index_name']
 
 def getEveryDay(begin_date,end_date):
@@ -117,7 +119,7 @@ def event_es_save(save,e_index):
     elasticsearch.helpers.bulk(es, actions=actions)
 
 
-def create_event_index(e_index):
+def create_event_index():
     event_data = {
         'settings': {
             'number_of_replicas': 0,
@@ -160,7 +162,7 @@ def create_event_index(e_index):
                     'geo': {
                         'type': 'keyword',
                     },
-                    'net_type': {
+                    'net_way': {
                         'type': 'text',
                         'index':True,
                     },
@@ -228,7 +230,7 @@ def create_event_index(e_index):
             },
         }
     }
-    result = es.indices.create(index=e_index, ignore=400, body=event_data)
+    result = es.indices.create(index='weibo_all', ignore=400, body=event_data)
     print(result)
 
 
@@ -262,12 +264,11 @@ def save_event_data(e_id, n, SENTIMENT_POS, SENTIMENT_NEG):
             save = []
             for message in messages:
                 message['sentiment_polarity'] = sentiment_dict[message['mid']]
-                message['source'] = '新浪'
                 save.append(message)
             if es.indices.exists(index=e_index):
                 event_es_save(save,e_index)
             else:
-                create_event_index(e_index)
+                create_event_index()
                 event_es_save(save, e_index)
 
 
@@ -302,8 +303,8 @@ def event_sensitivity(e_id,data_dict):
     conn.commit()
 
 
-# 事件计算时获取数据
-def get_event_data(e_index, start_date, end_date):
+# 时间计算时获取数据
+def get_event_data(e_index,start_date,end_date):
     start_ts = date2ts(str(start_date))
     if end_date == None:
         end_ts = time.time()
@@ -323,6 +324,7 @@ def get_event_data(e_index, start_date, end_date):
     result = elasticsearch.helpers.scan(es, index=e_index, query=query_body)
 
     data = {}
+    all_data= defaultdict(list)
     for item in result:
         item = item["_source"]
         date = ts2date(item["timestamp"])
@@ -330,4 +332,5 @@ def get_event_data(e_index, start_date, end_date):
             data[date].append(item["text"])
         else:
             data[date] = [item["text"]]
-    return data
+        all_data[date].append(item)
+    return data,all_data

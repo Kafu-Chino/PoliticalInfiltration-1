@@ -34,49 +34,9 @@ class Test(APIView):
         """DELETE方法的功能说明写在这里"""
         return HttpResponse('这是测试的DELETE方法')
 
+
+
 '''
-class BasicInfo(APIView):
-    """用户基本信息接口"""
-
-    def get(self, request):
-        """
-        获取uid，返回用户详情;
-        格式: {"uid": uid, "nick_name": nick_name,...}
-        """
-        res_dict = {}
-        uid = request.GET.get('uid')
-        result = Figure.objects.filter(f_id=uid).first()
-        res_dict["uid"] = result.uid if result.uid else "无"
-        res_dict["nick_name"] = result.nick_name if result.nick_name else "无"
-        res_dict["age"] = datetime.date.today().year - result.user_birth.year if result.user_birth else "无"
-        # now = datetime.date.today()
-        # birth = result.user_birth
-        # if now.month < birth.month:  # 如果月份比今天大，没过生日，则年份相减再减一
-        #     res_dict["age"] = now.year - birth.year - 1
-        # if now.month > birth.month:  # 如果月份比今天小，过生日了，则年份相减
-        #     res_dict["age"] = now.year - birth.year
-        # if now.month == birth.month and now.day < birth.day:  # 如果月份相等，生日比今天大，没过生日
-        #     res_dict["age"] = now.year - birth.year - 1
-        # if now.month == birth.month and now.day > birth.day:  # 如果月份相等，生日比今天小，过生日了
-        #     res_dict["age"] = now.year - birth.year
-        res_dict["statusnum"] = result.statusnum if result.statusnum else "无"
-        res_dict["political"] = political_dict[result.political] if result.political else "无"
-        # res_dict["domain"] = result.domain if result.domain else "无"
-        domain = list(UserDomain.objects.filter(uid=uid).values("main_domain").order_by("-timestamp"))[0]["main_domain"]
-        res_dict["domain"] = domain_dict[domain] if domain else "无"
-        res_dict["create_at"] = time.strftime("%Y-%m-%d", time.localtime(result.create_at)) if result.create_at else "无"
-        res_dict["sex"] = ("男" if result.sex == 1 else "女") if result.sex else "无"
-        res_dict["friendsnum"] = result.friendsnum if result.friendsnum else "无"
-        res_dict["fansnum"] = result.fansnum if result.fansnum else "无"
-        res_dict["user_location"] = result.user_location if result.user_location else "无"
-        res_dict["description"] = result.description if len(result.description) != 0 else "无"
-        return JsonResponse(res_dict)
-
-    def post(self, request):
-        """"""
-        return HttpResponse('这是POST方法')
-'''
-
 class User_Behavior(APIView):
     """用户活动特征接口"""
 
@@ -90,7 +50,10 @@ class User_Behavior(APIView):
         uid = request.GET.get('uid')
         n_type = request.GET.get('n_type')
         date = request.GET.get('date')
-        res_dict = {}
+        res_dict = defaultdict(dict)
+        #origin_dict = {}
+        #comment_dict={}
+
         t=datetime.datetime.strptime(date+ " 23:59:59", '%Y-%m-%d %H:%M:%S')
         #t = time.mktime(time.strptime(date, '%Y-%m-%d'))
         # 每日活动特征，从当前日期往前推7天展示 原创微博数、评论数、转发数、敏感微博数
@@ -103,7 +66,12 @@ class User_Behavior(APIView):
                 for item in result:
                     td = item["store_date"]  #pop("timestamp") - 24 * 60 * 60
                     #res_dict[time.strftime("%Y-%m-%d", time.localtime(t))] = item
-                    res_dict[str(td)] = item
+                    #res_dict[str(td)] = item
+                    res_dict['originalnum'][str(td)] = item['originalnum_s']
+                    res_dict['commentnum'][str(td)] = item['commentnum_s']
+                    res_dict['retweetnum'][str(td)] = item['retweetnum_s']
+                    res_dict['sensitivenum'][str(td)] = item['sensitivenum_s']
+       
             else:
                 return JsonResponse({"status":400, "error": "未找到该用户活动信息"},safe=False,json_dumps_params={'ensure_ascii':False}) 
         # 每周活动特征，从当前日期往前推5周展示 原创微博数、评论数、转发数、敏感微博数
@@ -118,7 +86,11 @@ class User_Behavior(APIView):
                     originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"), retweetnum_s=Sum("retweetnum"),
                     sensitivenum_s=Sum("sensitivenum"))
                 if list(result.values())[0]:
-                    res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result
+                    res_dict['originalnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['originalnum_s']
+                    res_dict['commentnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['commentnum_s']
+                    res_dict['retweetnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['retweetnum_s']
+                    res_dict['sensitivenum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['sensitivenum_s']
+                    #res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result
         # 每月活动特征，从当前日期往前推5月展示 原创微博数、评论数、转发数、敏感微博数
         if n_type == "月":
             date_dict = {}
@@ -131,8 +103,47 @@ class User_Behavior(APIView):
                     originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"), retweetnum_s=Sum("retweetnum"),
                     sensitivenum_s=Sum("sensitivenum"))
                 if list(result.values())[0]:
-                    res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result
+                    res_dict['originalnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['originalnum_s']
+                    res_dict['commentnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['commentnum_s']
+                    res_dict['retweetnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['retweetnum_s']
+                    res_dict['sensitivenum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['sensitivenum_s']
         return JsonResponse(res_dict)
+'''
+
+
+class User_Behavior(APIView):
+    """用户活动特征接口"""
+
+    def get(self, request):
+        """
+        获取uid，返回用户活动特征详情，根据传入参数n_type 日 周 月 返回相应数据结果，
+        返回数据格式{date1:{originalnum_s:10,commentnum_s:20,retweetnum_s:30,sensitivenum_s:10},
+                    date2:{originalnum_s: 10,commentnum_s:20,retweetnum_s:30,sensitivenum_s:10},
+                    ...}
+        """
+        uid = request.GET.get('uid')
+        #n_type = request.GET.get('n_type')
+        #date = request.GET.get('date')
+        res_dict = defaultdict(dict)
+        #origin_dict = {}
+        #comment_dict={}
+
+        #t=datetime.datetime.strptime(date+ " 23:59:59", '%Y-%m-%d %H:%M:%S')
+        #t = time.mktime(time.strptime(date, '%Y-%m-%d'))
+        #new_date = (t + datetime.timedelta(days=-7)).timestamp()
+        result = UserBehavior.objects.filter(uid=uid).values(
+                "store_date").annotate(originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"),
+                                      retweetnum_s=Sum("retweetnum"), sensitivenum_s=Sum("sensitivenum"))
+        if result.exists():
+            for item in result:
+                td = item["store_date"]  #pop("timestamp") - 24 * 60 * 60
+                res_dict['originalnum'][str(td)] = item['originalnum_s']
+                res_dict['commentnum'][str(td)] = item['commentnum_s']
+                res_dict['retweetnum'][str(td)] = item['retweetnum_s']
+                res_dict['sensitivenum'][str(td)] = item['sensitivenum_s']
+            return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
+        else:
+            return JsonResponse({"status":400, "error": "未找到该用户活动信息"},safe=False,json_dumps_params={'ensure_ascii':False}) 
 
 
 class User_Activity(APIView):
@@ -168,6 +179,7 @@ class User_Activity(APIView):
             statusnum_s=Sum("statusnum"), sensitivenum_s=Sum("sensitivenum")).order_by("-sensitivenum_s")
         res_dict["day_result"] = list(day_result)
         # 活动轨迹部分，如展示有问题可去掉
+        '''
         geo_dict = UserActivity.objects.filter(uid=uid, timestamp__gte=cal_date,timestamp__lte=t.timestamp()).values("timestamp", "geo").annotate(
             statusnum_s=Sum("statusnum"))
         route_dict = defaultdict(dict)
@@ -194,16 +206,18 @@ class User_Activity(APIView):
             if not (item['s'] and item['e']):
                 route_list.remove(item)
         res_dict["route_list"] = route_list
+        '''
 
         # 热度展示
-        '''
+        
         geo_map_result = UserActivity.objects.filter(uid=uid, timestamp__gte=cal_date).values("geo").annotate(
             statusnum_s=Sum("statusnum"),sensitivenum_s=Sum("sensitivenum")).order_by("-sensitivenum_s")
+        print(geo_map_result)
         res_dict["geo_map_result"] = list(geo_map_result)
-        '''
+        
 
 
-        return JsonResponse(res_dict)
+        return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
 
 
 
@@ -230,23 +244,25 @@ class Show_topic(APIView):
         #re2 = defaultdict(list)
         #prefer = defaultdict(dict)
         uid = request.GET.get("uid")
-        #start_time = request.GET.get("time1")
-        #end_time = request.GET.get("time2")
-        result1 = UserTopic.objects.filter(uid = uid)  #, store_date__range=(start_time,end_time)
+        #start_date = request.GET.get("date")
+        #start_date = datetime.datetime.strptime(start_date,"%Y-%m-%d")
+        #end_date = start_date + datetime.timedelta(days=7)
+        result1 = UserTopic.objects.filter(uid = uid) #,store_date__range=(start_date,end_date))
         #result2 = UserDomain.objects.filter(uid = uid)  #, store_date__range=(start_time,end_time)
         if result1.exists():
             json_data = serializers.serialize("json",result1)
             results = json.loads(json_data)
-            #return JsonResponse(results,safe=False)
+            new_topic={}
             for i in results:
                 #uid = i["fields"]["uid"]
-                new_topic={}
                 for item in i["fields"]["topics"]:
                     #print(topic_dict['anti_corruption'])
                     #print(i["fields"]["topics"][item])
-                    new_topic[topic_dict[item]]=i["fields"]["topics"][item]
+                    try:
+                        new_topic[topic_dict[item]] += i["fields"]["topics"][item]
+                    except:
+                        new_topic[topic_dict[item]] = i["fields"]["topics"][item]
                     #print(new_topic)
-                #re[uid].append(new_topic)
             re = dict(sorted(new_topic.items(),key=lambda x:x[1],reverse=True)[:5])
             #print(type(re))
             #re = json.dumps(re,ensure_ascii=False)
@@ -265,9 +281,15 @@ class Show_keyword(APIView):
     def get(self,request):
         re1 = {}
         uid = request.GET.get("uid")
+        #end_date = request.GET.get("date")
+        #end_date = datetime.datetime.strptime(end_date,"%Y-%m-%d")
+        #start_date = end_date - datetime.timedelta(days=7)
+        kw= {}
+        sw = {}
+        ht = {}
         #start_time = request.GET.get("time1")
         #end_time = request.GET.get("time2")
-        result = UserKeyWord.objects.filter(uid = uid)  #, store_date__range=(start_time,end_time)
+        result = UserKeyWord.objects.filter(uid = uid)  #, store_date__range=(start_date,end_date))
         #return HttpResponse(typeof(result))
         if result.exists():
             json_data = serializers.serialize("json",result)
@@ -276,9 +298,24 @@ class Show_keyword(APIView):
             for i in results:
                 #uid = i["fields"]["uid"]
                 #re1[uid].append({"keywords":i["fields"]["keywords"],"sensitive_words":i["fields"]["sensitive_words"],"hastags":i["fields"]["hastags"]})
-                re1["keywords"] = i["fields"]["keywords"]
-                re1["sensitive_words"] = i["fields"]["sensitive_words"]
-                re1["hastags"] = i["fields"]["hastags"]
+                for k,v in i["fields"]["keywords"].items():
+                    try:
+                        kw[k] += v
+                    except:
+                        kw[k] = v
+                for k,v in i["fields"]["sensitive_words"].items():
+                    try:
+                        sw[k] += v
+                    except:
+                        sw[k] = v 
+                for k,v in i["fields"]["hastags"].items():
+                    try:
+                        ht[k] += v
+                    except:
+                        ht[k] = v
+                re1["keywords"] = dict(sorted(kw.items(),key=lambda x:x[1],reverse=True)[:5])
+                re1["sensitive_words"] = sw
+                re1["hastags"] = dict(sorted(ht.items(),key=lambda x:x[1],reverse=True)[:5])
             return JsonResponse(re1,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "未找到该用户信息"},safe=False,json_dumps_params={'ensure_ascii':False})
@@ -439,13 +476,7 @@ class Show_figure(APIView):
                 #edate = item.end_date.strftime('%Y-%m-%d %H:%M:%S')
                 fid = item.f_id
                 event_count = Figure.objects.get(f_id=fid).event.all().count()
-                #for e in res_event:
-                    #print(e)
-                    #event_count += 1
-                #info_count = len(Information.objects.filter(uid=fid))
                 info_count = Information.objects.filter(uid=fid).count()
-                #for i in res_info:
-                    #info_count += 1
                 res_list.append({"f_id":fid,"nick_name":item.nick_name,"fansnum":item.fansnum,'friendsnum':item.friendsnum,'create_at':item.create_at,'event_count':event_count,'info_count':info_count,'user_location':item.user_location})
             '''
             page = Paginator(res_list, limit)
@@ -478,13 +509,8 @@ class show_figure_info(APIView):
         res = Figure.objects.filter(f_id=fid).values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location','create_at')
         if res.exists():
             res_event = Figure.objects.get(f_id=fid).event.all()
-            for e in res_event:
-                    #print(e)
-                event_count += 1
-                #info_count = len(Information.objects.filter(uid=fid))
-            res_info = Information.objects.filter(uid=fid)
-            for i in res_info:
-                info_count += 1
+            event_count = Figure.objects.get(f_id=fid).event.all().count()
+            info_count = Information.objects.filter(uid=fid).count()
             res_dict["uid"] = fid
             for re in res:
                 res_dict["nick_name"]=re["nick_name"]

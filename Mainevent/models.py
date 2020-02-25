@@ -63,9 +63,9 @@ class Event(models.Model):
 class Event_Analyze(models.Model):
     e_id = models.CharField(max_length=30, primary_key=True)
     event_name = models.CharField(max_length=50)
-    hot_index = JSONField()
-    sensitive_index = JSONField()
-    negative_index = JSONField()
+    hot_index = models.IntegerField(default=0)
+    sensitive_index = models.IntegerField(default=0)
+    negative_index = models.IntegerField(default=0)
     user_count = models.IntegerField(default=0)
     weibo_count = models.IntegerField(default=0)
     geo_inland = JSONField()
