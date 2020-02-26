@@ -63,7 +63,7 @@ def data_process(data, WEIBO_NUM):
     if len(data) > WEIBO_NUM:
         data = random.choices(data, k=WEIBO_NUM)
     # 预处理,分词
-    cut_list = weibo_move(data)
+    cut_list = weibo_move([i['text'] for i in data])
     dictionary = corpora.Dictionary(cut_list)
     corpus = [dictionary.doc2bow(text) for text in cut_list]
     tfidf = models.TfidfModel(corpus)
@@ -97,7 +97,7 @@ def event_semantic(e_id, e_name, data, thedate, WEIBO_NUM):
     timestamp = date2ts(thedate)
     es_id = str(timestamp) + e_id
     # sql = "insert into Event_Semantic set es_id=%s,e_id=%s,e_name=%s,topics=%s,timestamp=%s,into_date=%s" % (es_id,e_id,e_name,result,timestamp,thedate)
-    sql = "insert into Event_Semantic values(%s,%s,%s,%s,%s,%s)"
+    sql = "replace into Event_Semantic values(%s,%s,%s,%s,%s,%s)"
     val = [(es_id,e_id,e_name,result,timestamp,thedate)]
     try:
         n = cursor.executemany(sql, val)

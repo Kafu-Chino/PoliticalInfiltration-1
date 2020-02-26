@@ -36,6 +36,7 @@ def event_hashtag_senwords(e_id, data_dict, n):
         event_senwords_dic[date] = {}
 
         for text in data_dict[date]:
+            text = text['text']
             for hashtag in re_hashtag.findall(text):
                 if hashtag in hashtag_dic[date]:
                     hashtag_dic[date][hashtag] += 1

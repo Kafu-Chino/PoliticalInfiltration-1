@@ -87,7 +87,7 @@ def event_analyze(e_id,data,date=thedate):
         #weibo_count += 1
         #day = item['_source']["time"][0:10]
             #  后期使用if item["sentiment_polarity"]<0:
-        if int(item["sentiment"])<0:
+        if int(item["sentiment_polarity"])<0:
             negative += 1
         try:
             user_list[item["uid"]] = 1
@@ -121,7 +121,7 @@ def event_analyze(e_id,data,date=thedate):
                             "weibo_count":weibo_count,
                             "into_date":date,
                             "timestamp":end_time}
-    sql_insert_many(cursor,"Event_Analyze", "e_id", analyze_dict)
+    sql_insert_many("Event_Analyze", "e_id", analyze_dict)
         #print(item['_source']["geo"])
 '''
         k1 = pattern1.match(item['_source']["geo"])
