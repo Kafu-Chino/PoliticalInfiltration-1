@@ -26,7 +26,7 @@ def load_word():  # 加载词典
     domain_dict = dict()
     for name in POLITICAL_LABELS:
         word_dict = dict()
-        reader = csv.reader(open('political_bias_word_dict/%s.csv' % name, 'r'))
+        reader = csv.reader(open('../profile_cal/political_bias_word_dict/%s.csv' % name, 'r'))
         for count, word in reader:
             word = word.strip('\r\t\n')
             count = count.strip('\r\t\n')

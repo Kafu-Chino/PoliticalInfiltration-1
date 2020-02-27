@@ -1,3 +1,5 @@
+import sys
+sys.path.append("../../")
 from elasticsearch import Elasticsearch
 import numpy as np
 import pymysql
@@ -6,7 +8,7 @@ import json
 import math
 import time
 
-from Config.db_utils import es,conn,pi_cur
+from Config.db_utils import es,conn,pi_cur as es1,conn,pi_cur,db_connect
 from Config.time_utils import *
 
 # from influence.Config import *
@@ -27,17 +29,16 @@ activeness_weight_dict = { 'activity_geo': 0.5, 'statusnum': 0.5}
 
 ES_HOST = '219.224.135.12'
 ES_PORT = 9211
-def connect():
-    es = Elasticsearch(hosts=[{'host': ES_HOST, 'port': ES_PORT}], timeout=1000)
-    db = pymysql.connect(
-        host='219.224.135.12',
-        port=3306,
-        user='root',
-        passwd='mysql3306',
-        db='PoliticalInfiltration',
-        charset='utf8'
-    )
-    return es,db
+# def db_connect():
+#     db = pymysql.connect(
+#         host='219.224.135.12',
+#         port=3306,
+#         user='root',
+#         passwd='mysql3306',
+#         db='PoliticalInfiltration',
+#         charset='utf8'
+#     )
+#     return db
 '''
 影响力依赖统计
 '''
@@ -539,7 +540,7 @@ def get_activityness_dict(uid_list,date_data):
 def get_sensitive_dict(uid_list,word_dict):
     uids = uid_list
     word_score = {}
-    with open('word_score.txt', 'r', encoding='utf8') as f:#D:\PycharmProjects\zzst\influence\
+    with open('../profile_cal/word_score.txt', 'r', encoding='utf8') as f:#D:\PycharmProjects\zzst\influence\
         for line in f.readlines():
             line = line.strip().split('\t')
             word_score[line[0]] = int(line[1])
@@ -565,7 +566,7 @@ def influence_total(date,uid_list,word_count,data,index):
     store_date = date
     global es
     global db
-    es,db = connect()
+    es,db = db_connect()
     global day_time
     # day_time = int(time.mktime(datetime.date.today().timetuple()))+86400
     day_time =int(time.mktime(time.strptime(date, "%Y-%m-%d")))+86400

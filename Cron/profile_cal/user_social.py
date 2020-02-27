@@ -4,7 +4,7 @@ sys.path.append("../../")
 import os
 import time
 import datetime
-from data_utils import sql_insert_many, get_uid_list
+from Cron.profile_cal.data_utils import sql_insert_many, get_uid_list
 from Config.db_utils import es, pi_cur#, es_floww
 from Config.time_utils import *
 from elasticsearch.helpers import scan

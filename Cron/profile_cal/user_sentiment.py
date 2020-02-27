@@ -7,13 +7,14 @@
 
 @file: user_sentiment.py
 """
-
-from data_utils import sql_insert_many
+import sys
+sys.path.append("../../")
+from Cron.profile_cal.data_utils import sql_insert_many
 from Config.db_utils import pi_cur
 from Config.time_utils import today, date2ts
 import pickle
 import joblib
-from sentiment_classifier import triple_classifier
+from Cron.profile_cal.sentiment_classifier import triple_classifier
 from collections import Counter
 
 cursor = pi_cur()
@@ -26,10 +27,10 @@ def cal_user_emotion(word_dict, thedate):
     :return:None
     '''
     # 加载词向量
-    with open('sentiment_model_data/weibo_vector.pkl', 'rb') as f:
+    with open('../profile_cal/sentiment_model_data/weibo_vector.pkl', 'rb') as f:
         weibo_dic = pickle.load(f)
     # 加载模型
-    l_m = joblib.load('sentiment_model_data/sentiment_logical.model')
+    l_m = joblib.load('../profile_cal/sentiment_model_data/sentiment_logical.model')
     user_sentiment_dict = {}
     for uid, weibo_list in word_dict.items():#value 为列表  key 为uid
         sentiment_dict = {}

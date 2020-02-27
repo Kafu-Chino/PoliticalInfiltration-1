@@ -6,7 +6,7 @@ import jieba
 from pandas import DataFrame
 from collections import defaultdict
 
-from data_utils import sql_insert_many
+from Cron.profile_cal.data_utils import sql_insert_many
 from Config.time_utils import *
 from Config.db_utils import es, pi_cur, conn
 
@@ -37,7 +37,7 @@ def weibo_move(field_dict):
 
 #读取停用词
 def stopwordslist():
-    stopwords = set([line.strip() for line in open('stop_words.txt').readlines()])
+    stopwords = set([line.strip() for line in open('../profile_cal/stop_words.txt').readlines()])
     return stopwords
 
 #得到微博词频 

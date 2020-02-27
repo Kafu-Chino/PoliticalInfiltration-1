@@ -11,7 +11,7 @@ def get_uid_list(n):
     if n ==0:
         sql = 'select %s from %s where computestatus=0' % ("uid", "Figure")
     else:
-        sql = 'select %s from %s where computestatus=1' % ("uid", "Figure")
+        sql = 'select %s from %s' % ("uid", "Figure")
     cursor.execute(sql)
     result = cursor.fetchall()
     uidlist = [item["uid"] for item in result]

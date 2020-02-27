@@ -8,9 +8,9 @@ import numpy as np
 from collections import defaultdict
 import pandas as pd
 #from pandas import DataFrame 
-from data_get_utils import sql_insert_many
+from Cron.profile_cal.data_get_utils import sql_insert_many
 from Config.db_utils import es, pi_cur, conn
-from user_domain import get_user_domain
+from Cron.profile_cal.user_domain import get_user_domain
 cursor = pi_cur()
 
 TOPIC_LIST=["art","computer","economic","education","environment","medicine",\
@@ -22,7 +22,7 @@ TOPIC_LIST=["art","computer","economic","education","environment","medicine",\
 def topic_tfidf():
     ca_dict=defaultdict(dict) # {词：[{topic:tfidf}....]}
     for i in TOPIC_LIST: 
-        reader = pd.read_csv('topic_dict/%s_tfidf.csv' % i,header=None,names=['tfidf','word'],encoding= 'utf8')
+        reader = pd.read_csv('../profile_cal/topic_dict/%s_tfidf.csv' % i,header=None,names=['tfidf','word'],encoding= 'utf8')
         #print(reader)
         count = reader['tfidf'].sum()
         for row in reader.itertuples():
