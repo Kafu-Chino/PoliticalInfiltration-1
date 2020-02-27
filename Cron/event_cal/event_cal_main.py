@@ -50,26 +50,26 @@ def event_cal_main(info, n, start_date, end_date):
 
     print('获取事件相关微博')
     # 获取事件相关微博，计算情感极性，并存入事件索引（没有索引就创建一个）
-    save_event_data(e_id, n, SENTIMENT_POS, SENTIMENT_NEG)
+    # save_event_data(e_id, n, SENTIMENT_POS, SENTIMENT_NEG)
 
     print('敏感词过滤')
     # 对新获取的事件相关微博进行敏感词过滤
-    data_dict = sensitive_word_filter(n, e_id)
+    # data_dict = sensitive_word_filter(n, e_id)
 
-    print('敏感词过滤')
+    print('敏感计算')
     # 对过滤后的结果进行敏感计算
-    data_dict = sensitivity(e_id, data_dict, e_index, POS_NUM, NEG_NUM)
+    # data_dict = sensitivity(e_id, data_dict, e_index, POS_NUM, NEG_NUM)
     # print(data_dict)
 
-    if data_dict != {}:
-        print('敏感信息入库')
-        # 敏感信息入库,敏感信息和事件关联入库
-        sensitivity_store(data_dict)
-        event_sensitivity(e_id, data_dict)
+    # if data_dict != {}:
+    #     print('敏感信息入库')
+    #     # 敏感信息入库,敏感信息和事件关联入库
+    #     sensitivity_store(data_dict)
+    #     event_sensitivity(e_id, data_dict)
 
-        print('敏感人物入库')
-        # 敏感人物入库,敏感人物和事件关联入库
-        figure_add(data_dict, e_id)
+    #     print('敏感人物入库')
+    #     # 敏感人物入库,敏感人物和事件关联入库
+    #     figure_add(data_dict, e_id)
 
     print('事件计算')
     # 获取微博文本数据进行分析
@@ -77,11 +77,11 @@ def event_cal_main(info, n, start_date, end_date):
 
     
 
-    for date in data_dict:
+    # for date in data_dict:
         # 事件语义分析
-        event_semantic(e_id, e_name, data_dict[date], date, WEIBO_NUM)
+        # event_semantic(e_id, e_name, data_dict[date], date, WEIBO_NUM)
         # 事件态势分析
-        event_analyze(e_id, data_dict[date], date)
+        # event_analyze(e_id, data_dict[date], date)
 
     # 事件特殊分析（hashtag、敏感词分布）
     event_hashtag_senwords(e_id, data_dict, n)
@@ -89,9 +89,9 @@ def event_cal_main(info, n, start_date, end_date):
 
 def main():
     data_dict = get_event_data("xianggang_1582357500", "2019-08-08", "2019-08-08")
-    # event_hashtag_senwords("xianggang_1582357500", data_dict, 1)
-    for date in data_dict:
-        event_semantic("xianggang_1582357500", '香港', data_dict[date],date,100000)
+    event_hashtag_senwords("xianggang_1582357500", data_dict, 1)
+    # for date in data_dict:
+    #     event_semantic("xianggang_1582357500", '香港', data_dict[date],date,100000)
 
 if __name__ == '__main__':
     main()
