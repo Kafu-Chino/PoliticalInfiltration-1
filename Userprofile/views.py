@@ -178,40 +178,10 @@ class User_Activity(APIView):
         day_result = UserActivity.objects.filter(uid=uid, timestamp__gte=cal_date,timestamp__lte=t.timestamp()).values("geo", "send_ip").annotate(
             statusnum_s=Sum("statusnum"), sensitivenum_s=Sum("sensitivenum")).order_by("-sensitivenum_s")
         res_dict["day_result"] = list(day_result)
-        # 活动轨迹部分，如展示有问题可去掉
-        '''
-        geo_dict = UserActivity.objects.filter(uid=uid, timestamp__gte=cal_date,timestamp__lte=t.timestamp()).values("timestamp", "geo").annotate(
-            statusnum_s=Sum("statusnum"))
-        route_dict = defaultdict(dict)
-        for item in geo_dict:
-            t = item.pop("timestamp")
-            route_dict[t][item["geo"]] = item["statusnum_s"]
-        geo_dict_item = list(route_dict.items())
-        route_list = []
-        geo_dict_item = sorted(geo_dict_item, key=lambda x: x[0])
-        geo_index = 0
-        for i in range(len(geo_dict_item)):
-            if not geo_dict_item[i][1]:
-                continue
-            item = {'s': max(geo_dict_item[i][1], key=geo_dict_item[i][1].get).split('&')[1], 'e': ''}
-            route_list.append(item)
-            if geo_index > 0:
-                route_list[geo_index - 1]['e'] = max(geo_dict_item[i][1], key=geo_dict_item[i][1].get).split('&')[1]
-            geo_index += 1
-        if len(route_list) > 1:
-            del (route_list[-1])
-        elif len(route_list) == 1:
-            route_list[0]['e'] = route_list[0]['s']
-        for item in route_list:
-            if not (item['s'] and item['e']):
-                route_list.remove(item)
-        res_dict["route_list"] = route_list
-        '''
-
         # 热度展示
         
         geo_map_result = UserActivity.objects.filter(uid=uid, timestamp__gte=cal_date).values("geo").annotate(
-            statusnum_s=Sum("statusnum"),sensitivenum_s=Sum("sensitivenum")).order_by("-sensitivenum_s")
+            statusnum_s=Sum("statusnum")).order_by("-statusnum_s")
         print(geo_map_result)
         res_dict["geo_map_result"] = list(geo_map_result)
         
