@@ -52,9 +52,10 @@ def event_cal_main(info, n, start_date, end_date):
     # 获取事件相关微博，计算情感极性，并存入事件索引（没有索引就创建一个）
     # save_event_data(e_id, n, SENTIMENT_POS, SENTIMENT_NEG)
 
-    print('敏感词过滤')
-    # 对新获取的事件相关微博进行敏感词过滤
-    # data_dict = sensitive_word_filter(n, e_id)
+    print('敏感词过滤，精确敏感信息入库')
+    # 对新获取的事件相关微博进行敏感词过滤，并将包含精确敏感词的信息入库
+    data_dict = sensitive_word_filter(n, e_id)
+    print(len(data_dict))
 
     print('敏感计算')
     # 对过滤后的结果进行敏感计算
@@ -73,7 +74,7 @@ def event_cal_main(info, n, start_date, end_date):
 
     print('事件计算')
     # 获取微博文本数据进行分析
-    data_dict = get_event_data(e_index, start_date, end_date)
+    # data_dict = get_event_data(e_index, start_date, end_date)
 
     
 
@@ -84,7 +85,7 @@ def event_cal_main(info, n, start_date, end_date):
         # event_analyze(e_id, data_dict[date], date)
 
     # 事件特殊分析（hashtag、敏感词分布）
-    event_hashtag_senwords(e_id, data_dict, n)
+    # event_hashtag_senwords(e_id, data_dict, n)
 
 
 def main():
