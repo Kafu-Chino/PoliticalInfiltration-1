@@ -7,16 +7,17 @@ from Config.db_utils import es, pi_cur, conn
 from Config.time_utils import *
 from Cron.event_cal.data_utils import sql_insert_many
 
+
 # 统计事件在一段时间内的微博信息
 def event_hashtag_senwords(e_id, data_dict, n):
     # 正则规则构建，包括全局敏感词、事件敏感词、hashtag
     global_senwords_list = []
-    with open('sensitive_words_list_add.txt','r',encoding='utf-8') as f:
+    with open('../event_cal/sensitive_words_list_add.txt','r',encoding='utf-8') as f:
         for l in  f.readlines():
             global_senwords_list.append(l.strip())
 
     event_senwords_list = []
-    with open('高精度敏感词.txt','r',encoding='utf-8') as f:
+    with open('../event_cal/高精度敏感词.txt','r',encoding='utf-8') as f:
         for l in  f.readlines():
             event_senwords_list.append(l.strip())
 
