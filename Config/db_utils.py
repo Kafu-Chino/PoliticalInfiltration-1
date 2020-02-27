@@ -27,6 +27,17 @@ def test_sample(table):
     cur.close()
     return data
 
+def db_connect():
+    es = Elasticsearch(hosts=[{'host': ES_HOST, 'port': ES_PORT}], timeout=1000)
+    db = pymysql.connect(
+        host='219.224.135.12',
+        port=3306,
+        user='root',
+        passwd='mysql3306',
+        db='PoliticalInfiltration',
+        charset='utf8'
+    )
+    return es,db
 
 def get_global_para(para_name):
     cursor = pi_cur()

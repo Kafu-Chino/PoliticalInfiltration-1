@@ -9,17 +9,17 @@ sys.path.append("../../")
 os.environ['DJANGO_SETTINGS_MODULE'] = 'PoliticalInfiltration.settings'
 django.setup()
 
-from data_utils import get_uid_list, get_uidlist_data
-from data_process_utils import get_processed_data
-from user_sentiment import cal_user_emotion
-from user_social import get_user_social
-from user_topic import topic_domain_cal
-from user_keywords import get_user_keywords
-from user_influence_total import influence_total
-from user_political import get_user_political
-from user_influence_total import influence_total
-from user_position import get_user_activity_aggs
-from user_msg_type import get_msg_type_aggs
+from Cron.profile_cal.data_utils import get_uid_list, get_uidlist_data
+from Cron.profile_cal.data_process_utils import get_processed_data
+from Cron.profile_cal.user_sentiment import cal_user_emotion
+from Cron.profile_cal.user_social import get_user_social
+from Cron.profile_cal.user_topic import topic_domain_cal
+from Cron.profile_cal.user_keywords import get_user_keywords
+from Cron.profile_cal.user_influence_total import influence_total
+from Cron.profile_cal.user_political import get_user_political
+from Cron.profile_cal.user_influence_total import influence_total
+from Cron.profile_cal.user_position import get_user_activity_aggs
+from Cron.profile_cal.user_msg_type import get_msg_type_aggs
 
 
 def getEveryDay(begin_date,end_date):
@@ -38,12 +38,11 @@ def profile_cal_uidlist(uidlist,n):
         # end_date = datetime.datetime.today()- datetime.timedelta(days=1)
         # start_date = datetime.datetime.strptime(str(datetime.datetime.today() - datetime.timedelta(days=20))[:10],
         #                                         "%Y-%m-%d")
-        #end_date = '2019-08-15'
-        #start_date = datetime.datetime.strptime(str(datetime.datetime.strptime(end_date,"%Y-%m-%d") - datetime.timedelta(days=1))[:10],
+
         end_date = '2019-08-25'
         start_date = datetime.datetime.strptime(str(datetime.datetime.strptime(end_date,"%Y-%m-%d") - datetime.timedelta(days=20))[:10],
                                                 "%Y-%m-%d")
-        date_list = getEveryDay(str(start_date)[:10], str(end_date)[:10])
+        date_list = getEveryDay(str(start_date)[:10], str(end_date)[:10]).pop(20)
     else:
         today = datetime.date.today()
         oneday = datetime.timedelta(days=1)
@@ -59,7 +58,6 @@ def profile_cal_uidlist(uidlist,n):
         word_dict, text_list, text_dict = get_processed_data(date_data, date)
         time4 = time.time()
         # 地域特征（文娟）
-        # get_user_activity_aggs(date_data,date)
         get_user_activity_aggs(date_data,date)
         time2=time.time()
         print('地域：',time2-start_time)
@@ -75,31 +73,17 @@ def profile_cal_uidlist(uidlist,n):
         print('情绪：', time4 - time3)
 
         # 影响力特征（英汉）
-        # influence_total(date,uidlist,word_dict,date_data,index)
-        #
-        # # 社交特征（梦丽）
-        # get_user_social(date_data,date)
-        #     # 偏好特征（梦丽）
-        # get_user_keywords(text_list, word_dict, date, 5)
         influence_total(date,uidlist,word_dict,date_data,index)
         time5 = time.time()
         print('影响：', time5 - time4)
-        #
-        # # # 社交特征（梦丽）
+         # 社交特征（梦丽）
         get_user_social(uidlist,date_data,date,n)
         time6 = time.time()
         print('社交：', time6 - time5)
         # #
         #每星期计算一次
         dayOfWeek = datetime.datetime.strptime(date, "%Y-%m-%d").weekday()
-        # if  dayOfWeek == 0:
-        #     # 话题和领域特征
-        #     print('开始周计算')
-        #     thedate = datetime.datetime.strptime(date, "%Y-%m-%d")
-        #     theday = int(time.mktime(time.strptime(date, "%Y-%m-%d")))
-        #     thatdate = thedate - datetime.timedelta(days=7)
-        #     thatday = theday - 86400*7
-        #     topic_domain_cal(uidlist,thatday,theday,thatdate,thedate)
+
         if  dayOfWeek == 1:
             # 话题和领域特征
             print('开始周计算')
@@ -124,12 +108,11 @@ def profile_cal_uidlist(uidlist,n):
 
 
 
-def profile_cal_main(n):
-    
-    if n==0:
-        uidlist = get_uid_list(n)
-    else:
-        uidlist = get_uid_list(n)
+def profile_cal_main(n,uid_list):
+    # if n==0:
+    #     uidlist = get_uid_list(n)
+    # else:
+    #     uidlist = get_uid_list(n)
     batch_num = 5000
     batch_all = math.ceil(len(uidlist) / batch_num)
     for batch_epoch in range(batch_all):

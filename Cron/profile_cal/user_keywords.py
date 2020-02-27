@@ -1,13 +1,15 @@
 # coding = utf - 8
 import sys
+sys.path.append("../../")
+
 import os
 import json
 import re
 import time,datetime
 from collections import defaultdict
 from textrank4zh import TextRank4Keyword, TextRank4Sentence
-from data_process_utils import wordcount
-from data_get_utils import sql_insert_many
+from Cron.profile_cal.data_process_utils import wordcount
+from Cron.profile_cal.data_get_utils import sql_insert_many
 from Config.db_utils import es, pi_cur, conn
 
 cursor = pi_cur()
@@ -15,7 +17,7 @@ cursor = pi_cur()
 #从敏感词列表中读取敏感词及其程度 得到{词：敏感程度}
 def sensitive_word():
     sensitive_words_weight={}
-    for b in open('sensitive_words.txt', 'r'):
+    for b in open('../profile_cal/sensitive_words.txt', 'r'):
         word = b.strip().split('\t')[0]
         weight =  b.strip().split('\t')[1]
         sensitive_words_weight[word] = weight

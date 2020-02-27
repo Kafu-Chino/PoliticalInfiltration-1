@@ -1,13 +1,14 @@
 ### 在这里将get_aggs函数进行拆分，这里只放活动信息统计的部分，该文件不会直接执行，会在profile_cal_main.py里统一调用进行计算。
 
 ### 标记好这个统计函数的输入与输出，以便于代码查看
-
+import sys
+sys.path.append("../../")
 
 import time
 import datetime
 from pandas import DataFrame
 from Mainevent.models import *
-from data_get_utils import sql_insert_many
+from Cron.profile_cal.data_get_utils import sql_insert_many
 from Config.db_utils import es, pi_cur, conn
 
 cursor = pi_cur()

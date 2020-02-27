@@ -7,7 +7,7 @@ import datetime
 import numpy as np
 from collections import defaultdict
 import pandas as pd
-from data_get_utils import sql_insert_many
+from Cron.profile_cal.data_get_utils import sql_insert_many
 from Config.db_utils import es, pi_cur, conn
 
 cursor = pi_cur()
@@ -20,7 +20,7 @@ DOMAIN_LIST=['abroadadmin','abroadmedia','business','folkorg','grassroot','activ
 def domain_tfidf():
     ca_dict=defaultdict(dict) # {词：{domain:tfidf,....}}
     for i in DOMAIN_LIST: 
-        reader = pd.read_csv('domain_dict/%s.csv' % i,header=None,names=['tfidf','word'],encoding= 'utf8')
+        reader = pd.read_csv('../profile_cal/domain_dict/%s.csv' % i,header=None,names=['tfidf','word'],encoding= 'utf8')
         count = reader['tfidf'].sum()
         #print(reader)
         for row in reader.itertuples():
