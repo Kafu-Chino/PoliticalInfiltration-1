@@ -84,7 +84,7 @@ def lda_analyze(corpusTfidf, dictionary, num_topics=10, iterations=50, workers=6
         probability = [p.split('*')[0].strip() for p in item]
         word = [w.split('*')[1].strip().strip('"') for w in item]
         for w, p in zip(word, probability):
-        	json_data[i[0]][w] = p
+            json_data[i[0]][w] = p
         # print(word)
     return json_data
 

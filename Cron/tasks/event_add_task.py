@@ -27,7 +27,7 @@ def update_monitor_status(eid, status):
 
 # 对新添加的事件进行计算
 def event_add():
-    # 获取新添加的事件
+    # 获取新添加的事件（监测中未计算的）
     eid_dic = get_edic_add()
 
     # 更新为“计算中”
@@ -47,8 +47,8 @@ def event_add():
         # 更新为“计算完成”
         update_cal_status([e_item], 2)
 
-        # 更新为“监测中”
-        update_monitor_status(e_id, 1)
+        # # 更新为“监测中”
+        # update_monitor_status(e_id, 1)
 
         print("事件 %s 已添加成功，并计算完成。" % e_name)
 
