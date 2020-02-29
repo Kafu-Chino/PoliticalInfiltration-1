@@ -275,32 +275,38 @@ def save_event_data(e_id, n, SENTIMENT_POS, SENTIMENT_NEG):
 
 # 敏感信息入库
 def sensitivity_store(data_dict):
-    cursor = pi_cur()
-    sql = 'replace into Information set i_id=%s,uid=%s,root_uid=%s,mid=%s,text=%s,timestamp=%s,' \
-          'send_ip=%s,geo=%s,message_type=%s,root_mid=%s,source=%s,monitor_status=1,hazard_index=NULL,' \
-          'cal_status=0,add_manully=0'
-    val = []
-    for i, j in data_dict.items():
-        val.append((j.get('source',None)+i,j.get('uid',None),j.get('root_uid',None),i,j.get('text',None),
-                    j.get('timestamp',None),j.get('send_ip',None),j.get('geo',None),
-                    j.get('message_type',None),j.get('root_mid',None),j.get('source',None)))
-    # 执行sql语句
-    n = cursor.executemany(sql, val)
-    print("入库成功 %d 条" % n)
-    conn.commit()
+    if len(data_dict) == 0:
+        print('no data')
+    else:
+        cursor = pi_cur()
+        sql = 'replace into Information set i_id=%s,uid=%s,root_uid=%s,mid=%s,text=%s,timestamp=%s,' \
+              'send_ip=%s,geo=%s,message_type=%s,root_mid=%s,source=%s,monitor_status=1,hazard_index=NULL,' \
+              'cal_status=0,add_manully=0'
+        val = []
+        for i, j in data_dict.items():
+            val.append((j.get('source',None)+i,j.get('uid',None),j.get('root_uid',None),i,j.get('text',None),
+                        j.get('timestamp',None),j.get('send_ip',None),j.get('geo',None),
+                        j.get('message_type',None),j.get('root_mid',None),j.get('source',None)))
+        # 执行sql语句
+        n = cursor.executemany(sql, val)
+        print("入库成功 %d 条" % n)
+        conn.commit()
 
 
 # 敏感信息和事件关联入库
 def event_sensitivity(e_id,data_dict):
-    cursor = pi_cur()
-    sql = 'insert into Event_information set event_id=%s,information_id=%s'
-    val = []
-    for i in data_dict:
-        val.append((e_id,i))
-    # 执行sql语句
-    n = cursor.executemany(sql, val)
-    print("入库成功 %d 条" % n)
-    conn.commit()
+    if len(data_dict) == 0:
+        print('no data')
+    else:
+        cursor = pi_cur()
+        sql = 'insert into Event_information set event_id=%s,information_id=%s'
+        val = []
+        for i in data_dict:
+            val.append((e_id,i))
+        # 执行sql语句
+        n = cursor.executemany(sql, val)
+        print("入库成功 %d 条" % n)
+        conn.commit()
 
 
 # 事件计算时获取数据
