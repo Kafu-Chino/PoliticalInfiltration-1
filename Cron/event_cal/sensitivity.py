@@ -16,8 +16,11 @@ import os
 import pandas as pd
 from elasticsearch import helpers
 import sys
+
 sys.path.append('../../')
-from Config.db_utils import es, pi_cur
+from Config.db_utils import ees, pi_cur
+from Config.base import BERT_HOST, BERT_PORT, BERT_PORT_OUT
+
 
 def jinghua(text1):
     text = re.search('(.*?)//@', text1)
@@ -65,14 +68,14 @@ def data_process(data):
 
 # 转换bert向量
 def bert_vec(texts):
-    with BertClient(port=5555, port_out=5556) as bc:
+    with BertClient(ip=BERT_HOST, port=BERT_PORT, port_out=BERT_PORT_OUT) as bc:
         vec = bc.encode(texts)
         vec = list(vec)
     return vec
 
 
 def ANN_cal(e_id, vec, y):
-    index = ngtpy.Index(str(e_id)+'.anng')
+    index = ngtpy.Index(str(e_id) + '.anng')
     label = []
     for i in vec:
         results = index.search(i, size=8)
@@ -98,8 +101,8 @@ def ANN_cal(e_id, vec, y):
 
 
 def create_ANN(e_id, pos_data, neg_data):
-    ngtpy.create(path=str(e_id)+'.anng', dimension=768, distance_type="L2")
-    index = ngtpy.Index(str(e_id)+'.anng')
+    ngtpy.create(path=str(e_id) + '.anng', dimension=768, distance_type="L2")
+    index = ngtpy.Index(str(e_id) + '.anng')
     nX1 = np.array(list(pos_data['vec']))
     nX2 = np.array(list(neg_data['vec']))
     objects = np.concatenate((nX1, nX2))
@@ -108,8 +111,6 @@ def create_ANN(e_id, pos_data, neg_data):
     index.save()
     y = np.concatenate((np.ones(len(nX1), dtype=int), np.zeros(len(nX2), dtype=int)))
     return y
-
-
 
 
 def get_pos(POS_NUM):
@@ -126,14 +127,14 @@ def get_pos(POS_NUM):
 
 
 def get_pos_data(e_id, POS_NUM):
-    if os.path.exists(e_id+'.pkl'):
-        pos_data = pd.read_pickle(e_id+'.pkl')
+    if os.path.exists(e_id + '.pkl'):
+        pos_data = pd.read_pickle(e_id + '.pkl')
     else:
         pos_data = pd.DataFrame(columns=('mid', 'vec'))
         mid, texts = get_pos(int(POS_NUM))
         pos_data['mid'] = mid
         pos_data['vec'] = bert_vec(texts)
-        pos_data.to_pickle(e_id+'.pkl')
+        pos_data.to_pickle(e_id + '.pkl')
     return pos_data
 
 
@@ -145,7 +146,7 @@ def get_neg_data(e_index, NEG_NUM):
         }
     }
     es_result = helpers.scan(
-        client=es,
+        client=ees,
         query=query_body,
         scroll='1m',
         index=e_index,
@@ -156,7 +157,7 @@ def get_neg_data(e_index, NEG_NUM):
     vec = []
     es_result = list(es_result)
     if len(es_result) > 100000:
-        index_list = set(np.random.choice(range(len(es_result)),size=NEG_NUM,replace=False))
+        index_list = set(np.random.choice(range(len(es_result)), size=NEG_NUM, replace=False))
         for index, item in enumerate(es_result):
             if index not in index_list:
                 continue
@@ -165,7 +166,7 @@ def get_neg_data(e_index, NEG_NUM):
         neg_data['mid'] = mid
         neg_data['vec'] = bert_vec(vec)
     else:
-        index_list = set(np.random.choice(range(len(es_result)), size=int(len(es_result)/10), replace=False))
+        index_list = set(np.random.choice(range(len(es_result)), size=int(len(es_result) / 10), replace=False))
         for index, item in enumerate(es_result):
             if index not in index_list:
                 continue
@@ -176,25 +177,18 @@ def get_neg_data(e_index, NEG_NUM):
     return neg_data
 
 
-def sensitivity(e_id,data,e_index,POS_NUM,NEG_NUM):
-    data = dict_slice(data,0,25)
+def sensitivity(e_id, data, e_index, POS_NUM, NEG_NUM):
+    # data = dict_slice(data, 0, 25)   # 测试代码，采样一小部分数据
     data, texts = data_process(data)
     vec = bert_vec(texts)
-    pos_data = get_pos_data(e_id,POS_NUM)
-    neg_data = get_neg_data(e_index,NEG_NUM)
+    pos_data = get_pos_data(e_id, POS_NUM)
+    neg_data = get_neg_data(e_index, NEG_NUM)
     y = create_ANN(e_id, pos_data, neg_data)
     label = ANN_cal(e_id, vec, y)
     for i, j in zip(list(data.keys()), label):
         if j == 0:
             del data[i]
     return data
-
-
-
-
-
-
-
 
 
 def dict_slice(ori_dict, start, end):

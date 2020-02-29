@@ -1,7 +1,7 @@
 import sys
 sys.path.append("../../")
 from Cron.event_cal.new_dfa import *
-from Config.db_utils import es,conn,pi_cur
+from Config.db_utils import ees,conn,pi_cur
 from Config.time_utils import *
 from Cron.event_cal.data_utils import get_event_info
 from Cron.event_cal.data_utils import sensitivity_store,event_sensitivity
@@ -41,7 +41,7 @@ def querry(e_index,start_es,end_es):
         "sort": [],
         "aggs": {}
     }
-    query = es.search(index=e_index, body=querrybody, scroll='5m', size=10000)
+    query = ees.search(index=e_index, body=querrybody, scroll='5m', size=10000)
 
     results = query['hits']['hits']  # es查询出的结果第一页
     total = query['hits']['total']  # es查询出的结果总量
@@ -51,7 +51,7 @@ def querry(e_index,start_es,end_es):
         list.append(line['_source'])
     for i in range(0, int(total / 10000) + 1):
         # scroll参数必须指定否则会报错
-        query_scroll = es.scroll(scroll_id=scroll_id, scroll='5m')['hits']['hits']
+        query_scroll = ees.scroll(scroll_id=scroll_id, scroll='5m')['hits']['hits']
 
         for line in query_scroll:
             list.append(line['_source'])

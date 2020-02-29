@@ -1,7 +1,7 @@
 import sys
 import elasticsearch.helpers
 sys.path.append("../../")
-from Config.db_utils import es, pi_cur, conn
+from Config.db_utils import es, ees, pi_cur, conn
 from Cron.event_cal.SentimentalPolarities import sentiment_polarities
 from Config.time_utils import *
 from collections import defaultdict                                   
@@ -17,7 +17,7 @@ def get_edic_daily():
 
 def get_edic_add():
     cursor = pi_cur()
-    sql = 'select * from Event where monitor_status = 0 and cal_status = 0'
+    sql = 'select * from Event where monitor_status = 1 and cal_status = 0'
     cursor.execute(sql)
     result = cursor.fetchall()
     return result
@@ -115,7 +115,7 @@ def event_es_save(save,e_index):
         }
         for d in save
     ]
-    elasticsearch.helpers.bulk(es, actions=actions)
+    elasticsearch.helpers.bulk(ees, actions=actions)
 
 
 def create_event_index(e_index):
@@ -229,7 +229,7 @@ def create_event_index(e_index):
             },
         }
     }
-    result = es.indices.create(index=e_index, ignore=400, body=event_data)
+    result = ees.indices.create(index=e_index, ignore=400, body=event_data)
     print(result)
 
 
@@ -265,7 +265,7 @@ def save_event_data(e_id, n, SENTIMENT_POS, SENTIMENT_NEG):
                 message['sentiment_polarity'] = sentiment_dict[message['mid']]
                 message['source'] = '新浪'
                 save.append(message)
-            if es.indices.exists(index=e_index):
+            if ees.indices.exists(index=e_index):
                 event_es_save(save,e_index)
             else:
                 create_event_index(e_index)
@@ -321,11 +321,24 @@ def get_event_data(e_index, start_date, end_date):
         }
     }
 
-    result = elasticsearch.helpers.scan(es, index=e_index, query=query_body)
+    result = elasticsearch.helpers.scan(ees, index=e_index, query=query_body)
 
-    data= defaultdict(list)
+    data = defaultdict(list)
     for item in result:
         item = item["_source"]
         date = ts2date(item["timestamp"])                        
         data[date].append(item)
     return data
+
+
+# 初始化新事件参数
+def store_event_para(e_id, p_name):
+    cursor = pi_cur()
+    sql = 'replace into EventParameter values (%s, %s, %s, %s, %s)'
+    parameters = {'sentiment_neg':(e_id+'sentiment_neg','sentiment_neg',0.2,e_id,'信息情感极性负面阈值'),
+    'sentiment_pos':(e_id+'sentiment_pos','sentiment_pos',0.7,e_id,'信息情感极性正面阈值'),
+    'pos_num':(e_id+'pos_num','pos_num',1000,e_id,'敏感计算时正类数量'),
+    'neg_num':(e_id+'neg_num','neg_num',15000,e_id,'敏感计算时负类数量'),
+    'weibo_num':(e_id+'weibo_num','weibo_num',100000,e_id,'每日LDA聚类时采样的微博总数')}
+    cursor.executemany(sql, [parameters[p_name]])
+    conn.commit()

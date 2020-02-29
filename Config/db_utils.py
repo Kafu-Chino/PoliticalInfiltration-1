@@ -7,6 +7,8 @@ from DBUtils.PooledDB import PooledDB
 
 es = Elasticsearch(hosts=[{'host': ES_HOST, 'port': ES_PORT}], timeout=1000)
 
+ees = Elasticsearch(hosts=[{'host': EES_HOST, 'port': EES_PORT}], timeout=1000)
+
 redis_ep = redis.Redis(connection_pool=redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=0))
 
 pi_pool = PooledDB(creator=pymysql,mincached=DB_MIN_CACHED,
