@@ -341,10 +341,10 @@ def get_event_data(e_index, start_date, end_date):
 def store_event_para(e_id, p_name):
     cursor = pi_cur()
     sql = 'replace into EventParameter values (%s, %s, %s, %s, %s)'
-    parameters = {'sentiment_neg':(e_id+'sentiment_neg','sentiment_neg',0.2,e_id,'信息情感极性负面阈值'),
-    'sentiment_pos':(e_id+'sentiment_pos','sentiment_pos',0.7,e_id,'信息情感极性正面阈值'),
-    'pos_num':(e_id+'pos_num','pos_num',1000,e_id,'敏感计算时正类数量'),
-    'neg_num':(e_id+'neg_num','neg_num',15000,e_id,'敏感计算时负类数量'),
-    'weibo_num':(e_id+'weibo_num','weibo_num',100000,e_id,'每日LDA聚类时采样的微博总数')}
+    parameters = {'sentiment_neg':(e_id+'_sentiment_neg','sentiment_neg',0.2,e_id,'信息情感极性负面阈值'),
+    'sentiment_pos':(e_id+'_sentiment_pos','sentiment_pos',0.7,e_id,'信息情感极性正面阈值'),
+    'pos_num':(e_id+'_pos_num','pos_num',1000,e_id,'敏感计算时正类数量'),
+    'neg_num':(e_id+'_neg_num','neg_num',15000,e_id,'敏感计算时负类数量'),
+    'weibo_num':(e_id+'_weibo_num','weibo_num',100000,e_id,'每日LDA聚类时采样的微博总数')}
     cursor.executemany(sql, [parameters[p_name]])
     conn.commit()
