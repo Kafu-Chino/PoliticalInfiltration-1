@@ -10,6 +10,7 @@ class Informationspread(models.Model):
     timestamp = models.BigIntegerField(blank=True, null=True)
     store_date = models.DateField(blank=True, null=True)
     hazard_index = models.FloatField(blank=True, null=True)
+    message_type = models.IntegerField(blank=True, null=True)
 
     class Meta():
         db_table = 'Informationspread'

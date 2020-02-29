@@ -201,8 +201,6 @@ class Add_event(APIView):
             return JsonResponse({"status":400, "info": "添加失败，缺少必填项！"},safe=False)
 
         if not begin_date:
-            end_date = today()
-        if not begin_date:
             begin_date = ts2date(date2ts(today()) - 19 * 86400)
 
         event_name_pinyin = Pinyin().get_pinyin(event_name, '')
@@ -603,7 +601,7 @@ class Person_show(APIView):
             results.append(dic)
         return JsonResponse(results, safe=False)
 
-class Event_Special(APIView):
+class Event_Group(APIView):
     def get(self, request):
         e_id = request.GET.get('e_id')
 
