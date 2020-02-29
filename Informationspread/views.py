@@ -37,11 +37,11 @@ class Trend(APIView):
             date = Event.objects.filter(information__mid=mid).order_by('end_date')[0].end_date.strftime('%Y-%m-%d')
         except:
             date = today()
+        print(date)
         date = date2ts(date)
         date_before = date - n * 86400
         result = Informationspread.objects.filter(mid=mid, timestamp__gte=date_before, timestamp__lte=date).values()
         data_dic = {ts2date(item["timestamp"]): item["comment_count"] + item["retweet_count"] for item in result}
-        print(data_dic)
 
         datelist = get_datelist_v2(ts2date(date_before), ts2date(date))
         count_list = []
