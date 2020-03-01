@@ -306,6 +306,7 @@ class Show_contact(APIView):
         start_ts = end_ts - date_window * 86400
 
         result = UserSocialContact.objects.filter((Q(source=uid) | Q(target=uid)) & Q(timestamp__gte=start_ts) & Q(timestamp__lte=end_ts)).values()
+        # return JsonResponse({1:list(result)}, safe=False)
 
         # 对用户多日的数据进行聚合
         result_sta = {}

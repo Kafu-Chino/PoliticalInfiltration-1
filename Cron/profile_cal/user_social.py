@@ -81,7 +81,7 @@ def get_user_social(uidlist, date_data, date,n):
 
     # 用户昵称es库查询
     cursor = pi_cur()
-    sql = "SELECT uid, nick_name from Figure where uid in ({})".format(",".join(uidlist))
+    sql = "SELECT uid, nick_name from Figure where uid in ('{}'')".format("','".join(uidlist))
     cursor.execute(sql)
     result = cursor.fetchall()
     nick_name_dic = {item["uid"]: item["nick_name"] for item in result}

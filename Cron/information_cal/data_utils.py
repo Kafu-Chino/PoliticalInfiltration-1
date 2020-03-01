@@ -46,5 +46,10 @@ def sql_insert_many(table_name, primary_key, data_dict):
     values_sql = ",".join(values)
     sql = 'replace into %s (%s) values (%s)' % (table_name, columns_sql, values_sql)
 
-    n = cursor.executemany(sql, params)
-    conn.commit()
+    if len(params):
+        n = cursor.executemany(sql, params)
+        m = len(params)
+        print("insert {} success, {} failed".format(m, m - n))
+        conn.commit()
+    else:  
+        print('empty data')

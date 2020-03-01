@@ -3,6 +3,7 @@ import re
 from django.http import JsonResponse, HttpResponse
 
 from Config.time_utils import *
+from Config.db_utils import get_global_para
 from Config.base import MSG_TYPE_DIC
 from Informationspread.models import Informationspread
 from Mainevent.models import Information, Event
@@ -32,22 +33,36 @@ class Show_Info(APIView):
 class Trend(APIView):
     def get(self, request):
         mid = request.GET.get('mid')
-        n = 90
         try:
             date = Event.objects.filter(information__mid=mid).order_by('end_date')[0].end_date.strftime('%Y-%m-%d')
         except:
             date = today()
-        print(date)
         date = date2ts(date)
-        date_before = date - n * 86400
+        mid_item = Information.objects.filter(mid=mid).values()
+        date_before = mid_item[0]["timestamp"]
+        if date_before:
+            date_before = date2ts(ts2date(date_before))
+        else:
+            date_before = date - 30 * 86400
+        date_before = date - 90 * 86400
+
         result = Informationspread.objects.filter(mid=mid, timestamp__gte=date_before, timestamp__lte=date).values()
         data_dic = {ts2date(item["timestamp"]): item["comment_count"] + item["retweet_count"] for item in result}
 
+        if len(result):
+            message_type = result[0]["message_type"]
+        else:
+            message_type = 1
+
         datelist = get_datelist_v2(ts2date(date_before), ts2date(date))
+        decay_ratio = get_global_para("information_trend_decay_ratio")
         count_list = []
         for date in datelist:
             if date in data_dic:
-                count_list.append(data_dic[date])
+                if message_type == 1:
+                    count_list.append(data_dic[date])
+                elif message_type in [2,3]:
+                    count_list.append(int(data_dic[date] * decay_ratio))
             else:
                 count_list.append(0)
 

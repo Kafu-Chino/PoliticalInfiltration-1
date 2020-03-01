@@ -20,6 +20,7 @@ def information_daily(date):
     batch_all = math.ceil(len(mid_dic) / batch_num)
 
     # 批次输入进行计算（如有需要可多进程或分布式）
+    print("需要计算信息 {} 条。".format(len(mid_dic)))
     for batch_epoch in range(batch_all):
         mid_dic_batch = mid_dic[batch_epoch * batch_num: (batch_epoch + 1) * batch_num]
         print("信息{}至{}， 共{}".format(batch_epoch * batch_num, (batch_epoch + 1) * batch_num, len(mid_dic)))
@@ -32,5 +33,5 @@ def information_daily(date):
 
 if __name__ == '__main__':
     date = today()
-    # date = '2019-08-26'
+    # date = '2019-07-16'
     information_daily(date)
