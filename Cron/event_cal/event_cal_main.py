@@ -1,6 +1,7 @@
 #-*-coding=utf-8-*-
 #### 在这里导入数据函数和计算函数，写主函数进行计算
 import sys
+import time
 sys.path.append("../../")
 from Config.db_utils import get_event_para
 from Cron.event_cal.event_analyze import event_analyze
@@ -69,26 +70,38 @@ def event_cal_main(info, n, start_date, end_date):
 
     if data_dict != {}:
         print('敏感信息入库')
-    #     # 敏感信息入库,敏感信息和事件关联入库
+        # 敏感信息入库,敏感信息和事件关联入库
         sensitivity_store(data_dict)
         event_sensitivity(e_id, data_dict)
 
         print('敏感人物入库')
-    #     # 敏感人物入库,敏感人物和事件关联入库
+        # 敏感人物入库,敏感人物和事件关联入库
         figure_add(data_dict, e_id)
 
     print('事件计算')
-    # 获取微博文本数据进行分析
+    # 获取微博数据进行分析
+    # t0 = time.time()
     data_dict = get_event_data(e_index, start_date, end_date)
+    # t1 = time.time()
+    # print('取数据',t1-t0)
 
     for date in data_dict:
+        print(date)
+        print(len(data_dict[date]))
         # 事件语义分析
+        # t1 = time.time()
         event_semantic(e_id, e_name, data_dict[date], date, WEIBO_NUM)
+        # t2 = time.time()
+        # print('语义',t2-t1)
         # 事件态势分析
         event_analyze(e_id, data_dict[date], date)
+        # t3 = time.time()
+        # print('态势',t3-t2)
 
     # 事件特殊分析（hashtag、敏感词分布）
     event_hashtag_senwords(e_id, data_dict, n)
+    # t4 = time.time()
+    # print('特殊',t4-t3)
 
 
 def main():

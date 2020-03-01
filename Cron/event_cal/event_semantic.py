@@ -91,7 +91,7 @@ def lda_analyze(corpusTfidf, dictionary, num_topics=10, iterations=50, workers=6
 
 # 事件语义分析
 def event_semantic(e_id, e_name, data, thedate, WEIBO_NUM):
-    corpus_tfidf, dictionary = data_process(data, WEIBO_NUM)
+    corpus_tfidf, dictionary = data_process(data, int(WEIBO_NUM))
     result = lda_analyze(corpus_tfidf, dictionary, num_topics=5)
     result = json.dumps(result)
     timestamp = date2ts(thedate)
