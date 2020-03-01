@@ -256,7 +256,7 @@ class Event_trend(APIView):
                 hot[date] = re.hot_index
                 sensitive[date] = re.sensitive_index
                 neg[date] = re.negative_index
-                print(hot)
+                #print(hot)
             res_dict["hot_index"] = hot
             res_dict["sensitive_index"] = sensitive
             res_dict["negative_index"] = neg
@@ -508,9 +508,10 @@ class semantic_topic(APIView):
                     for k,v in re["topics"][str(i)].items():
                     #dict(zip(re["topics"][i]['主题'],re["topics"][i]['概率']))
                         try:
-                            topics[str(i)][k] += int(v)
+                            topics[str(i)][k] += float(v)
                         except:
-                            topics[str(i)][k] = int(v)
+                            topics[str(i)][k] = float(v)
+                    topics[str(i)] = dict(sorted(topics[str(i)].items(),key=lambda x:x[1],reverse=True)[:10])
             return JsonResponse(topics,safe=False,json_dumps_params={'ensure_ascii':False}) #
         else:
             return JsonResponse({"status":400, "error": "无主题信息"},safe=False)
