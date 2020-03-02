@@ -663,40 +663,67 @@ class User_Sentiment(APIView):
         """
         uid = request.GET.get('uid')
         n_type = request.GET.get('n_type')
-        res_dict = {}
+        try:
+            date = UserSentiment.objects.filter(uid=uid).order_by('-store_date')[0].store_date.strftime('%Y-%m-%d')
+        except:
+            date = today()
+        res_dict = defaultdict(dict)
+        date = date2ts(date)
         # 每日情绪特征，从当前日期往前推7天展示 积极微博数，中性微博数，消极微博数
         if n_type == "日":
-            new_date = (datetime.datetime.now() + datetime.timedelta(days=-7)).timestamp()
-            result = UserSentiment.objects.filter(uid=uid, timestamp__gte=new_date).values(
-                "timestamp").annotate(positive_s=Sum("positive"), nuetral_s=Sum("nuetral"),
-                                      negtive_s=Sum("negtive"))
-            for item in result:
-                t = item.pop("timestamp") - 24 * 60 * 60
-                res_dict[time.strftime("%Y-%m-%d", time.localtime(t))] = item
+            dl = get_datelist_v2(ts2date(date - 6 * 86400),ts2date(date))
+            # result = UserSentiment.objects.filter(uid=uid, timestamp__gte=date2ts(dl[0]), timestamp__lte=date).values("store_date").annotate(positive_s=Sum("positive"), nuetral_s=Sum("nuetral"), negtive_s=Sum("negtive"))
+            # for d in dl:
+            #     r = {}
+            #     for i in result:
+            #         if d == str(i['store_date']):
+            #             r = i
+            for d in dl:
+                result = UserSentiment.objects.filter(uid=uid, store_date__gte=d, store_date__lte=d).values('positive','nuetral','negtive')
+                if result.exists():
+                    res_dict['positive'][d] = result[0]['positive']
+                    res_dict['nuetral'][d] = result[0]['nuetral']
+                    res_dict['negtive'][d] = result[0]['negtive']
+                else:
+                    res_dict['positive'][d] = 0
+                    res_dict['nuetral'][d] = 0
+                    res_dict['negtive'][d] = 0
         # 每周情绪特征，从当前日期往前推5周展示 积极微博数，中性微博数，消极微博数
         if n_type == "周":
             date_dict = {}
-            for i in range(5):
-                date_dict[i + 1] = (datetime.datetime.now() + datetime.timedelta(weeks=(-1 * (i + 1)))).timestamp()
-            date_dict[0] = time.time()
-            for i in range(5):
+            for i in range(1,6):
+                date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(weeks=(-1 * i))).timestamp()
+            date_dict[0] = date
+            for i in [4, 3, 2, 1, 0]:
                 result = UserSentiment.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
-                                                     timestamp__lt=date_dict[i]).aggregate(positive_s=Sum("positive"), nuetral_s=Sum("nuetral"),
-                                      negtive_s=Sum("negtive"))
-                if list(result.values())[0] or list(result.values())[1] or list(result.values())[2]:
-                    res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i]) - 24 * 60 * 60))] = result
+                                                     timestamp__lt=date_dict[i]).aggregate(
+                    positive_s=Sum("positive"), nuetral_s=Sum("nuetral"), negtive_s=Sum("negtive"))
+                if result['positive_s'] != None:
+                    res_dict['positive'][ts2date(date_dict[i])] = result['positive_s']
+                    res_dict['nuetral'][ts2date(date_dict[i])] = result['nuetral_s']
+                    res_dict['negtive'][ts2date(date_dict[i])] = result['negtive_s']
+                else:
+                    res_dict['positive'][ts2date(date_dict[i])] = 0
+                    res_dict['nuetral'][ts2date(date_dict[i])] = 0
+                    res_dict['negtive'][ts2date(date_dict[i])] = 0
         # 每月情绪特征，从当前日期往前推5月展示 积极微博数，中性微博数，消极微博数
         if n_type == "月":
             date_dict = {}
-            for i in range(5):
-                date_dict[i + 1] = (datetime.datetime.now() + datetime.timedelta(days=(-30 * (i + 1)))).timestamp()
-            date_dict[0] = time.time()
-            for i in range(5):
+            for i in range(1,6):
+                date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(days=(-30 * i))).timestamp()
+            date_dict[0] = date
+            for i in [4, 3, 2, 1, 0]:
                 result = UserSentiment.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
-                                                     timestamp__lt=date_dict[i]).aggregate(positive_s=Sum("positive"), nuetral_s=Sum("nuetral"),
-                                      negtive_s=Sum("negtive"))
-                if list(result.values())[0] or list(result.values())[1] or list(result.values())[2]:
-                    res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i]) - 24 * 60 * 60))] = result
+                                                     timestamp__lt=date_dict[i]).aggregate(
+                    positive_s=Sum("positive"), nuetral_s=Sum("nuetral"), negtive_s=Sum("negtive"))
+                if result['positive_s'] != None:
+                    res_dict['positive'][ts2date(date_dict[i])] = result['positive_s']
+                    res_dict['nuetral'][ts2date(date_dict[i])] = result['nuetral_s']
+                    res_dict['negtive'][ts2date(date_dict[i])] = result['negtive_s']
+                else:
+                    res_dict['positive'][ts2date(date_dict[i])] = 0
+                    res_dict['nuetral'][ts2date(date_dict[i])] = 0
+                    res_dict['negtive'][ts2date(date_dict[i])] = 0
         return JsonResponse(res_dict)
 
 class User_Influence(APIView):
