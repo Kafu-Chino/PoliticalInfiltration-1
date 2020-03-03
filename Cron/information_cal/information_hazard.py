@@ -15,11 +15,13 @@ decay_ratio = get_global_para("information_trend_decay_ratio")
 def get_trend(mid_dic, start_date, end_date):
     # 初始搜索列表的构建，原创微博为自身，转发评论微博为其原创微博
     search_dic = defaultdict(list)
+    message_type_dic = {}
     for item in mid_dic:
         if item["message_type"] == 1:
             search_dic[item['mid']].append(item['mid'])
         else:
             search_dic[item['root_mid']].append(item['mid'])
+        message_type_dic[item['mid']] = item["message_type"]
     search_list = list(search_dic.keys())
     
     # es聚合主体，对每日的被查询mid的被转发和被评论（即作为root_mid）进行聚合
@@ -32,7 +34,8 @@ def get_trend(mid_dic, start_date, end_date):
         "aggs": {
             "count": {
                 "terms": {
-                    "field": "root_mid"
+                    "field": "root_mid",
+                    "size": len(search_list)
                 },
                 "aggs": {
                     "message_type": {
@@ -67,7 +70,8 @@ def get_trend(mid_dic, start_date, end_date):
                 ]
             }
         }
-        res = es.search(index='weibo_all', body=query_body)
+        res = es.search(index='flow_text_{}'.format(date), body=query_body)
+        # res = es.search(index='weibo_all', body=query_body)
 
         sta_res = res["aggregations"]["count"]["buckets"]
         for item in sta_res:
@@ -98,7 +102,8 @@ def get_trend(mid_dic, start_date, end_date):
                 "retweet_count": result_dic[date][mid]["retweet_count"], 
                 "timestamp": date2ts(date),
                 "hazard_index": 50,
-                "store_date": date
+                "store_date": date,
+                "message_type": message_type_dic[mid]
             }
     sql_insert_many("Informationspread", "is_id", insert_dic)
 
@@ -110,11 +115,12 @@ def get_trend(mid_dic, start_date, end_date):
 def cal_hazard_index(mid_dic, insert_dic, start_date, end_date):
     cursor = pi_cur()
     mid_type = {item["mid"]: item["message_type"] for item in mid_dic}
+    mid_list = [item["mid"] for item in mid_dic]
 
     hazard_index_dic = defaultdict(dict)
     # 对过去30天的结果进行聚合
     for date in get_datelist_v2(start_date, end_date):
-        agg_sql = "SELECT sum(comment_count), sum(retweet_count), mid from Informationspread WHERE `timestamp` >= {} and `timestamp` <= {} GROUP BY mid".format(date2ts(date) - 30 * 86400, date2ts(date))
+        agg_sql = "SELECT sum(comment_count), sum(retweet_count), mid from Informationspread WHERE `timestamp` >= {} and `timestamp` <= {} and mid in ('{}') GROUP BY mid".format(date2ts(date) - 30 * 86400, date2ts(date), "','".join(mid_list))
         cursor.execute(agg_sql)
         result = cursor.fetchall()
 

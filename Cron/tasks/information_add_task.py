@@ -19,9 +19,9 @@ def update_cal_status(mid_dic, cal_status):
 
 # 对新添加的信息进行计算，在bash里定义5分钟一运行
 def information_add(date):
-    # 定时间范围为当前计算日期前一天日期至前十五天内（当天数据当天晚上统一更新计算）
+    # 定时间范围为当前计算日期前一天日期至前二十天内（当天数据当天晚上统一更新计算）
     end_date = ts2date(int(date2ts(date)) - 86400)
-    start_date = ts2date(int(date2ts(date)) - 16 * 86400)
+    start_date = ts2date(int(date2ts(date)) - 20 * 86400)
 
     # 获取未计算的信息
     mid_dic = get_mid_dic_notcal()
@@ -29,7 +29,7 @@ def information_add(date):
     batch_all = math.ceil(len(mid_dic) / batch_num)
 
     # 批次输入进行计算（如有需要可多进程或分布式）
-    print("需要计算用户 {} 人。".format(len(mid_dic)))
+    print("需要计算信息 {} 条。".format(len(mid_dic)))
     for batch_epoch in range(batch_all):
         mid_dic_batch = mid_dic[batch_epoch * batch_num: (batch_epoch + 1) * batch_num]
         print("信息{}至{}， 共{}".format(batch_epoch * batch_num, (batch_epoch + 1) * batch_num, len(mid_dic)))

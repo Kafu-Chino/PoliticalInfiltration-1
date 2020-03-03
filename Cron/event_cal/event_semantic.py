@@ -84,14 +84,14 @@ def lda_analyze(corpusTfidf, dictionary, num_topics=10, iterations=50, workers=6
         probability = [p.split('*')[0].strip() for p in item]
         word = [w.split('*')[1].strip().strip('"') for w in item]
         for w, p in zip(word, probability):
-        	json_data[i[0]][w] = p
+            json_data[i[0]][w] = p
         # print(word)
     return json_data
 
 
 # 事件语义分析
 def event_semantic(e_id, e_name, data, thedate, WEIBO_NUM):
-    corpus_tfidf, dictionary = data_process(data, WEIBO_NUM)
+    corpus_tfidf, dictionary = data_process(data, int(WEIBO_NUM))
     result = lda_analyze(corpus_tfidf, dictionary, num_topics=5)
     result = json.dumps(result)
     timestamp = date2ts(thedate)

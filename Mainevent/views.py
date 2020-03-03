@@ -201,8 +201,6 @@ class Add_event(APIView):
             return JsonResponse({"status":400, "info": "添加失败，缺少必填项！"},safe=False)
 
         if not begin_date:
-            end_date = today()
-        if not begin_date:
             begin_date = ts2date(date2ts(today()) - 19 * 86400)
 
         event_name_pinyin = Pinyin().get_pinyin(event_name, '')
@@ -258,7 +256,7 @@ class Event_trend(APIView):
                 hot[date] = re.hot_index
                 sensitive[date] = re.sensitive_index
                 neg[date] = re.negative_index
-                print(hot)
+                #print(hot)
             res_dict["hot_index"] = hot
             res_dict["sensitive_index"] = sensitive
             res_dict["negative_index"] = neg
@@ -510,9 +508,10 @@ class semantic_topic(APIView):
                     for k,v in re["topics"][str(i)].items():
                     #dict(zip(re["topics"][i]['主题'],re["topics"][i]['概率']))
                         try:
-                            topics[str(i)][k] += int(v)
+                            topics[str(i)][k] += float(v)
                         except:
-                            topics[str(i)][k] = int(v)
+                            topics[str(i)][k] = float(v)
+                    topics[str(i)] = dict(sorted(topics[str(i)].items(),key=lambda x:x[1],reverse=True)[:10])
             return JsonResponse(topics,safe=False,json_dumps_params={'ensure_ascii':False}) #
         else:
             return JsonResponse({"status":400, "error": "无主题信息"},safe=False)
@@ -603,7 +602,7 @@ class Person_show(APIView):
             results.append(dic)
         return JsonResponse(results, safe=False)
 
-class Event_Special(APIView):
+class Event_Group(APIView):
     def get(self, request):
         e_id = request.GET.get('e_id')
 

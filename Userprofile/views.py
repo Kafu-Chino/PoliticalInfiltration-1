@@ -14,6 +14,8 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from rest_framework.views import APIView
 from rest_framework.schemas import ManualSchema
 import json
+import operator
+
 
 class Test(APIView):
     """测试页面"""
@@ -36,7 +38,7 @@ class Test(APIView):
 
 
 
-'''
+
 class User_Behavior(APIView):
     """用户活动特征接口"""
 
@@ -71,9 +73,9 @@ class User_Behavior(APIView):
                     res_dict['commentnum'][str(td)] = item['commentnum_s']
                     res_dict['retweetnum'][str(td)] = item['retweetnum_s']
                     res_dict['sensitivenum'][str(td)] = item['sensitivenum_s']
-       
-            else:
-                return JsonResponse({"status":400, "error": "未找到该用户活动信息"},safe=False,json_dumps_params={'ensure_ascii':False}) 
+                #return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
+            #else:
+                #return JsonResponse({"status":400, "error": "未找到该用户活动信息"},safe=False,json_dumps_params={'ensure_ascii':False}) 
         # 每周活动特征，从当前日期往前推5周展示 原创微博数、评论数、转发数、敏感微博数
         if n_type == "周":
             date_dict = {}
@@ -85,12 +87,21 @@ class User_Behavior(APIView):
                                                      timestamp__lt=date_dict[i]).aggregate(
                     originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"), retweetnum_s=Sum("retweetnum"),
                     sensitivenum_s=Sum("sensitivenum"))
-                if list(result.values())[0]:
+                #if list(result.values())[0]:
+                if len(result):  #.exists():
+                    '''
+                    for item in result:
+                        res_dict['originalnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = item['originalnum_s']
+                        res_dict['commentnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = item['commentnum_s']
+                        res_dict['retweetnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = item['retweetnum_s']
+                        res_dict['sensitivenum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = item['sensitivenum_s']
+                    '''
                     res_dict['originalnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['originalnum_s']
                     res_dict['commentnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['commentnum_s']
                     res_dict['retweetnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['retweetnum_s']
                     res_dict['sensitivenum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['sensitivenum_s']
                     #res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result
+                
         # 每月活动特征，从当前日期往前推5月展示 原创微博数、评论数、转发数、敏感微博数
         if n_type == "月":
             date_dict = {}
@@ -102,6 +113,17 @@ class User_Behavior(APIView):
                                                      timestamp__lt=date_dict[i]).aggregate(
                     originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"), retweetnum_s=Sum("retweetnum"),
                     sensitivenum_s=Sum("sensitivenum"))
+                if len(result):
+                    res_dict['originalnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['originalnum_s']
+                    res_dict['commentnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['commentnum_s']
+                    res_dict['retweetnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['retweetnum_s']
+                    res_dict['sensitivenum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['sensitivenum_s']
+        res_dict['originalnum'] = dict(sorted(res_dict['originalnum'].items(),key=lambda x:x[0],reverse=False))
+        res_dict['commentnum'] = dict(sorted(res_dict['commentnum'].items(),key=lambda x:x[0],reverse=False))
+        res_dict['retweetnum'] = dict(sorted(res_dict['retweetnum'].items(),key=lambda x:x[0],reverse=False))
+        res_dict['sensitivenum'] = dict(sorted(res_dict['sensitivenum'].items(),key=lambda x:x[0],reverse=False))
+        return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
+'''
                 if list(result.values())[0]:
                     res_dict['originalnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['originalnum_s']
                     res_dict['commentnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['commentnum_s']
@@ -111,6 +133,7 @@ class User_Behavior(APIView):
 '''
 
 
+'''
 class User_Behavior(APIView):
     """用户活动特征接口"""
 
@@ -144,7 +167,7 @@ class User_Behavior(APIView):
             return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "未找到该用户活动信息"},safe=False,json_dumps_params={'ensure_ascii':False}) 
-
+'''
 
 class User_Activity(APIView):
     """用户地域特征接口"""
@@ -306,6 +329,7 @@ class Show_contact(APIView):
         start_ts = end_ts - date_window * 86400
 
         result = UserSocialContact.objects.filter((Q(source=uid) | Q(target=uid)) & Q(timestamp__gte=start_ts) & Q(timestamp__lte=end_ts)).values()
+        # return JsonResponse({1:list(result)}, safe=False)
 
         # 对用户多日的数据进行聚合
         result_sta = {}
@@ -461,8 +485,9 @@ class Show_figure(APIView):
                 results = page.page(1)
             '''
             #re = json.dumps(list(results),ensure_ascii=False)
-            #re = json.loads(re)
-            return JsonResponse(res_list,safe=False,json_dumps_params={'ensure_ascii':False})
+            #reres_list= = json.loads(re)
+            res=sorted(res_list,key=operator.itemgetter('info_count'),reverse=True)
+            return JsonResponse(res,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "无人物"},safe=False)
 
@@ -597,25 +622,28 @@ class search_figure(APIView):
         """展示人物,该文档返回Figure表中存在的需要展示的数据，返回字段f_id为用户账号，nick_name为昵称
           fansnum粉丝数,friendsnum关注数,political政治倾向,domain领域,user_location地点"""
         info = request.GET.get("info")
-        #results={}
+        res_list = []
         limit = request.GET.get("limit")
         page_id = request.GET.get('page_id')
         if page_id is None:
             page_id = 1
         if limit is None:
             limit = 10
-        result = Figure.objects.filter(Q(nick_name__contains = info) | Q(uid__contains = info)).values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        result = Figure.objects.filter(Q(nick_name__contains = info) | Q(uid__contains = info))[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]  #.values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')
         if result.exists():
-            #results["result"] = list(result)
-            #print(type(results))
-            #json_data = serializers.serialize("json",results)
-            #re = json.loads(json_data)
-            #print(results)
-            re = json.dumps(list(result),ensure_ascii=False)
-            #re = re.replace("\\","")
-            #re = re.Replace("[","")
-            re = json.loads(re)
-            return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False})
+            for item in result:
+                event_count = 0
+                info_count = 0
+                #sdate = item.begin_date.strftime('%Y-%m-%d %H:%M:%S')
+                #edate = item.end_date.strftime('%Y-%m-%d %H:%M:%S')
+                fid = item.f_id
+                event_count = Figure.objects.get(f_id=fid).event.all().count()
+                info_count = Information.objects.filter(uid=fid).count()
+                res_list.append({"f_id":fid,"nick_name":item.nick_name,"fansnum":item.fansnum,'friendsnum':item.friendsnum,'create_at':item.create_at,'event_count':event_count,'info_count':info_count,'user_location':item.user_location})
+            #re = json.dumps(list(result),ensure_ascii=False)
+            #re = json.loads(re)
+            res=sorted(res_list,key=operator.itemgetter('info_count'),reverse=True)
+            return JsonResponse(res,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "该人物不存在"},safe=False,json_dumps_params={'ensure_ascii':False})
 
@@ -635,40 +663,67 @@ class User_Sentiment(APIView):
         """
         uid = request.GET.get('uid')
         n_type = request.GET.get('n_type')
-        res_dict = {}
+        try:
+            date = UserSentiment.objects.filter(uid=uid).order_by('-store_date')[0].store_date.strftime('%Y-%m-%d')
+        except:
+            date = today()
+        res_dict = defaultdict(dict)
+        date = date2ts(date)
         # 每日情绪特征，从当前日期往前推7天展示 积极微博数，中性微博数，消极微博数
         if n_type == "日":
-            new_date = (datetime.datetime.now() + datetime.timedelta(days=-7)).timestamp()
-            result = UserSentiment.objects.filter(uid=uid, timestamp__gte=new_date).values(
-                "timestamp").annotate(positive_s=Sum("positive"), nuetral_s=Sum("nuetral"),
-                                      negtive_s=Sum("negtive"))
-            for item in result:
-                t = item.pop("timestamp") - 24 * 60 * 60
-                res_dict[time.strftime("%Y-%m-%d", time.localtime(t))] = item
+            dl = get_datelist_v2(ts2date(date - 6 * 86400),ts2date(date))
+            # result = UserSentiment.objects.filter(uid=uid, timestamp__gte=date2ts(dl[0]), timestamp__lte=date).values("store_date").annotate(positive_s=Sum("positive"), nuetral_s=Sum("nuetral"), negtive_s=Sum("negtive"))
+            # for d in dl:
+            #     r = {}
+            #     for i in result:
+            #         if d == str(i['store_date']):
+            #             r = i
+            for d in dl:
+                result = UserSentiment.objects.filter(uid=uid, store_date__gte=d, store_date__lte=d).values('positive','nuetral','negtive')
+                if result.exists():
+                    res_dict['positive'][d] = result[0]['positive']
+                    res_dict['nuetral'][d] = result[0]['nuetral']
+                    res_dict['negtive'][d] = result[0]['negtive']
+                else:
+                    res_dict['positive'][d] = 0
+                    res_dict['nuetral'][d] = 0
+                    res_dict['negtive'][d] = 0
         # 每周情绪特征，从当前日期往前推5周展示 积极微博数，中性微博数，消极微博数
         if n_type == "周":
             date_dict = {}
-            for i in range(5):
-                date_dict[i + 1] = (datetime.datetime.now() + datetime.timedelta(weeks=(-1 * (i + 1)))).timestamp()
-            date_dict[0] = time.time()
-            for i in range(5):
+            for i in range(1,6):
+                date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(weeks=(-1 * i))).timestamp()
+            date_dict[0] = date
+            for i in [4, 3, 2, 1, 0]:
                 result = UserSentiment.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
-                                                     timestamp__lt=date_dict[i]).aggregate(positive_s=Sum("positive"), nuetral_s=Sum("nuetral"),
-                                      negtive_s=Sum("negtive"))
-                if list(result.values())[0] or list(result.values())[1] or list(result.values())[2]:
-                    res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i]) - 24 * 60 * 60))] = result
+                                                     timestamp__lt=date_dict[i]).aggregate(
+                    positive_s=Sum("positive"), nuetral_s=Sum("nuetral"), negtive_s=Sum("negtive"))
+                if result['positive_s'] != None:
+                    res_dict['positive'][ts2date(date_dict[i])] = result['positive_s']
+                    res_dict['nuetral'][ts2date(date_dict[i])] = result['nuetral_s']
+                    res_dict['negtive'][ts2date(date_dict[i])] = result['negtive_s']
+                else:
+                    res_dict['positive'][ts2date(date_dict[i])] = 0
+                    res_dict['nuetral'][ts2date(date_dict[i])] = 0
+                    res_dict['negtive'][ts2date(date_dict[i])] = 0
         # 每月情绪特征，从当前日期往前推5月展示 积极微博数，中性微博数，消极微博数
         if n_type == "月":
             date_dict = {}
-            for i in range(5):
-                date_dict[i + 1] = (datetime.datetime.now() + datetime.timedelta(days=(-30 * (i + 1)))).timestamp()
-            date_dict[0] = time.time()
-            for i in range(5):
+            for i in range(1,6):
+                date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(days=(-30 * i))).timestamp()
+            date_dict[0] = date
+            for i in [4, 3, 2, 1, 0]:
                 result = UserSentiment.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
-                                                     timestamp__lt=date_dict[i]).aggregate(positive_s=Sum("positive"), nuetral_s=Sum("nuetral"),
-                                      negtive_s=Sum("negtive"))
-                if list(result.values())[0] or list(result.values())[1] or list(result.values())[2]:
-                    res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i]) - 24 * 60 * 60))] = result
+                                                     timestamp__lt=date_dict[i]).aggregate(
+                    positive_s=Sum("positive"), nuetral_s=Sum("nuetral"), negtive_s=Sum("negtive"))
+                if result['positive_s'] != None:
+                    res_dict['positive'][ts2date(date_dict[i])] = result['positive_s']
+                    res_dict['nuetral'][ts2date(date_dict[i])] = result['nuetral_s']
+                    res_dict['negtive'][ts2date(date_dict[i])] = result['negtive_s']
+                else:
+                    res_dict['positive'][ts2date(date_dict[i])] = 0
+                    res_dict['nuetral'][ts2date(date_dict[i])] = 0
+                    res_dict['negtive'][ts2date(date_dict[i])] = 0
         return JsonResponse(res_dict)
 
 class User_Influence(APIView):
