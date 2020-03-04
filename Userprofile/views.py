@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.core import serializers
 from django.http import JsonResponse, HttpResponse
-from django.db.models import Sum
+from django.db.models import Sum,Avg
 import time
 import datetime
 from collections import defaultdict
@@ -738,42 +738,69 @@ class User_Influence(APIView):
         """
         uid = request.GET.get('uid')
         n_type = request.GET.get('n_type')
-        print (uid)
-        print (NewUserInfluence.objects.filter(uid=uid).exists())
-        res_dict = {}
+        try:
+            date = UserSentiment.objects.filter(uid=uid).order_by('-store_date')[0].store_date.strftime('%Y-%m-%d')
+        except:
+            date = today()
+        res_dict = defaultdict(dict)
+        date = date2ts(date)
         # 每日影响力特征，从当前日期往前推7天展示 影响力 活跃度 重要度 敏感度
         if n_type == "日":
-            new_date = (datetime.datetime.now() + datetime.timedelta(days=-7)).timestamp()
-            result = NewUserInfluence.objects.filter(uid=uid, timestamp__gte=new_date).values(
-                "timestamp","influence","importance","sensitity","activity")
-            for item in result:
-                t = item.pop("timestamp") - 24 * 60 * 60
-                res_dict[time.strftime("%Y-%m-%d", time.localtime(t))] = item
+            dl = get_datelist_v2(ts2date(date - 6 * 86400), ts2date(date))
+            for d in dl:
+                result =  NewUserInfluence.objects.filter(uid=uid, store_date__gte=d, store_date__lte=d).values('influence','importance','sensitity','activity')
+                if result.exists():
+                    res_dict['influence'][d] = result[0]['influence']
+                    res_dict['importance'][d] = result[0]['importance']
+                    res_dict['sensitity'][d] = result[0]['sensitity']
+                    res_dict['activity'][d] = result[0]['activity']
+                else:
+                    res_dict['influence'][d] = 0
+                    res_dict['importance'][d] = 0
+                    res_dict['sensitity'][d] = 0
+                    res_dict['activity'][d] = 0
         # 每周影响力特征，从当前日期往前推5周展示
         if n_type == "周":
             date_dict = {}
-            for i in range(5):
-                date_dict[i + 1] = (datetime.datetime.now() + datetime.timedelta(weeks=(-1 * (i + 1)))).timestamp()
-            date_dict[0] = time.time()
-            for i in range(5):
-                print (date_dict[i + 1],date_dict[i])
-                result =NewUserInfluence.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
-                                                      timestamp__lt=date_dict[i]).aggregate(
+            for i in range(1, 6):
+                date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(
+                    weeks=(-1 * i))).timestamp()
+            date_dict[0] = date
+            for i in [4, 3, 2, 1, 0]:
+                result = NewUserInfluence.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
+                                                       timestamp__lt=date_dict[i]).aggregate(
                     influence=Avg("influence"), importance=Avg("importance"),
-                    sensitity=Avg("sensitity"),activity=Avg("activity"))
-                if list(result.values())[0] or list(result.values())[1] or list(result.values())[2]:
-                    res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i]) - 24 * 60 * 60))] = result
+                    sensitity=Avg("sensitity"), activity=Avg("activity"))
+                if result['influence'] != None:
+                    res_dict['influence'][ts2date(date_dict[i])] = result['influence']
+                    res_dict['importance'][ts2date(date_dict[i])] = result['importance']
+                    res_dict['sensitity'][ts2date(date_dict[i])] = result['sensitity']
+                    res_dict['activity'][ts2date(date_dict[i])] = result['activity']
+                else:
+                    res_dict['influence'][ts2date(date_dict[i])] = 0
+                    res_dict['importance'][ts2date(date_dict[i])] = 0
+                    res_dict['sensitity'][ts2date(date_dict[i])] = 0
+                    res_dict['activity'][ts2date(date_dict[i])] = 0
         # 每月情绪特征，从当前日期往前推5月展示
         if n_type == "月":
             date_dict = {}
-            for i in range(5):
-                date_dict[i + 1] = (datetime.datetime.now() + datetime.timedelta(days=(-30 * (i + 1)))).timestamp()
-            date_dict[0] = time.time()
-            for i in range(5):
+            for i in range(1, 6):
+                date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(
+                    days=(-30 * i))).timestamp()
+            date_dict[0] = date
+            for i in [4, 3, 2, 1, 0]:
                 result = NewUserInfluence.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
-                                                      timestamp__lt=date_dict[i]).aggregate(
+                                                         timestamp__lt=date_dict[i]).aggregate(
                     influence=Avg("influence"), importance=Avg("importance"),
-                    sensitity=Avg("sensitity"),activity=Avg("activity"))
-                if list(result.values())[0] or list(result.values())[1] or list(result.values())[2]:
-                    res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i]) - 24 * 60 * 60))] = result
+                    sensitity=Avg("sensitity"), activity=Avg("activity"))
+                if result['influence'] != None:
+                    res_dict['influence'][ts2date(date_dict[i])] = result['influence']
+                    res_dict['importance'][ts2date(date_dict[i])] = result['importance']
+                    res_dict['sensitity'][ts2date(date_dict[i])] = result['sensitity']
+                    res_dict['activity'][ts2date(date_dict[i])] = result['activity']
+                else:
+                    res_dict['influence'][ts2date(date_dict[i])] = 0
+                    res_dict['importance'][ts2date(date_dict[i])] = 0
+                    res_dict['sensitity'][ts2date(date_dict[i])] = 0
+                    res_dict['activity'][ts2date(date_dict[i])] = 0
         return JsonResponse(res_dict)
