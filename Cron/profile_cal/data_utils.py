@@ -35,17 +35,25 @@ def get_uidlist_data(uidlist,index):#, start_date, end_date
     result = scan(es, index=index, query=query_body)
 
     data = {}
+    # data = []
+    # for uid in uidlist:
+    #     data[uid] = []
     for item in result:
         item = item["_source"]
-        date = ts2date(item["timestamp"])
+        # date = ts2date(item["timestamp"])
         uid = item["uid"]
-        if date in data:
-            if uid in data[date]:
-                data[date][uid].append(item)
-            else:
-                data[date][uid] = [item]
+        if uid in data:
+            data[uid].append(item)
         else:
-            data[date] = {uid: [item]}
+            data[uid] = []
+            data[uid].append(item)
+        # if date in data:
+        #     if uid in data[date]:
+        #         data[date][uid].append(item)
+        #     else:
+        #         data[date][uid] = [item]
+        # else:
+        #     data[date] = {uid: [item]}
 
     return data
 

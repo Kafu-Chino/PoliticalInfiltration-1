@@ -7,19 +7,24 @@
 
 @file: user_political.py
 """
-
+import sys
+sys.path.append("../../")
 import csv
 from Config.db_utils import pi_cur, conn
 from decimal import *
 from collections import defaultdict
 import json
 import datetime
+from Config.db_utils import get_global_para
 
 cursor = pi_cur()
 POLITICAL_LABELS = ['left', 'right', 'mid']
 political_bias_dict = {'left': '左倾', 'mid': '中立', 'right': '右倾'}
-LEFT_STA = 6000
-RIGHT_STA = 3000
+
+
+
+LEFT_STA = get_global_para('user_left')
+RIGHT_STA = get_global_para('user_right')
 
 
 def load_word():  # 加载词典

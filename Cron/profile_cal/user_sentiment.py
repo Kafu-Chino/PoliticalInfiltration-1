@@ -17,6 +17,7 @@ import joblib
 from Cron.profile_cal.sentiment_classifier import triple_classifier
 from collections import Counter
 
+
 cursor = pi_cur()
 
 
