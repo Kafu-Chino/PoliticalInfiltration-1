@@ -14,13 +14,15 @@ from Systemmanage.models import SensitiveWord
 from rest_framework.views import APIView
 from rest_framework.schemas import ManualSchema
 import re
+from django.db.models import Sum,Count
+
 
 
 class Show_event(APIView):
     """展示事件列表
        输出{‘event_name(事件名称)’: ,’keywords_dict(事件关键词)’: ,’content(事件内容)’: , ‘begin_date(开始日期)’:  ,‘end_date(结束日期)’: },{},{}"""
     def get(self, request):
-        result = Event.objects.values('e_id','event_name','keywords_dict','begin_date','end_date')
+        #result = Event.objects.values('e_id','event_name','keywords_dict','begin_date','end_date')
         limit = request.GET.get("limit")
         page_id = request.GET.get('page_id')
         if page_id is None:
@@ -304,12 +306,20 @@ class related_figure(APIView):
         eid = request.GET.get('eid')
         limit = request.GET.get("limit")
         page_id = request.GET.get('page_id')
+        if page_id is None:
+            page_id = 1
+        if limit is None:
+            limit = 10
         res_event = Event.objects.filter(e_id=eid)  #.first().event_set.all()
-        for e in res_event:
+        if res_event.exists():
             #print(e)
-            res = e.figure.all()
+            res = res_event[0].figure.all()[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
             for f in res:
                 res_dict.append({"f_id": f.f_id, "nick_name": f.nick_name,"fansnum":f.fansnum,"friendsnum":f.friendsnum})
+            return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
+        else:
+            return JsonResponse({"status":400, "error": "无相关人物"},safe=False)
+        '''
         if len(res_dict):
             page = Paginator(res_dict, limit)
             #page_id = request.GET.get('page_id')
@@ -324,9 +334,8 @@ class related_figure(APIView):
                 results = page.page(1)
             re = json.dumps(list(results),ensure_ascii=False)
             re = json.loads(re)
-            return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False})
-        else:
-            return JsonResponse({"status":400, "error": "无相关人物"},safe=False)
+            '''
+
 
 
 class related_info(APIView):
@@ -343,16 +352,24 @@ class related_info(APIView):
         eid = request.GET.get('eid')
         limit = request.GET.get("limit")
         page_id = request.GET.get('page_id')
+        if page_id is None:
+            page_id = 1
+        if limit is None:
+            limit = 10
         res_event = Event.objects.filter(e_id=eid)  #.first().event_set.all()
-        for e in res_event:
+        if res_event.exists():
             #print(e)
-            res1 = e.information.all()
+            res1 = res_event[0].information.all()[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
             for i in res1:
                 lt = time.localtime(i.timestamp)
                 itime = time.strftime('%Y-%m-%d %H:%M:%S',lt)
                 #print(itime)
                 res_dict.append({'text': i.text,'time':itime,'geo':i.geo})
                 #print(res_dict["info"])
+            return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False}) #
+        else:
+            return JsonResponse({"status":400, "error": "无相关信息"},safe=False)
+        '''
         if len(res_dict):
             page = Paginator(res_dict, limit)
             #page_id = request.GET.get('page_id')
@@ -367,9 +384,8 @@ class related_info(APIView):
                 results = page.page(1)
             re = json.dumps(list(results),ensure_ascii=False)
             re = json.loads(re)
-            return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False}) #
-        else:
-            return JsonResponse({"status":400, "error": "无相关信息"},safe=False)
+            '''
+
 
 
 class event_geo_out(APIView):
@@ -438,7 +454,7 @@ class info_geo_out(APIView):
 
 
 class info_geo_in(APIView):
-    """事件国内地域分布"""
+    """事件国内按敏感信息地域分布"""
     def get(self,request):
         eid = request.GET.get('eid')
         result = Event_Analyze.objects.filter(event_name =eid).values('geo_info_inland')
@@ -631,3 +647,142 @@ class Event_Group(APIView):
             result['event_senword'] = event_senword
 
         return JsonResponse(result, safe=False)
+
+
+
+class first_info_trend(APIView):
+    """事件敏感度
+       输入事件id:eid
+       输出{"日期1": ,"日期2":,...}"""
+    def get(self, request):
+        """获取事件id:eid"""
+        event_id = request.GET.get('eid') 
+        res_dict= defaultdict(dict)
+        hot = {}
+        sensitive = {}
+        neg = {}
+        times = time.time()
+        res = Event.objects.filter(e_id = event_id)
+        if res.exists():
+            sd = res[0].begin_date
+            ed = res[0].end_date
+            if sd and ed:
+                result = Event_Analyze.objects.filter(event_name = event_id,into_date__gte=sd,into_date__lte=ed)
+            else:
+                result = Event_Analyze.objects.filter(event_name = event_id)
+            if result.exists():
+                for re in result:
+                    date = re.into_date.strftime('%Y-%m-%d')
+                #hot[date] = re.hot_index
+                    sensitive[date] = re.sensitive_index
+                #neg[date] = re.negative_index
+                #print(hot)
+                #res_dict.append({"hot_index":re.hot_index,"sensitive_index":re.sensitive_index,"negative_index":re.negative_index})
+                return JsonResponse(sensitive,safe=False,json_dumps_params={'ensure_ascii':False})
+            else:
+                return JsonResponse({"status":400, "error": "敏感度待计算"},safe=False,json_dumps_params={'ensure_ascii':False})
+        else:
+            return JsonResponse({"status":400, "error": "请输入正确的事件ID"},safe=False,json_dumps_params={'ensure_ascii':False})
+
+
+class first_info_geo(APIView):
+    """事件敏感信息地域分布"""
+    def get(self,request):
+        eid = request.GET.get('eid')
+        result = Event_Analyze.objects.filter(event_name =eid).values('geo_info_inland','geo_info_outland')
+        geo_dict={}
+        #print(type(result))
+        if result.exists():
+            for re in result:
+                for k,v in re["geo_info_inland"].items():
+                    try:
+                        geo_dict[k] += v
+                    except:
+                        geo_dict[k] = v
+                for k,v in re["geo_info_outland"].items():
+                    try:
+                        geo_dict[k] += v
+                    except:
+                        geo_dict[k] = v
+                geo_dict=dict(sorted(geo_dict.items(),key=lambda x:x[1],reverse=True)[:10])
+            return JsonResponse(geo_dict,safe=False,json_dumps_params={'ensure_ascii':False}) #
+        else:
+            return JsonResponse({"status":400, "error": "无该事件地域敏感信息分布信息"},safe=False)
+
+
+class first_sensitive(APIView):
+    """首页敏感词"""
+    def get(self, request):
+        eid = request.GET.get('eid')
+        results = Event_Hashtag_Senwords.objects.filter(e_id=eid, show_status=1)
+        global_senword = {}
+        if results.exists():
+            #hashtag = results[0].hashtag
+            print(results[0].global_senword)
+            global_senword = results[0].global_senword
+            #event_senword = results[0].event_senword
+
+            #hashtag = sorted(hashtag.items(), key=lambda x:x[1], reverse=True)[:100]
+            global_senword = sorted(global_senword.items(), key=lambda x:x[1], reverse=True)[:50]
+            #event_senword = sorted(event_senword.items(), key=lambda x:x[1], reverse=True)[:10]
+
+            #hashtag = {item[0]: item[1] for item in hashtag}
+            global_senword = {item[0]: item[1] for item in global_senword}
+            #event_senword = {item[0]: item[1] for item in event_senword}
+
+        return JsonResponse(global_senword, safe=False)
+
+
+class first_figure(APIView):
+    def get(self, request):
+        eid = request.GET.get('eid')
+        res_event = Event.objects.filter(e_id=eid)  #.first().event_set.all()
+        if res_event.exists():
+            #print(e)
+            res = res_event[0].information.all().values("uid").annotate(info_count = Count('i_id')).order_by('-info_count')[:10].values_list("uid",flat = True)
+            res = list(res)
+            #print(res)
+            res_figure = Figure.objects.filter(f_id__in = res).values('nick_name')
+            #print(res_figure)
+            re = json.dumps(list(res_figure),ensure_ascii=False)
+            re = json.loads(re)
+            return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False})
+        else:
+            return JsonResponse({"status":400, "error": "未找到该事件敏感人物"},safe=False)
+
+
+
+class first_info(APIView):
+    def get(self, request):
+        res_dict = []
+        eid = request.GET.get('eid')
+        res_event = Event.objects.filter(e_id=eid)  #.first().event_set.all()
+        if res_event.exists():
+            #print(e)
+            res = res_event[0].information.all().order_by('-hazard_index')[:5]
+            for i in res:
+                lt = time.localtime(i.timestamp)
+                itime = time.strftime('%Y-%m-%d %H:%M:%S',lt)
+                res_dict.append({"uid":i.uid,"time":itime,"text":i.text})
+            return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
+        else:
+            return JsonResponse({"status":400, "error": "未找到该事件敏感信息"},safe=False)
+
+
+class first_event(APIView):
+    def get(self, request):
+        res_dict = []
+        result = Event.objects.filter(monitor_status=1).order_by('-end_date')[:12]
+        if result.exists():
+            for res in result:
+                eid = res.e_id
+                re = Event.objects.filter(e_id=eid)[0].information.all().order_by('-hazard_index')
+                if re.exists():
+                    #print(re)
+                    res_dict.append({"eid":res.e_id,"begin_date":res.begin_date,"end_date":res.end_date,"event_name":res.event_name,"text":re[0].text})
+                else:
+                    res_dict.append({"eid":res.e_id,"begin_date":res.begin_date,"end_date":res.end_date,"event_name":res.event_name,"text":None})
+            return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
+        else:
+            return JsonResponse({"status":400, "error": "没有事件信息"},safe=False)
+

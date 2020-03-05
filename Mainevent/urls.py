@@ -21,4 +21,10 @@ urlpatterns = [
     path('timeline/',views.semantic_tl.as_view()),
     path('event_topic/',views.semantic_topic.as_view()),
     path('semantic_info/',views.semantic_info.as_view()),
+    path('first_trend/',views.first_info_trend.as_view()),
+    path('first_senword/',views.first_sensitive.as_view()),
+    path('first_figure/',views.first_figure.as_view()),
+    path('first_geo/',views.first_info_geo.as_view()),
+    path('first_info/',views.first_info.as_view()),
+    path('first_event/',views.first_event.as_view()),
 ]

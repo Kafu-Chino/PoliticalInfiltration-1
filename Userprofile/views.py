@@ -61,18 +61,21 @@ class User_Behavior(APIView):
         # 每日活动特征，从当前日期往前推7天展示 原创微博数、评论数、转发数、敏感微博数
         if n_type == "日":
             new_date = (t + datetime.timedelta(days=-7)).timestamp()
+            '''
             result = UserBehavior.objects.filter(uid=uid, timestamp__gte=new_date,timestamp__lte=t.timestamp()).values(
                 "store_date").annotate(originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"),
-                                      retweetnum_s=Sum("retweetnum"), sensitivenum_s=Sum("sensitivenum"))
+                                      retweetnum_s=Sum("retweetnum"), sensitivenum_s=Sum("sensitivenum"))'''
+            result = UserBehavior.objects.filter(uid=uid, timestamp__gte=new_date,timestamp__lte=t.timestamp()).values(
+                "store_date",'originalnum','commentnum','retweetnum','sensitivenum')
             if result.exists():
                 for item in result:
                     td = item["store_date"]  #pop("timestamp") - 24 * 60 * 60
                     #res_dict[time.strftime("%Y-%m-%d", time.localtime(t))] = item
                     #res_dict[str(td)] = item
-                    res_dict['originalnum'][str(td)] = item['originalnum_s']
-                    res_dict['commentnum'][str(td)] = item['commentnum_s']
-                    res_dict['retweetnum'][str(td)] = item['retweetnum_s']
-                    res_dict['sensitivenum'][str(td)] = item['sensitivenum_s']
+                    res_dict['originalnum'][str(td)] = item['originalnum']
+                    res_dict['commentnum'][str(td)] = item['commentnum']
+                    res_dict['retweetnum'][str(td)] = item['retweetnum']
+                    res_dict['sensitivenum'][str(td)] = item['sensitivenum']
                 #return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
             #else:
                 #return JsonResponse({"status":400, "error": "未找到该用户活动信息"},safe=False,json_dumps_params={'ensure_ascii':False}) 
