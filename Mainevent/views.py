@@ -736,17 +736,24 @@ class first_sensitive(APIView):
 class first_figure(APIView):
     def get(self, request):
         eid = request.GET.get('eid')
+        res_dict = []
         res_event = Event.objects.filter(e_id=eid)  #.first().event_set.all()
         if res_event.exists():
-            #print(e)
-            res = res_event[0].information.all().values("uid").annotate(info_count = Count('i_id')).order_by('-info_count')[:10].values_list("uid",flat = True)
+            res = res_event[0].information.all().values("uid").annotate(info_count = Count('i_id')).order_by('-info_count')[:10].values("uid","info_count")
+            '''
+            #res = res_event[0].information.all().values("uid").annotate(info_count = Count('i_id')).order_by('-info_count')[:10].values_list("uid",flat = True)
             res = list(res)
-            #print(res)
             res_figure = Figure.objects.filter(f_id__in = res).values('nick_name')
             #print(res_figure)
             re = json.dumps(list(res_figure),ensure_ascii=False)
             re = json.loads(re)
-            return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False})
+            '''
+            for re in res:
+                result = Figure.objects.filter(f_id = re["uid"])
+                #print(result)
+                if result.exists():
+                    res_dict.append({"nick_name":result[0].nick_name,"info_count":re["info_count"]})
+            return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "未找到该事件敏感人物"},safe=False)
 
@@ -775,13 +782,16 @@ class first_event(APIView):
         result = Event.objects.filter(monitor_status=1).order_by('-end_date')[:12]
         if result.exists():
             for res in result:
+                '''
                 eid = res.e_id
                 re = Event.objects.filter(e_id=eid)[0].information.all().order_by('-hazard_index')
                 if re.exists():
                     #print(re)
-                    res_dict.append({"eid":res.e_id,"begin_date":res.begin_date,"end_date":res.end_date,"event_name":res.event_name,"text":re[0].text})
+                    #res_dict.append({"eid":res.e_id,"begin_date":res.begin_date,"end_date":res.end_date,"event_name":res.event_name,"text":re[0].text})
                 else:
                     res_dict.append({"eid":res.e_id,"begin_date":res.begin_date,"end_date":res.end_date,"event_name":res.event_name,"text":None})
+            '''
+                res_dict.append({"eid":res.e_id,"begin_date":res.begin_date,"end_date":res.end_date,"event_name":res.event_name,"keywords":res.keywords_dict})
             return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "没有事件信息"},safe=False)
