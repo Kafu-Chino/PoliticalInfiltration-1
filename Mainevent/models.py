@@ -98,3 +98,13 @@ class Event_Hashtag_Senwords(models.Model):
     show_status = models.IntegerField(default=0)
     class Meta():
         db_table = 'Event_Hashtag_Senwords'
+
+class EventAnalysisShow(models.Model):
+    e_id = models.CharField(max_length=50, primary_key=True)
+    geo = JSONField()
+    funs_num = JSONField()
+    friends_num = JSONField()
+    create_time = JSONField()
+    age = JSONField()
+    class Meta():
+        db_table = 'EventAnalysisShow'
