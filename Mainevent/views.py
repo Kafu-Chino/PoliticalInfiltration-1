@@ -803,7 +803,7 @@ class first_event(APIView):
 class create_time(APIView):
     """群体账号创建时间展示"""
     def get(self,request):
-        eid = request.GET.get('e_id')
+        e_id = request.GET.get('e_id')
         result = EventAnalysisShow.objects.filter(e_id =e_id).values('create_time')[0]['create_time']
         print(result)
         print(type(result))
@@ -813,7 +813,7 @@ class create_time(APIView):
 class age(APIView):
     """群体年龄分布展示"""
     def get(self,request):
-        eid = request.GET.get('e_id')
+        e_id = request.GET.get('e_id')
         result = EventAnalysisShow.objects.filter(e_id =e_id).values('age')[0]['age']
         # create_time_dict={}
         print(result)
@@ -824,7 +824,7 @@ class age(APIView):
 class group_geo(APIView):
     """群体地理位置分布展示"""
     def get(self,request):
-        eid = request.GET.get('e_id')
+        e_id = request.GET.get('e_id')
         result = EventAnalysisShow.objects.filter(e_id =e_id).values('geo')[0]['geo']
         # create_time_dict={}
         print(result)
@@ -835,7 +835,7 @@ class group_geo(APIView):
 class funs_num(APIView):
     """群体粉丝数分布展示"""
     def get(self,request):
-        eid = request.GET.get('e_id')
+        e_id = request.GET.get('e_id')
         result = EventAnalysisShow.objects.filter(e_id =e_id).values('funs_num')[0]['funs_num']
         # create_time_dict={}
         print(result)
@@ -846,7 +846,7 @@ class funs_num(APIView):
 class friends_num(APIView):
     """群体粉丝数分布展示"""
     def get(self,request):
-        eid = request.GET.get('e_id')
+        e_id = request.GET.get('e_id')
         result = EventAnalysisShow.objects.filter(e_id =e_id).values('friends_num')[0]['friends_num']
         # create_time_dict={}
         print(result)
