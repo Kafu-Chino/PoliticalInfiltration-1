@@ -27,7 +27,7 @@ def querry(e_index,start_es,end_es):
                     {
                         "range": {
                             "timestamp": {
-                                "gt": start_es,
+                                "gte": start_es,
                                 "lt": end_es
                             }
                         }
