@@ -7,25 +7,31 @@
 
 @file: user_political.py
 """
-
+import sys
+sys.path.append("../../")
 import csv
-from data_get_utils import sql_insert_many
 from Config.db_utils import pi_cur, conn
-from Config.time_utils import today, nowts
 from decimal import *
+from collections import defaultdict
+import json
+import datetime
+from Config.db_utils import get_global_para
 
 cursor = pi_cur()
 POLITICAL_LABELS = ['left', 'right', 'mid']
 political_bias_dict = {'left': '左倾', 'mid': '中立', 'right': '右倾'}
-LEFT_STA = 6000
-RIGHT_STA = 3000
+
+
+
+LEFT_STA = get_global_para('user_left')
+RIGHT_STA = get_global_para('user_right')
 
 
 def load_word():  # 加载词典
     domain_dict = dict()
     for name in POLITICAL_LABELS:
         word_dict = dict()
-        reader = csv.reader(open('political_bias_word_dict/%s.csv' % name, 'r'))
+        reader = csv.reader(open('../profile_cal/political_bias_word_dict/%s.csv' % name, 'r'))
         for count, word in reader:
             word = word.strip('\r\t\n')
             count = count.strip('\r\t\n')
@@ -80,18 +86,31 @@ def political_classify(uid_weibo):
     return domain_dict
 
 
-def get_user_political(word_dict):
+
+def get_user_political(uid_list, start_ts, end_ts):
     '''
     用户政治倾向计算函数  left为左倾 mid为中立 right为右倾
-    :param word_dict:
-    :return:None
     '''
-    political = political_classify(word_dict)
+    uids = ''
+    for uid in uid_list:
+        uids += uid + ','
+    sql = 'select uid,wordcount from WordCount where uid in (%s) and  timestamp >= %s and timestamp <= %s' % (uids[:-1],start_ts,end_ts)
+    cursor.execute(sql)
+    word_c = defaultdict(dict)
+    result = cursor.fetchall()
+    for i in result:
+        item = json.loads(i['wordcount'])
+        for k, v in item.items():
+            try:
+                word_c[i['uid']][k] += v
+            except:
+                word_c[i['uid']][k] = v
+    political = political_classify(word_c)
     sql = 'UPDATE Figure SET political=%s where uid=%s'
     val = []
     for i, j in political.items():
         val.append((j, i))
     # 执行sql语句
     n = cursor.executemany(sql, val)
-    print("update %d success" % n)
+    print("update success")
     conn.commit()

@@ -1,3 +1,4 @@
+#-*-coding=utf-8-*-
 import sys
 import os
 import time
@@ -162,7 +163,8 @@ def sql_select(cursor, table_name, field_name="*"):
 
 
 # 每天定时从人物库获取uid_list，并通过查询流数据获取用户微博信息
-def get_data_dict(cursor, table_name, field_name="*"):
+def get_data_dict(table_name, field_name="*"):
+    cursor = pi_cur()
     uid_list = set()
     uids = sql_select(cursor, table_name, field_name)
     for uid_dict in uids:
@@ -171,7 +173,8 @@ def get_data_dict(cursor, table_name, field_name="*"):
 
 
 # 每天定时从人物库获取uid_list
-def get_uid_list(cursor, table_name, field_name="*"):
+def get_uid_list(table_name, field_name="*"):
+    cursor = pi_cur()
     uid_list = set()
     uids = sql_select(cursor, table_name, field_name)
     for uid_dict in uids:

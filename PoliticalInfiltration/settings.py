@@ -37,13 +37,16 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_swagger',
     'drf_yasg',
+    'corsheaders',
     'Mainevent',
     'Userprofile',
     'Usermanager',
     'Informationspread',
+    'Systemmanage',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware', #最好添加至第一行
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -54,6 +57,31 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'PoliticalInfiltration.urls'
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ORIGIN_ALLOW_ALL = True
+
+#默认可以使用的非标准请求头，需要使用自定义请求头时，就可以进行修改
+CORS_ALLOW_HEADERS = (
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+)
+#默认请求方法
+CORS_ALLOW_METHODS = (
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+)
 
 TEMPLATES = [
     {
@@ -82,7 +110,7 @@ DATABASES = {
         'NAME': 'PoliticalInfiltration',         # 你要存储数据的库名，事先要创建之
         'USER': 'root',         # 数据库用户名
         'PASSWORD': 'mysql3306',     # 密码
-        'HOST': '219.224.134.214',    # 主机
+        'HOST': '219.224.135.12',    # 主机
         'PORT': '3306',         # 数据库使用的端口
         'OPTIONS': {'charset': 'utf8mb4'},  # 用utf8mb4编码在MySQL中存储4字节字符
     }
@@ -111,7 +139,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Shanghai'
 
 USE_I18N = True
 

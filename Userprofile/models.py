@@ -2,6 +2,7 @@ from django.db import models
 from django_mysql.models import JSONField
 
 # Create your models here.
+
 class UserTopic(models.Model):
     ut_id = models.CharField(max_length=50, primary_key=True)
     uid = models.CharField(max_length=30)
@@ -14,6 +15,7 @@ class UserTopic(models.Model):
 class UserDomain(models.Model):
     ud_id = models.CharField(max_length=50, primary_key=True)
     uid = models.CharField(max_length=30)
+    main_domain = models.CharField(max_length=30,blank=True, null=True)
     domains = JSONField()
     timestamp = models.BigIntegerField()
     store_date = models.DateField(blank=True, null=True)
@@ -22,15 +24,15 @@ class UserDomain(models.Model):
 
 
 class UserSocialContact(models.Model):
-    uc_id = models.CharField(max_length=100, primary_key=True)
-    uid = models.CharField(max_length=30)
-    target = models.CharField(max_length=30)
-    target_name = models.CharField(max_length=50)
-    source = models.CharField(max_length=30)
-    source_name = models.CharField(max_length=50)
-    message_type = models.IntegerField()
-    #count = models.IntegerField()
-    timestamp = models.BigIntegerField()
+    uc_id = models.CharField(max_length=120, primary_key=True)
+    
+    target = models.CharField(max_length=30, null=True)
+    target_name = models.CharField(max_length=50, null=True)
+    source = models.CharField(max_length=30, null=True)
+    source_name = models.CharField(max_length=50, null=True)
+    message_type = models.IntegerField(default=2)
+    count = models.IntegerField(default=0)
+    timestamp = models.BigIntegerField(blank=True, null=True)
     store_date = models.DateField(blank=True, null=True)
     class Meta():
         db_table = 'UserSocialContact'
@@ -48,7 +50,7 @@ class UserKeyWord(models.Model):
 
 
 class UserActivity(models.Model):
-    ua_id = models.CharField(max_length=50, primary_key=True)
+    ua_id = models.CharField(max_length=100, primary_key=True)
     uid = models.CharField(max_length=30, blank=True, null=True)
     statusnum = models.IntegerField(blank=True, null=True)
     sensitivenum = models.IntegerField(blank=True, null=True)
@@ -90,6 +92,7 @@ class Influence(models.Model):
         db_table = 'Influence'
 
 
+
 class WordCount(models.Model):
     uwc_id = models.CharField(max_length=50, primary_key=True)
     uid = models.CharField(max_length=30)
@@ -112,3 +115,28 @@ class UserSentiment(models.Model):
     class Meta():
         db_table = 'UserSentiment'
 
+
+class UserInfluence(models.Model):
+    uid = models.CharField(max_length=30, blank=True,primary_key=True)
+    timestamp = models.BigIntegerField(blank=True, null=True)
+    influence = models.IntegerField(blank=True, null=True)
+    importance = models.IntegerField(blank=True, null=True)
+    activity = models.IntegerField(blank=True, null=True)
+    sensitity = models.IntegerField(blank=True, null=True)
+    store_date = models.DateField(blank=True, null=True)
+
+    class Meta():
+        db_table = 'UserInfluence'
+
+class NewUserInfluence(models.Model):
+    uid_ts = models.CharField(max_length=40, primary_key=True)
+    uid = models.CharField(max_length=30, blank=True)
+    timestamp = models.BigIntegerField(blank=True, null=True)
+    influence = models.IntegerField(blank=True, null=True)
+    importance = models.IntegerField(blank=True, null=True)
+    activity = models.IntegerField(blank=True, null=True)
+    sensitity = models.IntegerField(blank=True, null=True)
+    store_date = models.DateField(blank=True, null=True)
+
+    class Meta():
+        db_table = 'NewUserInfluence'

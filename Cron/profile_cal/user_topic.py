@@ -4,12 +4,13 @@ import os
 import json
 import time
 import datetime
+import numpy as np
 from collections import defaultdict
 import pandas as pd
 #from pandas import DataFrame 
-from data_get_utils import sql_insert_many
+from Cron.profile_cal.data_get_utils import sql_insert_many
 from Config.db_utils import es, pi_cur, conn
-
+from Cron.profile_cal.user_domain import get_user_domain
 cursor = pi_cur()
 
 TOPIC_LIST=["art","computer","economic","education","environment","medicine",\
@@ -17,53 +18,107 @@ TOPIC_LIST=["art","computer","economic","education","environment","medicine",\
              "fear-of-violence","house","law","peace","religion","social-security"]
 
 
-#得到话题的代表词及其权重tfidf返回{话题：{词：tfidf}}
+
 def topic_tfidf():
-    ca_dict={} #存储一类的tfidf {词：tfidf}
-    topic_dict={} #话题字典{话题：{词：tfidf}}
+    ca_dict=defaultdict(dict) # {词：[{topic:tfidf}....]}
     for i in TOPIC_LIST: 
-        reader = pd.read_csv('topic_dict/%s_tfidf.csv' % i,header=None,names=['tfidf','word'],encoding= 'utf8')
-        ca_dict = reader.groupby('word')['tfidf'].apply(list).to_dict() #转化为字典
-        topic_dict[i]=ca_dict
-    return topic_dict
+        reader = pd.read_csv('../profile_cal/topic_dict/%s_tfidf.csv' % i,header=None,names=['tfidf','word'],encoding= 'utf8')
+        #print(reader)
+        count = reader['tfidf'].sum()
+        for row in reader.itertuples():
+            ca_dict[getattr(row,'word')][i]=getattr(row,'tfidf')/count
+    #print(ca_dict['文艺'])
+    return ca_dict
 
 
 #输入为训练字典已有文件中读出的权重字典和测试字典{uid:{词：词频} 
 def get_p(train_dict,test_dict):
     result_p={}
-    p_dict=defaultdict(list)
+    #train_new = []
+    p_dict=defaultdict(dict)
+    #print(train_df)
+    train_word = set(train_dict.keys())
     for k,v in test_dict.items():
+        result_p={}
+        train_new = defaultdict(dict)
         test_word = set(v.keys())
-        for i,j in train_dict.items():
-            train_word = set(j.keys())
-            c_set = test_word & train_word
-            #print(c_set)
-            p=0
-            p = sum([float(j[n][0]*v[n]) for n in c_set])
-            result_p[i]=p
-        result_p = dict(sorted(result_p.items(),key = lambda x:x[1], reverse = True))
-        p_dict[k]=result_p
+        c_set = test_word & train_word
+        #print(len(c_set))
+        #print(c_set)
+        #print(v['count'])
+        test_new = np.zeros(len(c_set))
+        i = 0
+        for n in c_set:
+            train_new[n] = train_dict[n]
+            test_new[i] = v[n]/v['count']
+            #print(v[n])
+            i = i+1
+        #print(train_new)
+        #print(test_new)
+        df = pd.DataFrame(train_new.values()).fillna(0)
+        #print(df)
+        df_m = np.dot(test_new,df.values)
+        #print(df_m)
+        j=0
+        for i in df.columns:
+            result_p[i] = df_m[j]
+            j=j+1
+        p_dict[k] = result_p
+    #print(p_dict)
     return p_dict
-
 
 
 #用户分类函数 计算用户话题和领域并保存至数据库
 #输入为结巴分词后的字典{uid:词列表}
-def get_user_topic(word_dict):
+def get_user_topic(word_dict,date):
+    #time1 = time.time()
     topic_dict=topic_tfidf()
-    thedate = datetime.date.today()
+    #time2 = time.time()
+    #print("读取topic花费：",time2-time1)
+    #thedate = datetime.date.today()
+    #td = date + " 00:00:00"
+    #ta = time.strptime(td, "%Y-%m-%d %H:%M:%S")
+    #ts = int(time.mktime(ta))
     #print(topic_dict)
+    ts = date.timestamp()
     user_topic={}
     topic_p= get_p(topic_dict,word_dict)
+    #time3 = time.time()
+    #print("获取概率花费：",time3-time1)
     for k in word_dict.keys():
         topic_json = json.dumps(topic_p[k])
-        user_topic["%s_%s" % (str(int(time.time())), k)]={"uid": k,
-                                                          "timestamp": int(time.time()),
+        user_topic["%s_%s" % (str(ts), k)]={"uid": k,
+                                                          "timestamp": ts,
                                                           "topics":topic_json,
-                                                          "store_date":thedate}
+                                                          "store_date":date}
     sql_insert_many(cursor, "UserTopic", "ut_id", user_topic)
+    # print("插入topic数据：",time4-time3)
     #return category_dict
 
-if __name__ == '__main__':
-    topic_dict=topic_tfidf()
-    topic_p= get_p(topic_dict,word_dict)
+
+thedate = datetime.date.today()
+thatday = thedate - datetime.timedelta(days=7)
+#print(thedate,thatday)
+def topic_domain_cal(uid_list,start_ts,end_ts,start_date=thatday,end_date=thedate):
+    uids = ''
+    for uid in uid_list:
+        uids += uid + ','
+    sql = 'select uid,wordcount from WordCount where uid in (%s) and  timestamp >= %s and timestamp <= %s' % (uids[:-1],start_ts,end_ts)
+    cursor.execute(sql)
+    word_c =defaultdict(dict)
+    word = {}
+    result = cursor.fetchall()
+    #result1 = json.loads(result)
+    for i in result:
+        item = json.loads(i['wordcount'])
+        #print(item)
+        #print(type(i[wordcount]))
+        for k,v in item.items():
+            try:
+                word_c[i['uid']][k] += v
+            except:
+                word_c[i['uid']][k] = v
+    #print(word_c)
+    get_user_topic(word_c,end_date)
+    get_user_domain(word_c,end_date)
+
