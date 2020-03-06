@@ -10,38 +10,6 @@ from rest_framework.views import APIView
 from rest_framework.schemas import ManualSchema
 
 
-class Test(APIView):
-    """测试页面"""
-
-    def get(self, request):
-        """GET方法的功能说明写在这里"""
-        # username = "Admin"
-        username = "Superuser1"
-        # password = hash_code("Admin123")
-        password = hash_code("Superuser1")
-        role = 2
-        if not User.objects.filter(username=username):
-            User.objects.create(username=username, password=password, role=role)
-            print("%s created success" % username)
-            status = 1
-        else:
-            print("%s exists" % username)
-            status = 0
-        return JsonResponse({"status": status})
-
-    def post(self, request):
-        """POST方法的功能说明写在这里"""
-        return HttpResponse('这是测试的POST方法')
-
-    def put(self, request):
-        """PUT方法的功能说明写在这里"""
-        return HttpResponse('这是测试的PUT方法')
-
-    def delete(self, request):
-        """DELETE方法的功能说明写在这里"""
-        return HttpResponse('这是测试的DELETE方法')
-
-
 class User_Info(APIView):
     """查询符合条件用户信息接口"""
 
@@ -82,13 +50,12 @@ class User_Login(APIView):
         username = request.POST.get('username')
         password = request.POST.get('password')
 
-        if request.session.get('username', None) == username:
-            message = "您已登录！"
-            return JsonResponse({"message": message})
-
         try:
             user = User.objects.get(username=username)
             if user.password == hash_code(password):
+                if request.session.get('username', None) == username:
+                    message = "您已登录！"
+                    return JsonResponse({"message": message})
                 request.session['username'] = user.username
                 request.session['role'] = user.role
                 request.session['is_login'] = True
@@ -110,7 +77,7 @@ class User_Logout(APIView):
         """
         if request.session.get("is_login", None):
             request.session.flush()
-        return redirect('/Usermanager/user_login/')
+        return JsonResponse({"status": "已登出"})
 
 
 class User_Add(APIView):
@@ -190,13 +157,19 @@ class User_Modify(APIView):
         username = request.POST.get('username')
         try:
             if request.session['role'] == 1 or request.session['role'] == 2:
-                if User.objects.filter(username=username).first():
-                    new_username = request.POST.get('new_username')
-                    if not User.objects.filter(username=new_username).first():
-                        new_role = request.POST.get('new_role')
-                        new_pwd = request.POST.get('new_pwd')
-                        User.objects.filter(username=username).update(username=new_username,
-                                                                      password=hash_code(new_pwd), role=new_role)
+                user = User.objects.filter(username=username).first()
+                if user:
+                    new_username = request.POST.get('new_username') if request.POST.get(
+                        'new_username') else user.username
+                    new_role = request.POST.get('new_role') if request.POST.get('new_role') else user.role
+                    new_pwd = hash_code(request.POST.get('new_pwd')) if request.POST.get('new_pwd') else user.password
+                    if username == new_username:
+                        User.objects.filter(username=username).update(password=new_pwd, role=new_role)
+                        res_dict["status"] = 1
+                        res_dict["message"] = "修改信息成功！"
+                    elif not User.objects.filter(username=new_username).first():
+                        User.objects.filter(username=username).update(username=new_username, password=new_pwd,
+                                                                      role=new_role)
                         res_dict["status"] = 1
                         res_dict["message"] = "修改信息成功！"
                     else:
