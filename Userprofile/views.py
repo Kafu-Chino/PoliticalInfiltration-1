@@ -654,6 +654,7 @@ class search_figure(APIView):
 
 
 
+
 class User_Sentiment(APIView):
     """用户情绪特征接口"""
 
@@ -727,7 +728,12 @@ class User_Sentiment(APIView):
                     res_dict['positive'][ts2date(date_dict[i])] = 0
                     res_dict['nuetral'][ts2date(date_dict[i])] = 0
                     res_dict['negtive'][ts2date(date_dict[i])] = 0
-        return JsonResponse(res_dict)
+        n_res = defaultdict(dict)
+        n_res['date'] = list(res_dict['positive'].keys())
+        n_res['positive_num'] = list(res_dict['positive'].values())
+        n_res['nuetral_num'] = list(res_dict['nuetral'].values())
+        n_res['negtive_num'] = list(res_dict['negtive'].values())
+        return JsonResponse(n_res)
 
 class User_Influence(APIView):
     """用户影响力特征接口"""
@@ -806,4 +812,10 @@ class User_Influence(APIView):
                     res_dict['importance'][ts2date(date_dict[i])] = 0
                     res_dict['sensitity'][ts2date(date_dict[i])] = 0
                     res_dict['activity'][ts2date(date_dict[i])] = 0
-        return JsonResponse(res_dict)
+        n_res = defaultdict(dict)
+        n_res['date'] = list(res_dict['influence'].keys())
+        n_res['influence_num'] = list(res_dict['influence'].values())
+        n_res['importance_num'] = list(res_dict['importance'].values())
+        n_res['sensitity_num'] = list(res_dict['sensitity'].values())
+        n_res['activity_num'] = list(res_dict['activity'].values())
+        return JsonResponse(n_res)
