@@ -59,7 +59,7 @@ def fit(m_dict):
         days = []
 
 
-        if len( m_dict[mid]['list'])>5:
+        if len( m_dict[mid]['list'])>3:
             save_dict[mid] = {}
             for i in m_dict[mid]['list']:
                 retweet.append(i['retweet_count'])
@@ -129,12 +129,15 @@ def save(save_dict):
             val.append((mid+str(timestamp),mid,timestamp,int(save_dict[mid][date]['retweet']),int(save_dict[mid][date]['comment']),save_dict[mid][date]['message_type'],date,1))
     sql = 'insert into Informationspread(is_id,mid,timestamp,retweet_count,comment_count,message_type,store_date,predict) values (%s,%s,%s,%s,%s,%s,%s,%s )'
     cursor = conn.cursor()
-    # try:
-    cursor.executemany(sql, val)
-    conn.commit()
-    # except:
-    #     conn.rollback()
-    #     print('错误')
+    try:
+        cursor.executemany(sql, val)
+        conn.commit()
+    except:
+        conn.rollback()
+        print('错误')
+
+def prediction():
+    fit(data_process())
 
 
 
