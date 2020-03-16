@@ -52,7 +52,7 @@ class User_Behavior(APIView):
         uid = request.GET.get('uid')
         n_type = request.GET.get('n_type')
         date = request.GET.get('date')
-        res_dict = defaultdict(dict)
+        res_dict = defaultdict(list)
         #origin_dict = {}
         #comment_dict={}
 
@@ -66,16 +66,16 @@ class User_Behavior(APIView):
                 "store_date").annotate(originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"),
                                       retweetnum_s=Sum("retweetnum"), sensitivenum_s=Sum("sensitivenum"))'''
             result = UserBehavior.objects.filter(uid=uid, timestamp__gte=new_date,timestamp__lte=t.timestamp()).values(
-                "store_date",'originalnum','commentnum','retweetnum','sensitivenum')
+                "store_date",'originalnum','commentnum','retweetnum','sensitivenum').order_by("timestamp")
             if result.exists():
                 for item in result:
-                    td = item["store_date"]  #pop("timestamp") - 24 * 60 * 60
+                    res_dict['date'].append(item["store_date"])
                     #res_dict[time.strftime("%Y-%m-%d", time.localtime(t))] = item
                     #res_dict[str(td)] = item
-                    res_dict['originalnum'][str(td)] = item['originalnum']
-                    res_dict['commentnum'][str(td)] = item['commentnum']
-                    res_dict['retweetnum'][str(td)] = item['retweetnum']
-                    res_dict['sensitivenum'][str(td)] = item['sensitivenum']
+                    res_dict['originalnum'].append(item['originalnum'])
+                    res_dict['commentnum'].append(item['commentnum'])
+                    res_dict['retweetnum'].append(item['retweetnum'])
+                    res_dict['sensitivenum'].append(item['sensitivenum'])
                 #return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
             #else:
                 #return JsonResponse({"status":400, "error": "未找到该用户活动信息"},safe=False,json_dumps_params={'ensure_ascii':False}) 
@@ -89,7 +89,7 @@ class User_Behavior(APIView):
                 result = UserBehavior.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
                                                      timestamp__lt=date_dict[i]).aggregate(
                     originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"), retweetnum_s=Sum("retweetnum"),
-                    sensitivenum_s=Sum("sensitivenum"))
+                    sensitivenum_s=Sum("sensitivenum")).order_by("timestamp")
                 #if list(result.values())[0]:
                 if len(result):  #.exists():
                     '''
@@ -99,10 +99,11 @@ class User_Behavior(APIView):
                         res_dict['retweetnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = item['retweetnum_s']
                         res_dict['sensitivenum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = item['sensitivenum_s']
                     '''
-                    res_dict['originalnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['originalnum_s']
-                    res_dict['commentnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['commentnum_s']
-                    res_dict['retweetnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['retweetnum_s']
-                    res_dict['sensitivenum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['sensitivenum_s']
+                    res_dict['date'].append(time.strftime("%Y-%m-%d", time.localtime((date_dict[i]))))
+                    res_dict['originalnum'].append(result['originalnum_s']) 
+                    res_dict['commentnum'].append(result['commentnum_s'])
+                    res_dict['retweetnum'].append(result['retweetnum_s'])
+                    res_dict['sensitivenum'].append(result['sensitivenum_s'])
                     #res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result
                 
         # 每月活动特征，从当前日期往前推5月展示 原创微博数、评论数、转发数、敏感微博数
@@ -115,25 +116,15 @@ class User_Behavior(APIView):
                 result = UserBehavior.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
                                                      timestamp__lt=date_dict[i]).aggregate(
                     originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"), retweetnum_s=Sum("retweetnum"),
-                    sensitivenum_s=Sum("sensitivenum"))
+                    sensitivenum_s=Sum("sensitivenum")).order_by("timestamp")
                 if len(result):
-                    res_dict['originalnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['originalnum_s']
-                    res_dict['commentnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['commentnum_s']
-                    res_dict['retweetnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['retweetnum_s']
-                    res_dict['sensitivenum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['sensitivenum_s']
-        res_dict['originalnum'] = dict(sorted(res_dict['originalnum'].items(),key=lambda x:x[0],reverse=False))
-        res_dict['commentnum'] = dict(sorted(res_dict['commentnum'].items(),key=lambda x:x[0],reverse=False))
-        res_dict['retweetnum'] = dict(sorted(res_dict['retweetnum'].items(),key=lambda x:x[0],reverse=False))
-        res_dict['sensitivenum'] = dict(sorted(res_dict['sensitivenum'].items(),key=lambda x:x[0],reverse=False))
+                    res_dict['date'].append(time.strftime("%Y-%m-%d", time.localtime((date_dict[i]))))
+                    res_dict['originalnum'].append(result['originalnum_s']) 
+                    res_dict['commentnum'].append(result['commentnum_s'])
+                    res_dict['retweetnum'].append(result['retweetnum_s'])
+                    res_dict['sensitivenum'].append(result['sensitivenum_s'])
         return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
-'''
-                if list(result.values())[0]:
-                    res_dict['originalnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['originalnum_s']
-                    res_dict['commentnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['commentnum_s']
-                    res_dict['retweetnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['retweetnum_s']
-                    res_dict['sensitivenum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['sensitivenum_s']
-        return JsonResponse(res_dict)
-'''
+
 
 
 '''
@@ -237,7 +228,7 @@ class Show_topic(APIView):
        输出{“topics”：{“uid”:{“topic1”:p,…}}}"""
     def get(self,request):
         #re = defaultdict(list)
-        #re2 = defaultdict(list)
+        re2 = []
         #prefer = defaultdict(dict)
         uid = request.GET.get("uid")
         #start_date = request.GET.get("date")
@@ -259,11 +250,13 @@ class Show_topic(APIView):
                     except:
                         new_topic[topic_dict[item]] = i["fields"]["topics"][item]
                     #print(new_topic)
-            re = dict(sorted(new_topic.items(),key=lambda x:x[1],reverse=True)[:5])
+            re = sorted(new_topic.items(),key=lambda x:x[1],reverse=True)[:5]
+            for item in re:
+                re2.append({"name":item[0],"values":item[1]})
             #print(type(re))
             #re = json.dumps(re,ensure_ascii=False)
             #re = json.load(re,ensure_ascii=False)
-            return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False})
+            return JsonResponse(re2,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "未找到该用户信息"},safe=False,json_dumps_params={'ensure_ascii':False}) 
 
@@ -275,7 +268,7 @@ class Show_keyword(APIView):
        输入uid
        输出{‘uid’:{‘keywords’:{…},’sensitive_words’:{},’hastags’:{}}"""
     def get(self,request):
-        re1 = {}
+        re1 = defaultdict(list)
         uid = request.GET.get("uid")
         #end_date = request.GET.get("date")
         #end_date = datetime.datetime.strptime(end_date,"%Y-%m-%d")
@@ -309,9 +302,19 @@ class Show_keyword(APIView):
                         ht[k] += v
                     except:
                         ht[k] = v
-                re1["keywords"] = dict(sorted(kw.items(),key=lambda x:x[1],reverse=True)[:5])
-                re1["sensitive_words"] = sw
-                re1["hastags"] = dict(sorted(ht.items(),key=lambda x:x[1],reverse=True)[:5])
+                #re1["keywords"] = dict(sorted(kw.items(),key=lambda x:x[1],reverse=True)[:5])
+                #re1["sensitive_words"] = sw
+                #re1["hastags"] = dict(sorted(ht.items(),key=lambda x:x[1],reverse=True)[:5])
+            key = sorted(kw.items(),key=lambda x:x[1],reverse=True)[:5]
+            has = sorted(ht.items(),key=lambda x:x[1],reverse=True)[:5]
+                #print(sw)
+            for item in key:
+                re1["keywords"].append({"name":item[0],"values":item[1]})
+            for item in has:
+                re1["hastags"].append({"name":item[0],"values":item[1]})
+            for k,v in sw.items():
+                    #print(item)
+                re1["sensitive_words"].append({"name":k,"values":v})
             return JsonResponse(re1,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "未找到该用户信息"},safe=False,json_dumps_params={'ensure_ascii':False})
