@@ -650,7 +650,7 @@ class Event_Group(APIView):
             global_senword = sorted(global_senword.items(), key=lambda x:x[1], reverse=True)[:10]
             event_senword = sorted(event_senword.items(), key=lambda x:x[1], reverse=True)[:10]
 
-            hashtag = {item[0]: item[1] for item in hashtag}
+            hashtag = [{"name": item[0], "value": item[1]} for item in hashtag]
             global_senword = {item[0]: item[1] for item in global_senword}
             event_senword = {item[0]: item[1] for item in event_senword}
 
