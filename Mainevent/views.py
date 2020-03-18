@@ -501,7 +501,7 @@ class semantic_tl(APIView):
         #print(result)
         info_dict = defaultdict(list)
         tl_dict ={}
-        timeline = defaultdict(list)
+        timeline =[]
         if result.exists():
             '''
             for re in result:
@@ -511,10 +511,9 @@ class semantic_tl(APIView):
             '''
             for re in result:
                 date = time.strftime('%Y-%m-%d',time.localtime(re.timestamp))
-                info_dict[date].append({"source":re.uid,"text":re.text,"hazard_index":re.hazard_index})
+                info_dict[date].append({"date":date,"source":re.uid,"text":re.text,"hazard_index":re.hazard_index})
             for k,v in info_dict.items():
-                timeline["content"].append(sorted(v,key=operator.itemgetter('hazard_index'),reverse=True)[:1])
-                timeline["date"].append(k)
+                timeline.append(sorted(v,key=operator.itemgetter('hazard_index'),reverse=True)[:1])
             
             #print(timeline)
             return JsonResponse(timeline,safe=False,json_dumps_params={'ensure_ascii':False}) #
@@ -529,18 +528,26 @@ class semantic_topic(APIView):
         eid = request.GET.get('eid')
         result = Event_Semantic.objects.filter(e_id=eid).values("topics")
         topics = defaultdict(dict)
+        themes = defaultdict(list)
         if result.exists():
-            for re in result:
+            #print(result)
+            #for re in result:
                 #print(re["topics"]['0'])
-                for i in range(5):
-                    for k,v in re["topics"][str(i)].items():
+            for i in range(5):
+                for k,v in result[0]["topics"][str(i)].items():
                     #dict(zip(re["topics"][i]['主题'],re["topics"][i]['概率']))
-                        try:
-                            topics[str(i)][k] += float(v)
-                        except:
-                            topics[str(i)][k] = float(v)
-                    topics[str(i)] = dict(sorted(topics[str(i)].items(),key=lambda x:x[1],reverse=True)[:10])
-            return JsonResponse(topics,safe=False,json_dumps_params={'ensure_ascii':False}) #
+                    try:
+                        topics[str(i)][k] += float(v)
+                    except:
+                        topics[str(i)][k] = float(v)
+                topic = dict(sorted(topics[str(i)].items(),key=lambda x:x[1],reverse=True)[:10])
+                    #print(topic)
+                    #break
+                for k,v in topic.items():
+                        #print(k,v)
+                    themes[str(i)].append({"name":k,"values":v})
+            #print(themes)
+            return JsonResponse(themes,safe=False,json_dumps_params={'ensure_ascii':False}) #
         else:
             return JsonResponse({"status":400, "error": "无主题信息"},safe=False)
 
