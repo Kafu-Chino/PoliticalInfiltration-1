@@ -63,10 +63,10 @@ class Show_event(APIView):
                         info_rat = None
                     if weibo_count != 0:
                         info_rat = float(info_count/weibo_count)
-                    jre.append({"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
+                    jre.append({"eid":eid,"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
                             "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':figure_rat,'sensitive_info_ratio':info_rat})
                 else:
-                    jre.append({"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
+                    jre.append({"eid":item["e_id"],"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
                                 "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':None,'sensitive_info_ratio':None})
             return JsonResponse(jre,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
@@ -173,10 +173,10 @@ class search_event(APIView):
                         info_rat = None
                     if weibo_count != 0:
                         info_rat = float(info_count/weibo_count)
-                    jre.append({"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
+                    jre.append({"eid":eid,"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
                             "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':figure_rat,'sensitive_info_ratio':info_rat})
                 else:
-                    jre.append({"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
+                    jre.append({"eid":eid,"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
                                 "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':None,'sensitive_info_ratio':None})
             re = json.dumps(list(jre),ensure_ascii=False)
             re = json.loads(re)
