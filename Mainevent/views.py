@@ -191,13 +191,13 @@ class Add_event(APIView):
     """
     添加新的事件计算任务
     """
-    def post(self, request):
-        event_name = request.POST.get("event_name")
-        keywords_dict = request.POST.get("keywords_dict")
-        sensitive_word_white = request.POST.get("sensitive_word_white")
-        sensitive_word_black = request.POST.get("sensitive_word_black")
-        begin_date = request.POST.get("begin_date")
-        end_date = request.POST.get("end_date")
+    def get(self, request):
+        event_name = request.GET.get("event_name")
+        keywords_dict = request.GET.get("keywords_dict")
+        sensitive_word_white = request.GET.get("sensitive_word_white")
+        sensitive_word_black = request.GET.get("sensitive_word_black")
+        begin_date = request.GET.get("begin_date")
+        end_date = request.GET.get("end_date")
 
         if not event_name or not keywords_dict:
             return JsonResponse({"status":400, "info": "添加失败，缺少必填项！"},safe=False)
