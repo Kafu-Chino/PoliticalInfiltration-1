@@ -511,10 +511,11 @@ class semantic_tl(APIView):
             '''
             for re in result:
                 date = time.strftime('%Y-%m-%d',time.localtime(re.timestamp))
+                #info_dict[date].append({"日期":date,"发博用户":re.uid,"微博内容":re.text,"危害指数":re.hazard_index})
                 info_dict[date].append({"date":date,"source":re.uid,"text":re.text,"hazard_index":re.hazard_index})
             for k,v in info_dict.items():
-                timeline.append(sorted(v,key=operator.itemgetter('hazard_index'),reverse=True)[:1])
-            
+                #timeline.append(sorted(v,key=operator.itemgetter('危害指数'),reverse=True)[:1][0])
+                timeline.append(sorted(v,key=operator.itemgetter('危害指数'),reverse=True)[:1][0])
             #print(timeline)
             return JsonResponse(timeline,safe=False,json_dumps_params={'ensure_ascii':False}) #
         else:
