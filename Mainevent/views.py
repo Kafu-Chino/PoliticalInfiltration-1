@@ -501,7 +501,7 @@ class semantic_tl(APIView):
         #print(result)
         info_dict = defaultdict(list)
         tl_dict ={}
-        timeline = defaultdict(list)
+        timeline =[]
         if result.exists():
             '''
             for re in result:
@@ -511,10 +511,9 @@ class semantic_tl(APIView):
             '''
             for re in result:
                 date = time.strftime('%Y-%m-%d',time.localtime(re.timestamp))
-                info_dict[date].append({"source":re.uid,"text":re.text,"hazard_index":re.hazard_index})
+                info_dict[date].append({"date":date,"source":re.uid,"text":re.text,"hazard_index":re.hazard_index})
             for k,v in info_dict.items():
-                timeline["content"].append(sorted(v,key=operator.itemgetter('hazard_index'),reverse=True)[:1])
-                timeline["date"].append(k)
+                timeline.append(sorted(v,key=operator.itemgetter('hazard_index'),reverse=True)[:1])
             
             #print(timeline)
             return JsonResponse(timeline,safe=False,json_dumps_params={'ensure_ascii':False}) #
