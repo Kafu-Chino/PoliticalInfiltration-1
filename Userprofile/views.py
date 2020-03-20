@@ -555,17 +555,23 @@ class Association(APIView):
 class related_info(APIView):
     """人物-信息关联分析"""
     def get(self,request):
-        res_dict = []
+        res_dict = defaultdict(list)
         fid = request.GET.get('uid')
         limit = request.GET.get("limit")
         page_id = request.GET.get('page_id')
-        res = Information.objects.filter(uid=fid)
+        if page_id is None:
+            page_id = 1
+        if limit is None:
+            limit = 10
+        res = Information.objects.filter(uid=fid)[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
         if res.exists():
             for i in res:
                 lt = time.localtime(i.timestamp)
                 itime = time.strftime('%Y-%m-%d %H:%M:%S',lt)
                 #print(itime)
-                res_dict.append({'text': i.text,'time':itime,'geo':i.geo})
+                res_dict['table'].append(['text','time','geo'])
+                res_dict['data'].append([i.text,itime,i.geo])
+            '''
             page = Paginator(res_dict, limit)
             #page_id = request.GET.get('page_id')
             if page_id:
@@ -579,7 +585,8 @@ class related_info(APIView):
                 results = page.page(1)
             re = json.dumps(list(results),ensure_ascii=False)
             re = json.loads(re)
-            return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False}) #
+            '''
+            return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False}) #
         else:
             return JsonResponse({"status":400, "error": "无相关人物和信息"},safe=False)
 
@@ -588,20 +595,26 @@ class related_info(APIView):
 class related_event(APIView):
     """人物-事件相关信息"""
     def get(self,request):
-        res_dict = []
+        res_dict = defaultdict(list)
         fid = request.GET.get('uid')
         limit = request.GET.get("limit")
         page_id = request.GET.get('page_id')
+        if page_id is None:
+            page_id = 1
+        if limit is None:
+            limit = 10
         res = Figure.objects.filter(uid=fid)
         if res.exists():
-            res_event = Figure.objects.get(f_id=fid).event.all()
+            res_event = Figure.objects.get(f_id=fid).event.all()[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
             for e in res_event:
                 #lt = time.localtime(i.timestamp)
                 #itime = time.strftime('%Y-%m-%d %H:%M:%S',lt)
                 #print(itime)
                 sdate = e.begin_date.strftime('%Y-%m-%d %H:%M:%S')
                 edate = e.end_date.strftime('%Y-%m-%d %H:%M:%S')
-                res_dict.append({'event_name': e.event_name,'keywords':e.keywords_dict,'begin_date':sdate,'end_date':edate})
+                res_dict['table'].append(['event_name','keywords','begin_date','end_date'])
+                res_dict['data'].append([e.event_name,e.keywords_dict,sdate,edate])
+            '''
             page = Paginator(res_dict, limit)
             #page_id = request.GET.get('page_id')
             if page_id:
@@ -615,7 +628,8 @@ class related_event(APIView):
                 results = page.page(1)
             re = json.dumps(list(results),ensure_ascii=False)
             re = json.loads(re)
-            return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False}) #
+            '''
+            return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False}) #
         else:
             return JsonResponse({"status":400, "error": "无相关人物和信息"},safe=False)
 
