@@ -304,7 +304,7 @@ class related_figure(APIView):
                     "information":[{"text": text1, "hazard_index": hazard_index1},{}]
                 }
         """
-        res_dict = []
+        res_dict = defaultdict(list)
         eid = request.GET.get('eid')
         limit = request.GET.get("limit")
         page_id = request.GET.get('page_id')
@@ -317,7 +317,8 @@ class related_figure(APIView):
             #print(e)
             res = res_event[0].figure.all()[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
             for f in res:
-                res_dict.append({"f_id": f.f_id, "nick_name": f.nick_name,"fansnum":f.fansnum,"friendsnum":f.friendsnum})
+                res_dict['table'].append(["f_id","nick_name","fansnum","friendsnum"])
+                res_dict['data'].append([f.f_id, f.nick_name,f.fansnum,f.friendsnum])
             return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "无相关人物"},safe=False)
@@ -350,7 +351,7 @@ class related_info(APIView):
                     "information":[{"text": text1, "hazard_index": hazard_index1},{}]
                 }
         """
-        res_dict = []
+        res_dict = defaultdict(list)
         eid = request.GET.get('eid')
         limit = request.GET.get("limit")
         page_id = request.GET.get('page_id')
@@ -365,8 +366,8 @@ class related_info(APIView):
             for i in res1:
                 lt = time.localtime(i.timestamp)
                 itime = time.strftime('%Y-%m-%d %H:%M:%S',lt)
-                #print(itime)
-                res_dict.append({'text': i.text,'time':itime,'geo':i.geo})
+                res_dict['table'].append(['text','time','geo'])
+                res_dict['data'].append([i.text,itime,i.geo])
                 #print(res_dict["info"])
             return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False}) #
         else:
