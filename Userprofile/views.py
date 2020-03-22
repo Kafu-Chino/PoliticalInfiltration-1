@@ -323,7 +323,8 @@ class Show_keyword(APIView):
         else:
             return JsonResponse({"status":400, "error": "未找到该用户信息"},safe=False,json_dumps_params={'ensure_ascii':False})
 
-class Show_contact(APIView):
+# 社交特征完整功能接口
+class Show_contact_wanquanban(APIView):
     def get(self,request):
         uid = request.GET.get("uid")
         date_window = int(request.GET.get("date_window", 30))
@@ -413,6 +414,98 @@ class Show_contact(APIView):
 
         return JsonResponse(social_contact, safe=False)
 
+# 社交特征阉割版功能接口
+class Show_contact(APIView):
+    def get(self,request):
+        uid = request.GET.get("uid")
+        date_window = int(request.GET.get("date_window", 30))
+        min_count = int(request.GET.get("min_count", 1))
+        max_count = int(request.GET.get("max_count", 9999999999))
+
+        message_type_dic = {
+        	2: "评论",
+        	3: "转发"
+        }
+        # 时间范围内的数据获取，该用户上游和下游的节点连接
+        try:
+            end_date = Event.objects.filter(figure__uid=uid).order_by('end_date')[0].end_date.strftime('%Y-%m-%d')
+        except:
+            end_date = today()
+        end_ts = date2ts(end_date)
+        start_ts = end_ts - date_window * 86400
+
+        result = UserSocialContact.objects.filter((Q(source=uid) | Q(target=uid)) & Q(timestamp__gte=start_ts) & Q(timestamp__lte=end_ts)).values()
+        # return JsonResponse({1:list(result)}, safe=False)
+
+        # 对用户多日的数据进行聚合
+        result_sta = {}
+        for item in result:
+            key = (item['source'], item['target'])
+            source_name = item['source_name'] if item['source_name'] else item['source']
+            target_name = item['target_name'] if item['target_name'] else item['target']
+            if key not in result_sta:
+                result_sta[key] = {
+                    "message_type":{
+                        2: 0,
+                        3: 0
+                    },
+                    "name": (source_name, target_name)
+                }
+            result_sta[key]["message_type"][item['message_type']] += item["count"]
+
+        # 形成节点、边的列表，展示节点和边的属性
+        node_list = []
+        link_list = []
+        max_num = 0
+        min_num = 9999999999
+        node_set = set([])
+        for key in result_sta:
+            # 去掉自环节点
+            if key[0] == key[1]:
+                continue
+
+            for message_type in result_sta[key]["message_type"]:
+                count = result_sta[key]["message_type"][message_type]
+                if count:
+                    max_num = max(count, max_num)
+                    min_num = min(count, min_num)
+                if count >= min_count and count <= max_count:
+                    node_link = {
+                        'source': result_sta[key]["name"][0],
+                        'target': result_sta[key]["name"][1],
+                        'value': message_type_dic[message_type]
+                    }
+                    link_list.append(node_link)
+
+                    if key[0] not in node_set:
+                        source_node = {'id': key[0], 'name': result_sta[key]["name"][0]}
+                        node_list.append(source_node)
+                        node_set.add(key[0])
+
+                    if key[1] not in node_set:
+                        target_node = {'id': key[1], 'name': result_sta[key]["name"][1]}
+                        node_list.append(target_node)
+                        node_set.add(key[1])
+
+        # 标记节点属性，如果为节点自身，标记为1，如果节点在敏感库内，标记为2，其他标记为3
+        node_set.remove(uid)
+        contain_result = Figure.objects.filter(uid__in=list(node_set)).values()
+        contain_set = set([item["uid"] for item in contain_result])
+        for node in node_list:
+            if node["id"] == uid:
+                node["value"] = 1
+            elif node["id"] in contain_set:
+                node["value"] = 2
+            else:
+                node["value"] = 3
+            node.pop("id")
+
+        social_contact = {
+            'node': node_list, 
+            'link': link_list
+        }
+
+        return JsonResponse(social_contact, safe=False)
 
 class Figure_create(APIView):
     """添加人物入库"""
