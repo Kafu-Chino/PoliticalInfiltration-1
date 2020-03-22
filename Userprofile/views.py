@@ -51,12 +51,12 @@ class User_Behavior(APIView):
         """
         uid = request.GET.get('uid')
         n_type = request.GET.get('n_type')
-        date = request.GET.get('date')
+        #date = request.GET.get('date')
         res_dict = defaultdict(list)
         #origin_dict = {}
         #comment_dict={}
-
-        t=datetime.datetime.strptime(date+ " 23:59:59", '%Y-%m-%d %H:%M:%S')
+        t= datetime.datetime.now()
+        #t=datetime.datetime.strptime(date+ " 23:59:59", '%Y-%m-%d %H:%M:%S')
         #t = time.mktime(time.strptime(date, '%Y-%m-%d'))
         # 每日活动特征，从当前日期往前推7天展示 原创微博数、评论数、转发数、敏感微博数
         if n_type == "日":
@@ -89,7 +89,7 @@ class User_Behavior(APIView):
                 result = UserBehavior.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
                                                      timestamp__lt=date_dict[i]).aggregate(
                     originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"), retweetnum_s=Sum("retweetnum"),
-                    sensitivenum_s=Sum("sensitivenum")).order_by("timestamp")
+                    sensitivenum_s=Sum("sensitivenum"))
                 #if list(result.values())[0]:
                 if len(result):  #.exists():
                     '''
@@ -116,7 +116,7 @@ class User_Behavior(APIView):
                 result = UserBehavior.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
                                                      timestamp__lt=date_dict[i]).aggregate(
                     originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"), retweetnum_s=Sum("retweetnum"),
-                    sensitivenum_s=Sum("sensitivenum")).order_by("timestamp")
+                    sensitivenum_s=Sum("sensitivenum"))
                 if len(result):
                     res_dict['date'].append(time.strftime("%Y-%m-%d", time.localtime((date_dict[i]))))
                     res_dict['originalnum'].append(result['originalnum_s']) 
@@ -179,9 +179,10 @@ class User_Activity(APIView):
         """
         uid = request.GET.get('uid')
         n_type = request.GET.get('n_type') if request.GET.get('n_type') else 3
-        date = request.GET.get('date')
-        t=datetime.datetime.strptime(date+ " 23:59:59", '%Y-%m-%d %H:%M:%S')
-        res_dict = {}
+        #date = request.GET.get('date')
+        #t=datetime.datetime.strptime(date+ " 23:59:59", '%Y-%m-%d %H:%M:%S')
+        t= datetime.datetime.now()
+        res_dict = defaultdict(list)
         cal_date = (t + datetime.timedelta(days=-30)).timestamp()
         if n_type == 1:
             cal_date = (t + datetime.timedelta(days=-1)).timestamp()
@@ -200,9 +201,12 @@ class User_Activity(APIView):
         geo_map_result = UserActivity.objects.filter(uid=uid, timestamp__gte=cal_date).values("geo").annotate(
             statusnum_s=Sum("statusnum")).order_by("-statusnum_s")
         print(geo_map_result)
-        res_dict["geo_map_result"] = list(geo_map_result)
-        
-
+        #res_dict["geo_map_result"] = list(geo_map_result)
+        if geo_map_result.exists():
+            for item in geo_map_result:
+                res_dict["geo_map_result"].append({"name":item["geo"],"value":item["statusnum_s"]})
+        else:
+            res_dict["geo_map_result"]=[]
 
         return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
 
@@ -252,7 +256,7 @@ class Show_topic(APIView):
                     #print(new_topic)
             re = sorted(new_topic.items(),key=lambda x:x[1],reverse=True)[:5]
             for item in re:
-                re2.append({"name":item[0],"values":item[1]})
+                re2.append({"name":item[0],"value":item[1]})
             #print(type(re))
             #re = json.dumps(re,ensure_ascii=False)
             #re = json.load(re,ensure_ascii=False)
@@ -309,12 +313,12 @@ class Show_keyword(APIView):
             has = sorted(ht.items(),key=lambda x:x[1],reverse=True)[:5]
                 #print(sw)
             for item in key:
-                re1["keywords"].append({"name":item[0],"values":item[1]})
+                re1["keywords"].append({"name":item[0],"value":item[1]})
             for item in has:
-                re1["hastags"].append({"name":item[0],"values":item[1]})
+                re1["hastags"].append({"name":item[0],"value":item[1]})
             for k,v in sw.items():
                     #print(item)
-                re1["sensitive_words"].append({"name":k,"values":v})
+                re1["sensitive_words"].append({"name":k,"value":v})
             return JsonResponse(re1,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "未找到该用户信息"},safe=False,json_dumps_params={'ensure_ascii':False})
@@ -526,6 +530,14 @@ class Figure_create(APIView):
         if result.exists():
             return JsonResponse({"status":400, "error": "人物已存在"},safe=False,json_dumps_params={'ensure_ascii':False})
         if f_id and nick :
+            if not birth:
+                birthday = "0000-00-00"
+            if not create_at:
+                create_at = "0000-00-00"
+            if not fans:
+                fans = -1
+            if not friends:
+                friends = -1
             Figure.objects.create(f_id=f_id, uid=uid, nick_name=nick,user_location=location,fansnum=fans,user_birth = birth,create_at=create_at,
                                 friendsnum=friends,political = political,domain=domain)
             return JsonResponse({"status":201, "msg": "人物添加成功"},safe=False,json_dumps_params={'ensure_ascii':False})
