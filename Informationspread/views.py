@@ -125,9 +125,12 @@ class Info_spread(APIView):
         n_res['date'].extend(dl)
         n_res['retweet_count_pred'] = []
         n_res['comment_count_pred'] = []
-        for i in range(len(res_dict['retweet_count'].values())):
+        for i in range(len(res_dict['retweet_count'].values())-1):
             n_res['retweet_count_pred'].append('-')
             n_res['comment_count_pred'].append('-')
+        print (res_dict['retweet_count'])
+        n_res['retweet_count_pred'].append(list(res_dict['retweet_count'].values())[len(res_dict['retweet_count'].values())-1])
+        n_res['comment_count_pred'].append(list(res_dict['comment_count'].values())[len(res_dict['retweet_count'].values())-1])
         n_res['retweet_count_pred'].extend(list(res_dict['retweet_count_pred'].values()))
         n_res['comment_count_pred'].extend(list(res_dict['comment_count_pred'].values()))
         # normal_days = len(n_res['retweet_count'])
@@ -375,15 +378,10 @@ class Info_spread(APIView):
                         [{'name': '预警', 'xAxis': date_list[color_point[i]]},
                          {'xAxis': date_list[len(n_res['date']) - 1]}])
 
-                # n_res['retweet_pieces'].append({lte:big_check_point[0],color:'green'})
-                # num = 0
-                # for i in range(len(small_check_point)):
-                #     if num%2 == 0:
-                #         n_res['retweet_pieces'].append({gt: big_check_point[i],lte:small_check_point[i], color: 'red'})
-                #     else:
-                #         n_res['retweet_pieces'].append({gt: big_check_point[i], lte: small_check_point[i], color: 'green'})
-                #     num += 1
-                #
-
-
+        if len(n_res['comment_name'])==0:
+            n_res['comment_name'].append([{'name': '', 'xAxis': ''},
+                         {'xAxis': ''}])
+        if len(n_res['retweet_name'])==0:
+            n_res['retweet_name'].append([{'name': '', 'xAxis': ''},
+                         {'xAxis': ''}])
         return JsonResponse(n_res)
