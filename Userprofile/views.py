@@ -56,32 +56,47 @@ class User_Behavior(APIView):
         #origin_dict = {}
         #comment_dict={}
         t= datetime.datetime.now()
+        date_dict = {}
         #t=datetime.datetime.strptime(date+ " 23:59:59", '%Y-%m-%d %H:%M:%S')
         #t = time.mktime(time.strptime(date, '%Y-%m-%d'))
         # 每日活动特征，从当前日期往前推7天展示 原创微博数、评论数、转发数、敏感微博数
         if n_type == "日":
             new_date = (t + datetime.timedelta(days=-7)).timestamp()
-            '''
-            result = UserBehavior.objects.filter(uid=uid, timestamp__gte=new_date,timestamp__lte=t.timestamp()).values(
-                "store_date").annotate(originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"),
-                                      retweetnum_s=Sum("retweetnum"), sensitivenum_s=Sum("sensitivenum"))'''
-            result = UserBehavior.objects.filter(uid=uid, timestamp__gte=new_date,timestamp__lte=t.timestamp()).values(
-                "store_date",'originalnum','commentnum','retweetnum','sensitivenum').order_by("timestamp")
-            if result.exists():
-                for item in result:
+            for i in range(7):
+                date_dict[i + 1] = (t + datetime.timedelta(-1 * (i + 1))).timestamp()
+            date_dict[0] = t.timestamp()
+            for i in range(7):
+                item = UserBehavior.objects.filter(uid=uid, timestamp__gt=date_dict[i+1],timestamp__lt=date_dict[i]).values(
+                    "store_date",'originalnum','commentnum','retweetnum','sensitivenum')   #.order_by("timestamp")
+                if item.exists():
                     res_dict['date'].append(item["store_date"])
                     #res_dict[time.strftime("%Y-%m-%d", time.localtime(t))] = item
                     #res_dict[str(td)] = item
-                    res_dict['originalnum'].append(item['originalnum'])
-                    res_dict['commentnum'].append(item['commentnum'])
-                    res_dict['retweetnum'].append(item['retweetnum'])
-                    res_dict['sensitivenum'].append(item['sensitivenum'])
-                #return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
-            #else:
-                #return JsonResponse({"status":400, "error": "未找到该用户活动信息"},safe=False,json_dumps_params={'ensure_ascii':False}) 
+                    if item['originalnum_s']:
+                        res_dict['originalnum'].append(item['originalnum_s']) 
+                    else:
+                        res_dict['originalnum'].append(0) 
+                    if item['commentnum_s']:
+                        res_dict['commentnum'].append(item['commentnum_s'])
+                    else:
+                        res_dict['commentnum'].append(0)
+                    if item['retweetnum_s']:
+                        res_dict['retweetnum'].append(item['retweetnum_s'])
+                    else:
+                        res_dict['retweetnum'].append(0)
+                    if item['sensitivenum_s']:
+                        res_dict['sensitivenum'].append(item['sensitivenum_s'])
+                    else:
+                        res_dict['sensitivenum'].append(0)
+                else:
+                    res_dict['date'].append(ts2date(date_dict[i+1]))
+                    res_dict['originalnum'].append(0) 
+                    res_dict['commentnum'].append(0)
+                    res_dict['retweetnum'].append(0)
+                    res_dict['sensitivenum'].append(0)
         # 每周活动特征，从当前日期往前推5周展示 原创微博数、评论数、转发数、敏感微博数
         if n_type == "周":
-            date_dict = {}
+
             for i in range(5):
                 date_dict[i + 1] = (t + datetime.timedelta(weeks=(-1 * (i + 1)))).timestamp()
             date_dict[0] = t.timestamp()
@@ -92,23 +107,31 @@ class User_Behavior(APIView):
                     sensitivenum_s=Sum("sensitivenum"))
                 #if list(result.values())[0]:
                 if len(result):  #.exists():
-                    '''
-                    for item in result:
-                        res_dict['originalnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = item['originalnum_s']
-                        res_dict['commentnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = item['commentnum_s']
-                        res_dict['retweetnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = item['retweetnum_s']
-                        res_dict['sensitivenum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = item['sensitivenum_s']
-                    '''
                     res_dict['date'].append(time.strftime("%Y-%m-%d", time.localtime((date_dict[i]))))
-                    res_dict['originalnum'].append(result['originalnum_s']) 
-                    res_dict['commentnum'].append(result['commentnum_s'])
-                    res_dict['retweetnum'].append(result['retweetnum_s'])
-                    res_dict['sensitivenum'].append(result['sensitivenum_s'])
-                    #res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result
-                
+                    if result['originalnum_s']:
+                        res_dict['originalnum'].append(result['originalnum_s']) 
+                    else:
+                        res_dict['originalnum'].append(0) 
+                    if result['commentnum_s']:
+                        res_dict['commentnum'].append(result['commentnum_s'])
+                    else:
+                        res_dict['commentnum'].append(0)
+                    if result['retweetnum_s']:
+                        res_dict['retweetnum'].append(result['retweetnum_s'])
+                    else:
+                        res_dict['retweetnum'].append(0)
+                    if result['sensitivenum_s']:
+                        res_dict['sensitivenum'].append(result['sensitivenum_s'])
+                    else:
+                        res_dict['sensitivenum'].append(0)
+                else:
+                    res_dict['date'].append(ts2date(date_dict[i+1]))
+                    res_dict['originalnum'].append(0) 
+                    res_dict['commentnum'].append(0)
+                    res_dict['retweetnum'].append(0)
+                    res_dict['sensitivenum'].append(0)
         # 每月活动特征，从当前日期往前推5月展示 原创微博数、评论数、转发数、敏感微博数
         if n_type == "月":
-            date_dict = {}
             for i in range(5):
                 date_dict[i + 1] = (t + datetime.timedelta(days=(-30 * (i + 1)))).timestamp()
             date_dict[0] = t.timestamp()
@@ -119,10 +142,28 @@ class User_Behavior(APIView):
                     sensitivenum_s=Sum("sensitivenum"))
                 if len(result):
                     res_dict['date'].append(time.strftime("%Y-%m-%d", time.localtime((date_dict[i]))))
-                    res_dict['originalnum'].append(result['originalnum_s']) 
-                    res_dict['commentnum'].append(result['commentnum_s'])
-                    res_dict['retweetnum'].append(result['retweetnum_s'])
-                    res_dict['sensitivenum'].append(result['sensitivenum_s'])
+                    if result['originalnum_s']:
+                        res_dict['originalnum'].append(result['originalnum_s']) 
+                    else:
+                        res_dict['originalnum'].append(0) 
+                    if result['commentnum_s']:
+                        res_dict['commentnum'].append(result['commentnum_s'])
+                    else:
+                        res_dict['commentnum'].append(0)
+                    if result['retweetnum_s']:
+                        res_dict['retweetnum'].append(result['retweetnum_s'])
+                    else:
+                        res_dict['retweetnum'].append(0)
+                    if result['sensitivenum_s']:
+                        res_dict['sensitivenum'].append(result['sensitivenum_s'])
+                    else:
+                        res_dict['sensitivenum'].append(0)
+                else:
+                    res_dict['date'].append(ts2date(date_dict[i+1]))
+                    res_dict['originalnum'].append(0) 
+                    res_dict['commentnum'].append(0)
+                    res_dict['retweetnum'].append(0)
+                    res_dict['sensitivenum'].append(0)
         return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
 
 
