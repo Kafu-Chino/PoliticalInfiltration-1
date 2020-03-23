@@ -159,70 +159,70 @@ class Info_spread(APIView):
         if len(big_check_point)==0:
             if len(small_check_point)==0:
                 if  n_res['retweet_count'][0]>1000:
-                    n_res['retweet_pieces'].append({'lte': date_list[len(date_list)-1],'gt':date_list[0], 'color': 'red'})
+                    n_res['retweet_pieces'].append({'lte': len(date_list)-1,'gt':0, 'color': 'red'})
                     n_res['retweet_name'].append(
                         [{'name': '预警', 'xAxis': date_list[0]}, {'xAxis': date_list[len(date_list)-1]}])
                 else:
                     n_res['retweet_pieces'].append(
-                        {'lte': date_list[len(date_list) - 1], 'gt': date_list[0], 'color': 'green'})
+                        {'lte': len(date_list) - 1, 'gt': 0, 'color': 'green'})
             else:
-                n_res['retweet_pieces'].append({'lte': date_list[small_check_point[0]],'gt':date_list[0], 'color': 'red'})
-                n_res['retweet_pieces'].append({'lte': date_list[-1],'gt':small_check_point[0], 'color': 'green'})
+                n_res['retweet_pieces'].append({'lte': small_check_point[0],'gt':0, 'color': 'red'})
+                n_res['retweet_pieces'].append({'lte': len(date_list)-1,'gt':small_check_point[0], 'color': 'green'})
                 n_res['retweet_name'].append(
                     [{'name': '预警', 'xAxis': date_list[0]}, {'xAxis': date_list[small_check_point[0]]}])
 
         if len(big_check_point)!=0:
             if len(small_check_point) == 0:
                 n_res['retweet_pieces'].append(
-                    {'lte': date_list[big_check_point[0]], 'gt': date_list[0], 'color': 'green'})
-                n_res['retweet_pieces'].append({'lte': date_list[-1], 'gt': big_check_point[0], 'color': 'red'})
+                    {'lte': big_check_point[0], 'gt': 0, 'color': 'green'})
+                n_res['retweet_pieces'].append({'lte': len(date_list)-1, 'gt': big_check_point[0], 'color': 'red'})
                 n_res['retweet_name'].append(
                     [{'name': '预警', 'xAxis': date_list[big_check_point[0]]}, {'xAxis': date_list[-1]}])
 
         if len(big_check_point)!=0 and len(small_check_point)!=0:
             if big_check_point[0] <small_check_point[0]:
                 if len(big_check_point)>len(small_check_point):
-                    n_res['retweet_pieces'].append({'lte': date_list[big_check_point[0]], 'color': 'green'})
+                    n_res['retweet_pieces'].append({'lte': big_check_point[0], 'color': 'green'})
                     color_point = []
                     color_point.extend(list(chain.from_iterable(zip(big_check_point[:-1], small_check_point))).append(big_check_point[-1]))
                     for i in range(1,len(color_point)):
                         if i%2==1:
-                            n_res['retweet_pieces'].append({'lte': date_list[color_point[i]],'gt':date_list[color_point[i-1]], 'color': 'red'})
+                            n_res['retweet_pieces'].append({'lte': color_point[i],'gt':color_point[i-1], 'color': 'red'})
                             n_res['retweet_name'].append([{'name':'预警','xAxis':date_list[color_point[i-1]]},{'xAxis':date_list[color_point[i]]}])
                         else:
-                            n_res['retweet_pieces'].append({'lte': date_list[color_point[i]],'gt':date_list[color_point[i-1]], 'color': 'green'})
-                    n_res['retweet_pieces'].append({'gt':date_list[color_point[i]], 'color': 'red'})
+                            n_res['retweet_pieces'].append({'lte': color_point[i],'gt':color_point[i-1], 'color': 'green'})
+                    n_res['retweet_pieces'].append({'gt':color_point[i], 'color': 'red'})
                     n_res['retweet_name'].append([{'name': '预警', 'xAxis': date_list[color_point[i]]}, {'xAxis': date_list[len(n_res['date'])-1]}])
                 else:
-                    n_res['retweet_pieces'].append({'lte': date_list[big_check_point[0]], 'color': 'green'})
+                    n_res['retweet_pieces'].append({'lte': big_check_point[0], 'color': 'green'})
                     color_point = []
                     color_point.extend(
                         list(chain.from_iterable(zip(big_check_point, small_check_point))))
                     for i in range(1, len(color_point)):
                         if i % 2 == 1:
-                            n_res['retweet_pieces'].append({'lte': date_list[color_point[i]], 'gt': date_list[color_point[i - 1]], 'color': 'red'})
+                            n_res['retweet_pieces'].append({'lte': color_point[i], 'gt': color_point[i - 1], 'color': 'red'})
                             n_res['retweet_name'].append(
                                 [{'name': '预警', 'xAxis': date_list[color_point[i - 1]]}, {'xAxis': date_list[color_point[i]]}])
                         else:
-                            n_res['retweet_pieces'].append({'lte': date_list[color_point[i]], 'gt': date_list[color_point[i - 1]], 'color': 'green'})
-                    n_res['retweet_pieces'].append({'gt': date_list[color_point[i]], 'color': 'green'})
+                            n_res['retweet_pieces'].append({'lte': color_point[i], 'gt': color_point[i - 1], 'color': 'green'})
+                    n_res['retweet_pieces'].append({'gt': color_point[i], 'color': 'green'})
             else:
                 if len(small_check_point)>len(big_check_point):
-                    n_res['retweet_pieces'].append({'lte': date_list[small_check_point[0]], 'color': 'red'})
+                    n_res['retweet_pieces'].append({'lte': small_check_point[0], 'color': 'red'})
                     n_res['retweet_name'].append(
                         [{'name': '预警', 'xAxis': date_list[0]}, {'xAxis':  date_list[small_check_point[0]]}])
                     color_point = []
                     color_point.extend(list(chain.from_iterable(zip(small_check_point[:-1], big_check_point))).append(small_check_point[-1]))
                     for i in range(1,len(color_point)):
                         if i%2==1:
-                            n_res['retweet_pieces'].append({'lte': date_list[color_point[i]],'gt':date_list[color_point[i-1]], 'color': 'green'})
+                            n_res['retweet_pieces'].append({'lte': color_point[i],'gt':color_point[i-1], 'color': 'green'})
                         else:
-                            n_res['retweet_pieces'].append({'lte': date_list[color_point[i]],'gt':date_list[color_point[i-1]], 'color': 'red'})
+                            n_res['retweet_pieces'].append({'lte': color_point[i],'gt':color_point[i-1], 'color': 'red'})
                             n_res['retweet_name'].append(
                                 [{'name': '预警', 'xAxis': date_list[color_point[i - 1]]}, {'xAxis': date_list[color_point[i]]}])
-                    n_res['retweet_pieces'].append({'gt':date_list[color_point[i]], 'color': 'green'})
+                    n_res['retweet_pieces'].append({'gt':color_point[i], 'color': 'green'})
                 else:
-                    n_res['retweet_pieces'].append({'lte': date_list[small_check_point[0]], 'color': 'red'})
+                    n_res['retweet_pieces'].append({'lte': small_check_point[0], 'color': 'red'})
                     n_res['retweet_name'].append(
                         [{'name': '预警', 'xAxis': date_list[0]}, {'xAxis': date_list[small_check_point[0]]}])
                     color_point = []
@@ -230,12 +230,12 @@ class Info_spread(APIView):
                         list(chain.from_iterable(zip(small_check_point, big_check_point))))
                     for i in range(1, len(color_point)):
                         if i % 2 == 1:
-                            n_res['retweet_pieces'].append({'lte': date_list[color_point[i]], 'gt': date_list[color_point[i - 1]], 'color': 'green'})
+                            n_res['retweet_pieces'].append({'lte': color_point[i], 'gt': color_point[i - 1], 'color': 'green'})
                         else:
-                            n_res['retweet_pieces'].append({'lte': date_list[color_point[i]], 'gt': date_list[color_point[i - 1]], 'color': 'red'})
+                            n_res['retweet_pieces'].append({'lte': color_point[i], 'gt': color_point[i - 1], 'color': 'red'})
                             n_res['retweet_name'].append(
                                 [{'name': '预警', 'xAxis': date_list[color_point[i - 1]]}, {'xAxis': date_list[color_point[i]]}])
-                    n_res['retweet_pieces'].append({'gt': date_list[color_point[i]], 'color': 'red'})
+                    n_res['retweet_pieces'].append({'gt': color_point[i], 'color': 'red'})
                     n_res['retweet_name'].append(
                         [{'name': '预警', 'xAxis': date_list[color_point[i]]}, {'xAxis': date_list[len(n_res['date']) - 1]}])
 
@@ -269,30 +269,30 @@ class Info_spread(APIView):
             if len(small_check_point) == 0:
                 if n_res['comment_count'][0] > 1000:
                     n_res['comment_pieces'].append(
-                        {'lte': date_list[len(date_list) - 1], 'gt': date_list[0], 'color': 'red'})
+                        {'lte': len(date_list) - 1, 'gt': 0, 'color': 'red'})
                     n_res['comment_name'].append(
                         [{'name': '预警', 'xAxis': date_list[0]}, {'xAxis': date_list[len(date_list) - 1]}])
                 else:
                     n_res['comment_pieces'].append(
-                        {'lte': date_list[len(date_list) - 1], 'gt': date_list[0], 'color': 'green'})
+                        {'lte': len(date_list) - 1, 'gt': 0, 'color': 'blue'})
             else:
                 n_res['comment_pieces'].append(
-                    {'lte': date_list[small_check_point[0]], 'gt': date_list[0], 'color': 'red'})
-                n_res['comment_pieces'].append({'lte': date_list[-1], 'gt': small_check_point[0], 'color': 'green'})
+                    {'lte': small_check_point[0], 'gt': 0, 'color': 'red'})
+                n_res['comment_pieces'].append({'lte':  len(date_list) - 1, 'gt': small_check_point[0], 'color': 'blue'})
                 n_res['comment_name'].append(
                     [{'name': '预警', 'xAxis': date_list[0]}, {'xAxis': date_list[small_check_point[0]]}])
 
         if len(big_check_point) != 0:
             if len(small_check_point) == 0:
                 n_res['comment_pieces'].append(
-                    {'lte': date_list[big_check_point[0]], 'gt': date_list[0], 'color': 'green'})
-                n_res['comment_pieces'].append({'lte': date_list[-1], 'gt': big_check_point[0], 'color': 'red'})
+                    {'lte': big_check_point[0], 'gt': 0, 'color': 'blue'})
+                n_res['comment_pieces'].append({'lte':  len(date_list) - 1, 'gt': big_check_point[0], 'color': 'red'})
                 n_res['comment_name'].append(
                     [{'name': '预警', 'xAxis': date_list[big_check_point[0]]}, {'xAxis': date_list[-1]}])
         if len(big_check_point) != 0 and len(small_check_point) != 0:
             if big_check_point[0] < small_check_point[0]:
                 if len(big_check_point) > len(small_check_point):
-                    n_res['comment_pieces'].append({'lte': date_list[big_check_point[0]], 'color': 'green'})
+                    n_res['comment_pieces'].append({'lte': big_check_point[0], 'color': 'blue'})
                     color_point = []
                     color_point.extend(
                         list(chain.from_iterable(zip(big_check_point[:-1], small_check_point))).append(
@@ -300,38 +300,38 @@ class Info_spread(APIView):
                     for i in range(1, len(color_point)):
                         if i % 2 == 1:
                             n_res['comment_pieces'].append(
-                                {'lte': date_list[color_point[i]], 'gt': date_list[color_point[i - 1]],
+                                {'lte': color_point[i], 'gt': color_point[i - 1],
                                  'color': 'red'})
                             n_res['comment_name'].append([{'name': '预警', 'xAxis': date_list[color_point[i - 1]]},
                                                           {'xAxis': date_list[color_point[i]]}])
                         else:
                             n_res['comment_pieces'].append(
-                                {'lte': date_list[color_point[i]], 'gt': date_list[color_point[i - 1]],
-                                 'color': 'green'})
-                    n_res['comment_pieces'].append({'gt': date_list[color_point[i]], 'color': 'red'})
+                                {'lte': color_point[i], 'gt': color_point[i - 1],
+                                 'color': 'blue'})
+                    n_res['comment_pieces'].append({'gt': color_point[i], 'color': 'red'})
                     n_res['comment_name'].append([{'name': '预警', 'xAxis': date_list[color_point[i]]},
                                                   {'xAxis': date_list[len(n_res['date']) - 1]}])
                 else:
-                    n_res['comment_pieces'].append({'lte': date_list[big_check_point[0]], 'color': 'green'})
+                    n_res['comment_pieces'].append({'lte': date_list[big_check_point[0]], 'color': 'blue'})
                     color_point = []
                     color_point.extend(
                         list(chain.from_iterable(zip(big_check_point, small_check_point))))
                     for i in range(1, len(color_point)):
                         if i % 2 == 1:
                             n_res['comment_pieces'].append(
-                                {'lte': date_list[color_point[i]], 'gt': date_list[color_point[i - 1]],
+                                {'lte': color_point[i], 'gt': color_point[i - 1],
                                  'color': 'red'})
                             n_res['comment_name'].append(
                                 [{'name': '预警', 'xAxis': date_list[color_point[i - 1]]},
                                  {'xAxis': date_list[color_point[i]]}])
                         else:
                             n_res['comment_pieces'].append(
-                                {'lte': date_list[color_point[i]], 'gt': date_list[color_point[i - 1]],
-                                 'color': 'green'})
-                    n_res['comment_pieces'].append({'gt': date_list[color_point[i]], 'color': 'green'})
+                                {'lte': color_point[i], 'gt': color_point[i - 1],
+                                 'color': 'blue'})
+                    n_res['comment_pieces'].append({'gt': color_point[i], 'color': 'blue'})
             else:
                 if len(small_check_point) > len(big_check_point):
-                    n_res['comment_pieces'].append({'lte': date_list[small_check_point[0]], 'color': 'red'})
+                    n_res['comment_pieces'].append({'lte': small_check_point[0], 'color': 'red'})
                     n_res['comment_name'].append(
                         [{'name': '预警', 'xAxis': date_list[0]}, {'xAxis': date_list[small_check_point[0]]}])
                     color_point = []
@@ -341,18 +341,18 @@ class Info_spread(APIView):
                     for i in range(1, len(color_point)):
                         if i % 2 == 1:
                             n_res['comment_pieces'].append(
-                                {'lte': date_list[color_point[i]], 'gt': date_list[color_point[i - 1]],
-                                 'color': 'green'})
+                                {'lte': color_point[i], 'gt': color_point[i - 1],
+                                 'color': 'blue'})
                         else:
                             n_res['comment_pieces'].append(
-                                {'lte': date_list[color_point[i]], 'gt': date_list[color_point[i - 1]],
+                                {'lte': color_point[i], 'gt': color_point[i - 1],
                                  'color': 'red'})
                             n_res['comment_name'].append(
                                 [{'name': '预警', 'xAxis': date_list[color_point[i - 1]]},
                                  {'xAxis': date_list[color_point[i]]}])
-                    n_res['comment_pieces'].append({'gt': date_list[color_point[i]], 'color': 'green'})
+                    n_res['comment_pieces'].append({'gt': color_point[i], 'color': 'blue'})
                 else:
-                    n_res['comment_pieces'].append({'lte': date_list[small_check_point[0]], 'color': 'red'})
+                    n_res['comment_pieces'].append({'lte': small_check_point[0], 'color': 'red'})
                     n_res['comment_name'].append(
                         [{'name': '预警', 'xAxis': date_list[0]}, {'xAxis': date_list[small_check_point[0]]}])
                     color_point = []
@@ -362,15 +362,15 @@ class Info_spread(APIView):
                         if i % 2 == 1:
                             n_res['comment_pieces'].append(
                                 {'lte': date_list[color_point[i]], 'gt': date_list[color_point[i - 1]],
-                                 'color': 'green'})
+                                 'color': 'blue'})
                         else:
                             n_res['comment_pieces'].append(
-                                {'lte': date_list[color_point[i]], 'gt': date_list[color_point[i - 1]],
+                                {'lte': color_point[i], 'gt': color_point[i - 1],
                                  'color': 'red'})
                             n_res['comment_name'].append(
                                 [{'name': '预警', 'xAxis': date_list[color_point[i - 1]]},
                                  {'xAxis': date_list[color_point[i]]}])
-                    n_res['comment_pieces'].append({'gt': date_list[color_point[i]], 'color': 'red'})
+                    n_res['comment_pieces'].append({'gt': color_point[i], 'color': 'red'})
                     n_res['comment_name'].append(
                         [{'name': '预警', 'xAxis': date_list[color_point[i]]},
                          {'xAxis': date_list[len(n_res['date']) - 1]}])
