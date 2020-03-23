@@ -220,9 +220,9 @@ class User_Activity(APIView):
         """
         uid = request.GET.get('uid')
         n_type = request.GET.get('n_type') if request.GET.get('n_type') else 3
-        #date = request.GET.get('date')
-        #t=datetime.datetime.strptime(date+ " 23:59:59", '%Y-%m-%d %H:%M:%S')
-        t= datetime.datetime.now()
+        date = request.GET.get('date')
+        t=datetime.datetime.strptime(date+ " 23:59:59", '%Y-%m-%d %H:%M:%S')
+        #t= datetime.datetime.now()
         res_dict = defaultdict(list)
         cal_date = (t + datetime.timedelta(days=-30)).timestamp()
         if n_type == 1:
@@ -236,18 +236,19 @@ class User_Activity(APIView):
 
         day_result = UserActivity.objects.filter(uid=uid, timestamp__gte=cal_date,timestamp__lte=t.timestamp()).values("geo", "send_ip").annotate(
             statusnum_s=Sum("statusnum"), sensitivenum_s=Sum("sensitivenum")).order_by("-sensitivenum_s")
-        res_dict["day_result"] = list(day_result)
-        # 热度展示
-        
+        if day_result.exists():
+            res_dict["day_result"]=list(day_result)
+        else:
+            res_dict["day_result"] = {"geo":None,"send_ip":None,"statusnum_s":None,"sensitivenum_s":None}
         geo_map_result = UserActivity.objects.filter(uid=uid, timestamp__gte=cal_date).values("geo").annotate(
             statusnum_s=Sum("statusnum")).order_by("-statusnum_s")
-        print(geo_map_result)
+        #print(geo_map_result)
         #res_dict["geo_map_result"] = list(geo_map_result)
         if geo_map_result.exists():
             for item in geo_map_result:
                 res_dict["geo_map_result"].append({"name":item["geo"],"value":item["statusnum_s"]})
         else:
-            res_dict["geo_map_result"]=[]
+            res_dict["geo_map_result"].append({"name":None,"value":None})
 
         return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
 
