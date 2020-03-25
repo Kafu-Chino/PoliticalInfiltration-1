@@ -262,6 +262,10 @@ class Add_sensitivetext(APIView):
         try:
         # Event.objects.filter(e_id=e_id).first().information_set.create(i_id=source+mid, uid=uid,  mid=mid, timestamp=timestamp,
         #                            text=text, geo=geo, message_type=message_type,source=source,add_manully = 1)
+            if Information.objects.filter(mid=mid).exists():
+                res_dict["status"] = 0
+                res_dict["result"] = "添加失败,该mid已存在"
+                return JsonResponse(res_dict)
             Information.objects.create(i_id=source+mid, uid=uid,  mid=mid, timestamp=timestamp,
                                        text=text, geo=geo, message_type=message_type,source=source,add_manully = 1)
             info =  Information.objects.get(i_id=source+mid)
@@ -314,7 +318,7 @@ class Update_eventkeyword(APIView):
         new_value = request.GET.get('new_value')
         if  Event.objects.filter(e_id = e_id).exists():
             try:
-                Event.objects.filter(e_id = e_id).update(keyword_dict = new_value)
+                Event.objects.filter(e_id = e_id).update(keywords_dict = new_value)
                 res_dict["status"] = 1
                 res_dict["result"] = "更新成功"
             except:
