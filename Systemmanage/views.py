@@ -170,7 +170,16 @@ class Modify_global_parameter(APIView):
         else:
             return JsonResponse({"status":400, "error": "请输入全局参数和修改值"},safe=False,json_dumps_params={'ensure_ascii':False})
 
+class Event_show(APIView):
+    """事件列表展示"""
 
+    def get(self, request):
+        """
+        展示所有事件，前端分页
+        """
+        result = Event.objects.all().filter(cal_status=2).order_by("-begin_date").values("e_id", "keywords_dict", "event_name", "begin_date", "end_date")
+        res = [item for item in result]
+        return JsonResponse(res, safe=False, json_dumps_params={'ensure_ascii':False})
 
 
 class Add_sensitiveword(APIView):

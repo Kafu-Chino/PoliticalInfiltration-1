@@ -465,8 +465,8 @@ class Show_contact(APIView):
         max_count = int(request.GET.get("max_count", 9999999999))
 
         message_type_dic = {
-        	2: "评论",
-        	3: "转发"
+            2: "评论",
+            3: "转发"
         }
         # 时间范围内的数据获取，该用户上游和下游的节点连接
         try:
@@ -529,11 +529,23 @@ class Show_contact(APIView):
                         node_list.append(target_node)
                         node_set.add(key[1])
 
+        # 限制整体返回的数量，防止画图卡顿
+        link_list = sorted(link_list,key=lambda x:x["value"],reverse=True)[:100]
+        retrict_node_set = []
+        for node_link in link_list:
+            retrict_node_set.append(node_link["source"])
+            retrict_node_set.append(node_link["target"])
+        retrict_node_set = set(retrict_node_set)
+        # return JsonResponse({"s":str(retrict_node_set)}, safe=False)
+
         # 标记节点属性，如果为节点自身，标记为1，如果节点在敏感库内，标记为2，其他标记为3
         node_set.remove(uid)
         contain_result = Figure.objects.filter(uid__in=list(node_set)).values()
         contain_set = set([item["uid"] for item in contain_result])
+        node_list_new = []
         for node in node_list:
+            if node["name"] not in retrict_node_set:
+                continue
             if node["id"] == uid:
                 node["value"] = 1
             elif node["id"] in contain_set:
@@ -541,9 +553,10 @@ class Show_contact(APIView):
             else:
                 node["value"] = 3
             node.pop("id")
+            node_list_new.append(node)
 
         social_contact = {
-            'node': node_list, 
+            'node': node_list_new, 
             'link': link_list
         }
 
