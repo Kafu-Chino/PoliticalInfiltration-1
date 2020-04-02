@@ -74,9 +74,10 @@ class Add_sensitive_word(APIView):
             if not result.exists():
                 times = int(time.time())
                 SensitiveWord.objects.create(s_id=str(times) + prototype, prototype=prototype, perspective_bias=0)
-                transforms = extent(prototype)
-                for transform in transforms:
-                    SensitiveWord.objects.create(s_id=str(times)+transform, prototype=prototype, transform=transform, perspective_bias=0)
+                if len(prototype)<5:
+                    transforms = extent(prototype)
+                    for transform in transforms:
+                        SensitiveWord.objects.create(s_id=str(times)+transform, prototype=prototype, transform=transform, perspective_bias=0)
                 return JsonResponse({"status":201, "msg": "敏感词成功添加"},safe=False,json_dumps_params={'ensure_ascii':False})
             else:
                 return JsonResponse({"status": 400, "error": "敏感词已存在"}, safe=False,json_dumps_params={'ensure_ascii': False})
