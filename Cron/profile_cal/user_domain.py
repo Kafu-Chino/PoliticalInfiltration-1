@@ -61,6 +61,15 @@ def get_p(train_dict,test_dict):
     return p_dict
 
 
+def update(s_dict):
+    sql = 'update Figure set domain = %s where uid = %s'
+    val = []
+    for m in s_dict.values():
+        val.append((m['main_domain'],m['uid']))
+
+    cursor.executemany(sql, val)
+    conn.commit()
+
 
 def get_user_domain(word_dict,date):
     #time1 = time.time()
@@ -86,3 +95,4 @@ def get_user_domain(word_dict,date):
                                                            "domains":domain_json,
                                                            "store_date":date}
     sql_insert_many(cursor, "UserDomain", "ud_id", user_domain)
+    update(user_domain)

@@ -51,37 +51,52 @@ class User_Behavior(APIView):
         """
         uid = request.GET.get('uid')
         n_type = request.GET.get('n_type')
-        date = request.GET.get('date')
-        res_dict = defaultdict(dict)
+        #date = request.GET.get('date')
+        res_dict = defaultdict(list)
         #origin_dict = {}
         #comment_dict={}
-
-        t=datetime.datetime.strptime(date+ " 23:59:59", '%Y-%m-%d %H:%M:%S')
+        t= datetime.datetime.now()
+        date_dict = {}
+        #t=datetime.datetime.strptime(date+ " 23:59:59", '%Y-%m-%d %H:%M:%S')
         #t = time.mktime(time.strptime(date, '%Y-%m-%d'))
         # 每日活动特征，从当前日期往前推7天展示 原创微博数、评论数、转发数、敏感微博数
         if n_type == "日":
             new_date = (t + datetime.timedelta(days=-7)).timestamp()
-            '''
-            result = UserBehavior.objects.filter(uid=uid, timestamp__gte=new_date,timestamp__lte=t.timestamp()).values(
-                "store_date").annotate(originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"),
-                                      retweetnum_s=Sum("retweetnum"), sensitivenum_s=Sum("sensitivenum"))'''
-            result = UserBehavior.objects.filter(uid=uid, timestamp__gte=new_date,timestamp__lte=t.timestamp()).values(
-                "store_date",'originalnum','commentnum','retweetnum','sensitivenum')
-            if result.exists():
-                for item in result:
-                    td = item["store_date"]  #pop("timestamp") - 24 * 60 * 60
+            for i in range(7):
+                date_dict[i + 1] = (t + datetime.timedelta(-1 * (i + 1))).timestamp()
+            date_dict[0] = t.timestamp()
+            for i in range(7):
+                item = UserBehavior.objects.filter(uid=uid, timestamp__gt=date_dict[i+1],timestamp__lt=date_dict[i]).values(
+                    "store_date",'originalnum','commentnum','retweetnum','sensitivenum')   #.order_by("timestamp")
+                if item.exists():
+                    res_dict['date'].append(item["store_date"])
                     #res_dict[time.strftime("%Y-%m-%d", time.localtime(t))] = item
                     #res_dict[str(td)] = item
-                    res_dict['originalnum'][str(td)] = item['originalnum']
-                    res_dict['commentnum'][str(td)] = item['commentnum']
-                    res_dict['retweetnum'][str(td)] = item['retweetnum']
-                    res_dict['sensitivenum'][str(td)] = item['sensitivenum']
-                #return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
-            #else:
-                #return JsonResponse({"status":400, "error": "未找到该用户活动信息"},safe=False,json_dumps_params={'ensure_ascii':False}) 
+                    if item['originalnum_s']:
+                        res_dict['originalnum'].append(item['originalnum_s']) 
+                    else:
+                        res_dict['originalnum'].append(0) 
+                    if item['commentnum_s']:
+                        res_dict['commentnum'].append(item['commentnum_s'])
+                    else:
+                        res_dict['commentnum'].append(0)
+                    if item['retweetnum_s']:
+                        res_dict['retweetnum'].append(item['retweetnum_s'])
+                    else:
+                        res_dict['retweetnum'].append(0)
+                    if item['sensitivenum_s']:
+                        res_dict['sensitivenum'].append(item['sensitivenum_s'])
+                    else:
+                        res_dict['sensitivenum'].append(0)
+                else:
+                    res_dict['date'].append(ts2date(date_dict[i+1]))
+                    res_dict['originalnum'].append(0) 
+                    res_dict['commentnum'].append(0)
+                    res_dict['retweetnum'].append(0)
+                    res_dict['sensitivenum'].append(0)
         # 每周活动特征，从当前日期往前推5周展示 原创微博数、评论数、转发数、敏感微博数
         if n_type == "周":
-            date_dict = {}
+
             for i in range(5):
                 date_dict[i + 1] = (t + datetime.timedelta(weeks=(-1 * (i + 1)))).timestamp()
             date_dict[0] = t.timestamp()
@@ -92,22 +107,31 @@ class User_Behavior(APIView):
                     sensitivenum_s=Sum("sensitivenum"))
                 #if list(result.values())[0]:
                 if len(result):  #.exists():
-                    '''
-                    for item in result:
-                        res_dict['originalnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = item['originalnum_s']
-                        res_dict['commentnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = item['commentnum_s']
-                        res_dict['retweetnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = item['retweetnum_s']
-                        res_dict['sensitivenum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = item['sensitivenum_s']
-                    '''
-                    res_dict['originalnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['originalnum_s']
-                    res_dict['commentnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['commentnum_s']
-                    res_dict['retweetnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['retweetnum_s']
-                    res_dict['sensitivenum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['sensitivenum_s']
-                    #res_dict[time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result
-                
+                    res_dict['date'].append(time.strftime("%Y-%m-%d", time.localtime((date_dict[i]))))
+                    if result['originalnum_s']:
+                        res_dict['originalnum'].append(result['originalnum_s']) 
+                    else:
+                        res_dict['originalnum'].append(0) 
+                    if result['commentnum_s']:
+                        res_dict['commentnum'].append(result['commentnum_s'])
+                    else:
+                        res_dict['commentnum'].append(0)
+                    if result['retweetnum_s']:
+                        res_dict['retweetnum'].append(result['retweetnum_s'])
+                    else:
+                        res_dict['retweetnum'].append(0)
+                    if result['sensitivenum_s']:
+                        res_dict['sensitivenum'].append(result['sensitivenum_s'])
+                    else:
+                        res_dict['sensitivenum'].append(0)
+                else:
+                    res_dict['date'].append(ts2date(date_dict[i+1]))
+                    res_dict['originalnum'].append(0) 
+                    res_dict['commentnum'].append(0)
+                    res_dict['retweetnum'].append(0)
+                    res_dict['sensitivenum'].append(0)
         # 每月活动特征，从当前日期往前推5月展示 原创微博数、评论数、转发数、敏感微博数
         if n_type == "月":
-            date_dict = {}
             for i in range(5):
                 date_dict[i + 1] = (t + datetime.timedelta(days=(-30 * (i + 1)))).timestamp()
             date_dict[0] = t.timestamp()
@@ -117,23 +141,31 @@ class User_Behavior(APIView):
                     originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"), retweetnum_s=Sum("retweetnum"),
                     sensitivenum_s=Sum("sensitivenum"))
                 if len(result):
-                    res_dict['originalnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['originalnum_s']
-                    res_dict['commentnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['commentnum_s']
-                    res_dict['retweetnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['retweetnum_s']
-                    res_dict['sensitivenum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['sensitivenum_s']
-        res_dict['originalnum'] = dict(sorted(res_dict['originalnum'].items(),key=lambda x:x[0],reverse=False))
-        res_dict['commentnum'] = dict(sorted(res_dict['commentnum'].items(),key=lambda x:x[0],reverse=False))
-        res_dict['retweetnum'] = dict(sorted(res_dict['retweetnum'].items(),key=lambda x:x[0],reverse=False))
-        res_dict['sensitivenum'] = dict(sorted(res_dict['sensitivenum'].items(),key=lambda x:x[0],reverse=False))
+                    res_dict['date'].append(time.strftime("%Y-%m-%d", time.localtime((date_dict[i]))))
+                    if result['originalnum_s']:
+                        res_dict['originalnum'].append(result['originalnum_s']) 
+                    else:
+                        res_dict['originalnum'].append(0) 
+                    if result['commentnum_s']:
+                        res_dict['commentnum'].append(result['commentnum_s'])
+                    else:
+                        res_dict['commentnum'].append(0)
+                    if result['retweetnum_s']:
+                        res_dict['retweetnum'].append(result['retweetnum_s'])
+                    else:
+                        res_dict['retweetnum'].append(0)
+                    if result['sensitivenum_s']:
+                        res_dict['sensitivenum'].append(result['sensitivenum_s'])
+                    else:
+                        res_dict['sensitivenum'].append(0)
+                else:
+                    res_dict['date'].append(ts2date(date_dict[i+1]))
+                    res_dict['originalnum'].append(0) 
+                    res_dict['commentnum'].append(0)
+                    res_dict['retweetnum'].append(0)
+                    res_dict['sensitivenum'].append(0)
         return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
-'''
-                if list(result.values())[0]:
-                    res_dict['originalnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['originalnum_s']
-                    res_dict['commentnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['commentnum_s']
-                    res_dict['retweetnum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['retweetnum_s']
-                    res_dict['sensitivenum'][time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))] = result['sensitivenum_s']
-        return JsonResponse(res_dict)
-'''
+
 
 
 '''
@@ -190,7 +222,8 @@ class User_Activity(APIView):
         n_type = request.GET.get('n_type') if request.GET.get('n_type') else 3
         date = request.GET.get('date')
         t=datetime.datetime.strptime(date+ " 23:59:59", '%Y-%m-%d %H:%M:%S')
-        res_dict = {}
+        #t= datetime.datetime.now()
+        res_dict = defaultdict(list)
         cal_date = (t + datetime.timedelta(days=-30)).timestamp()
         if n_type == 1:
             cal_date = (t + datetime.timedelta(days=-1)).timestamp()
@@ -203,15 +236,19 @@ class User_Activity(APIView):
 
         day_result = UserActivity.objects.filter(uid=uid, timestamp__gte=cal_date,timestamp__lte=t.timestamp()).values("geo", "send_ip").annotate(
             statusnum_s=Sum("statusnum"), sensitivenum_s=Sum("sensitivenum")).order_by("-sensitivenum_s")
-        res_dict["day_result"] = list(day_result)
-        # 热度展示
-        
+        if day_result.exists():
+            res_dict["day_result"]=list(day_result)
+        else:
+            res_dict["day_result"] = {"geo":None,"send_ip":None,"statusnum_s":None,"sensitivenum_s":None}
         geo_map_result = UserActivity.objects.filter(uid=uid, timestamp__gte=cal_date).values("geo").annotate(
             statusnum_s=Sum("statusnum")).order_by("-statusnum_s")
-        print(geo_map_result)
-        res_dict["geo_map_result"] = list(geo_map_result)
-        
-
+        #print(geo_map_result)
+        #res_dict["geo_map_result"] = list(geo_map_result)
+        if geo_map_result.exists():
+            for item in geo_map_result:
+                res_dict["geo_map_result"].append({"name":item["geo"],"value":item["statusnum_s"]})
+        else:
+            res_dict["geo_map_result"].append({"name":None,"value":None})
 
         return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
 
@@ -237,7 +274,7 @@ class Show_topic(APIView):
        输出{“topics”：{“uid”:{“topic1”:p,…}}}"""
     def get(self,request):
         #re = defaultdict(list)
-        #re2 = defaultdict(list)
+        re2 = []
         #prefer = defaultdict(dict)
         uid = request.GET.get("uid")
         #start_date = request.GET.get("date")
@@ -259,11 +296,13 @@ class Show_topic(APIView):
                     except:
                         new_topic[topic_dict[item]] = i["fields"]["topics"][item]
                     #print(new_topic)
-            re = dict(sorted(new_topic.items(),key=lambda x:x[1],reverse=True)[:5])
+            re = sorted(new_topic.items(),key=lambda x:x[1],reverse=True)[:5]
+            for item in re:
+                re2.append({"name":item[0],"value":item[1]})
             #print(type(re))
             #re = json.dumps(re,ensure_ascii=False)
             #re = json.load(re,ensure_ascii=False)
-            return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False})
+            return JsonResponse(re2,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "未找到该用户信息"},safe=False,json_dumps_params={'ensure_ascii':False}) 
 
@@ -275,7 +314,7 @@ class Show_keyword(APIView):
        输入uid
        输出{‘uid’:{‘keywords’:{…},’sensitive_words’:{},’hastags’:{}}"""
     def get(self,request):
-        re1 = {}
+        re1 = defaultdict(list)
         uid = request.GET.get("uid")
         #end_date = request.GET.get("date")
         #end_date = datetime.datetime.strptime(end_date,"%Y-%m-%d")
@@ -309,14 +348,25 @@ class Show_keyword(APIView):
                         ht[k] += v
                     except:
                         ht[k] = v
-                re1["keywords"] = dict(sorted(kw.items(),key=lambda x:x[1],reverse=True)[:5])
-                re1["sensitive_words"] = sw
-                re1["hastags"] = dict(sorted(ht.items(),key=lambda x:x[1],reverse=True)[:5])
+                #re1["keywords"] = dict(sorted(kw.items(),key=lambda x:x[1],reverse=True)[:5])
+                #re1["sensitive_words"] = sw
+                #re1["hastags"] = dict(sorted(ht.items(),key=lambda x:x[1],reverse=True)[:5])
+            key = sorted(kw.items(),key=lambda x:x[1],reverse=True)[:5]
+            has = sorted(ht.items(),key=lambda x:x[1],reverse=True)[:5]
+                #print(sw)
+            for item in key:
+                re1["keywords"].append({"name":item[0],"value":item[1]})
+            for item in has:
+                re1["hastags"].append({"name":item[0],"value":item[1]})
+            for k,v in sw.items():
+                    #print(item)
+                re1["sensitive_words"].append({"name":k,"value":v})
             return JsonResponse(re1,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "未找到该用户信息"},safe=False,json_dumps_params={'ensure_ascii':False})
 
-class Show_contact(APIView):
+# 社交特征完整功能接口
+class Show_contact_wanquanban(APIView):
     def get(self,request):
         uid = request.GET.get("uid")
         date_window = int(request.GET.get("date_window", 30))
@@ -406,6 +456,111 @@ class Show_contact(APIView):
 
         return JsonResponse(social_contact, safe=False)
 
+# 社交特征阉割版功能接口
+class Show_contact(APIView):
+    def get(self,request):
+        uid = request.GET.get("uid")
+        date_window = int(request.GET.get("date_window", 30))
+        min_count = int(request.GET.get("min_count", 1))
+        max_count = int(request.GET.get("max_count", 9999999999))
+
+        message_type_dic = {
+            2: "评论",
+            3: "转发"
+        }
+        # 时间范围内的数据获取，该用户上游和下游的节点连接
+        try:
+            end_date = Event.objects.filter(figure__uid=uid).order_by('end_date')[0].end_date.strftime('%Y-%m-%d')
+        except:
+            end_date = today()
+        end_ts = date2ts(end_date)
+        start_ts = end_ts - date_window * 86400
+
+        result = UserSocialContact.objects.filter((Q(source=uid) | Q(target=uid)) & Q(timestamp__gte=start_ts) & Q(timestamp__lte=end_ts)).values()
+        # return JsonResponse({1:list(result)}, safe=False)
+
+        # 对用户多日的数据进行聚合
+        result_sta = {}
+        for item in result:
+            key = (item['source'], item['target'])
+            source_name = item['source_name'] if item['source_name'] else item['source']
+            target_name = item['target_name'] if item['target_name'] else item['target']
+            if key not in result_sta:
+                result_sta[key] = {
+                    "message_type":{
+                        2: 0,
+                        3: 0
+                    },
+                    "name": (source_name, target_name)
+                }
+            result_sta[key]["message_type"][item['message_type']] += item["count"]
+
+        # 形成节点、边的列表，展示节点和边的属性
+        node_list = []
+        link_list = []
+        max_num = 0
+        min_num = 9999999999
+        node_set = set([])
+        for key in result_sta:
+            # 去掉自环节点
+            if key[0] == key[1]:
+                continue
+
+            for message_type in result_sta[key]["message_type"]:
+                count = result_sta[key]["message_type"][message_type]
+                if count:
+                    max_num = max(count, max_num)
+                    min_num = min(count, min_num)
+                if count >= min_count and count <= max_count:
+                    node_link = {
+                        'source': result_sta[key]["name"][0],
+                        'target': result_sta[key]["name"][1],
+                        'value': message_type_dic[message_type]
+                    }
+                    link_list.append(node_link)
+
+                    if key[0] not in node_set:
+                        source_node = {'id': key[0], 'name': result_sta[key]["name"][0]}
+                        node_list.append(source_node)
+                        node_set.add(key[0])
+
+                    if key[1] not in node_set:
+                        target_node = {'id': key[1], 'name': result_sta[key]["name"][1]}
+                        node_list.append(target_node)
+                        node_set.add(key[1])
+
+        # 限制整体返回的数量，防止画图卡顿
+        link_list = sorted(link_list,key=lambda x:x["value"],reverse=True)[:100]
+        retrict_node_set = []
+        for node_link in link_list:
+            retrict_node_set.append(node_link["source"])
+            retrict_node_set.append(node_link["target"])
+        retrict_node_set = set(retrict_node_set)
+        # return JsonResponse({"s":str(retrict_node_set)}, safe=False)
+
+        # 标记节点属性，如果为节点自身，标记为1，如果节点在敏感库内，标记为2，其他标记为3
+        node_set.remove(uid)
+        contain_result = Figure.objects.filter(uid__in=list(node_set)).values()
+        contain_set = set([item["uid"] for item in contain_result])
+        node_list_new = []
+        for node in node_list:
+            if node["name"] not in retrict_node_set:
+                continue
+            if node["id"] == uid:
+                node["value"] = 1
+            elif node["id"] in contain_set:
+                node["value"] = 2
+            else:
+                node["value"] = 3
+            node.pop("id")
+            node_list_new.append(node)
+
+        social_contact = {
+            'node': node_list_new, 
+            'link': link_list
+        }
+
+        return JsonResponse(social_contact, safe=False)
 
 class Figure_create(APIView):
     """添加人物入库"""
@@ -422,13 +577,23 @@ class Figure_create(APIView):
         friends = request.GET.get("friends")
         political = request.GET.get("political")
         domain = request.GET.get("domain")
+        birth = request.GET.get("birthday")
+        create_at = request.GET.get("create_at")
         #h_id = request.GET.get("wb_id")  # 若该条人工输入事件从微博而来 则需输入来源微博的id
         #result = Task.objects.filter(~Q(mid=''), mid=h_id) #判断从微博得来的事件是否已存在，若微博ID未给出返回一个空值
         result = Figure.objects.filter(f_id=uid)
         if result.exists():
             return JsonResponse({"status":400, "error": "人物已存在"},safe=False,json_dumps_params={'ensure_ascii':False})
         if f_id and nick :
-            Figure.objects.create(f_id=f_id, uid=uid, nick_name=nick,user_location=location,fansnum=fans,
+            if not birth:
+                birthday = "0000-00-00"
+            if not create_at:
+                create_at = "0000-00-00"
+            if not fans:
+                fans = -1
+            if not friends:
+                friends = -1
+            Figure.objects.create(f_id=f_id, uid=uid, nick_name=nick,user_location=location,fansnum=fans,user_birth = birth,create_at=create_at,
                                 friendsnum=friends,political = political,domain=domain)
             return JsonResponse({"status":201, "msg": "人物添加成功"},safe=False,json_dumps_params={'ensure_ascii':False})
         else:
@@ -552,17 +717,23 @@ class Association(APIView):
 class related_info(APIView):
     """人物-信息关联分析"""
     def get(self,request):
-        res_dict = []
+        res_dict = defaultdict(list)
         fid = request.GET.get('uid')
         limit = request.GET.get("limit")
         page_id = request.GET.get('page_id')
-        res = Information.objects.filter(uid=fid)
+        if page_id is None:
+            page_id = 1
+        if limit is None:
+            limit = 10
+        res = Information.objects.filter(uid=fid)[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
         if res.exists():
             for i in res:
                 lt = time.localtime(i.timestamp)
                 itime = time.strftime('%Y-%m-%d %H:%M:%S',lt)
                 #print(itime)
-                res_dict.append({'text': i.text,'time':itime,'geo':i.geo})
+                res_dict['table'].append(['text','time','geo'])
+                res_dict['data'].append([i.text,itime,i.geo])
+            '''
             page = Paginator(res_dict, limit)
             #page_id = request.GET.get('page_id')
             if page_id:
@@ -576,7 +747,8 @@ class related_info(APIView):
                 results = page.page(1)
             re = json.dumps(list(results),ensure_ascii=False)
             re = json.loads(re)
-            return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False}) #
+            '''
+            return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False}) #
         else:
             return JsonResponse({"status":400, "error": "无相关人物和信息"},safe=False)
 
@@ -585,20 +757,26 @@ class related_info(APIView):
 class related_event(APIView):
     """人物-事件相关信息"""
     def get(self,request):
-        res_dict = []
+        res_dict = defaultdict(list)
         fid = request.GET.get('uid')
         limit = request.GET.get("limit")
         page_id = request.GET.get('page_id')
+        if page_id is None:
+            page_id = 1
+        if limit is None:
+            limit = 10
         res = Figure.objects.filter(uid=fid)
         if res.exists():
-            res_event = Figure.objects.get(f_id=fid).event.all()
+            res_event = Figure.objects.get(f_id=fid).event.all()[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
             for e in res_event:
                 #lt = time.localtime(i.timestamp)
                 #itime = time.strftime('%Y-%m-%d %H:%M:%S',lt)
                 #print(itime)
                 sdate = e.begin_date.strftime('%Y-%m-%d %H:%M:%S')
                 edate = e.end_date.strftime('%Y-%m-%d %H:%M:%S')
-                res_dict.append({'event_name': e.event_name,'keywords':e.keywords_dict,'begin_date':sdate,'end_date':edate})
+                res_dict['table'].append(['event_name','keywords','begin_date','end_date'])
+                res_dict['data'].append([e.event_name,e.keywords_dict,sdate,edate])
+            '''
             page = Paginator(res_dict, limit)
             #page_id = request.GET.get('page_id')
             if page_id:
@@ -612,7 +790,8 @@ class related_event(APIView):
                 results = page.page(1)
             re = json.dumps(list(results),ensure_ascii=False)
             re = json.loads(re)
-            return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False}) #
+            '''
+            return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False}) #
         else:
             return JsonResponse({"status":400, "error": "无相关人物和信息"},safe=False)
 
@@ -649,6 +828,7 @@ class search_figure(APIView):
             return JsonResponse(res,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "该人物不存在"},safe=False,json_dumps_params={'ensure_ascii':False})
+
 
 
 
@@ -727,7 +907,12 @@ class User_Sentiment(APIView):
                     res_dict['positive'][ts2date(date_dict[i])] = 0
                     res_dict['nuetral'][ts2date(date_dict[i])] = 0
                     res_dict['negtive'][ts2date(date_dict[i])] = 0
-        return JsonResponse(res_dict)
+        n_res = defaultdict(dict)
+        n_res['date'] = list(res_dict['positive'].keys())
+        n_res['positive_num'] = list(res_dict['positive'].values())
+        n_res['nuetral_num'] = list(res_dict['nuetral'].values())
+        n_res['negtive_num'] = list(res_dict['negtive'].values())
+        return JsonResponse(n_res)
 
 class User_Influence(APIView):
     """用户影响力特征接口"""
@@ -806,4 +991,10 @@ class User_Influence(APIView):
                     res_dict['importance'][ts2date(date_dict[i])] = 0
                     res_dict['sensitity'][ts2date(date_dict[i])] = 0
                     res_dict['activity'][ts2date(date_dict[i])] = 0
-        return JsonResponse(res_dict)
+        n_res = defaultdict(dict)
+        n_res['date'] = list(res_dict['influence'].keys())
+        n_res['influence_num'] = list(res_dict['influence'].values())
+        n_res['importance_num'] = list(res_dict['importance'].values())
+        n_res['sensitity_num'] = list(res_dict['sensitity'].values())
+        n_res['activity_num'] = list(res_dict['activity'].values())
+        return JsonResponse(n_res)

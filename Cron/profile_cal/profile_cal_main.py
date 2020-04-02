@@ -64,26 +64,26 @@ def profile_cal_uidlist(uidlist,n):
                 word_dict, text_list, text_dict = {},{},{}
             time4 = time.time()
             # 地域特征（文娟）
-            get_user_activity_aggs(date_data,date)
+            # get_user_activity_aggs(date_data,date)
             time2=time.time()
             print('地域：',time2-start_time)
 
             # 活动特征（文娟）
-            get_msg_type_aggs(date_data,date)
+            # get_msg_type_aggs(date_data,date)
             time3 = time.time()
             print('活动：', time3 - time2)
 
             # 情绪特征（中方）
-            cal_user_emotion(text_dict,date)
+            # cal_user_emotion(text_dict,date)
             time4 = time.time()
             print('情绪：', time4 - time3)
 
             # 影响力特征（英汉）
-            influence_total(date,uidlist,word_dict,date_data,index)
+            # influence_total(date,uidlist,word_dict,date_data,index)
             time5 = time.time()
             print('影响：', time5 - time4)
              # 社交特征（梦丽）
-            get_user_social(uidlist,date_data,date,n)
+            # get_user_social(uidlist,date_data,date,n)
             time6 = time.time()
             print('社交：', time6 - time5)
             # #
@@ -101,12 +101,12 @@ def profile_cal_uidlist(uidlist,n):
                 time7 = time.time()
                 print('领域：', time7 - time6)
                 # 偏好特征（梦丽）
-                get_user_keywords(text_list, word_dict, date, 5)
+                # get_user_keywords(text_list, word_dict, date, 5)
                 time8 = time.time()
                 print('偏好：', time8 - time7)
             #
             #     #政治倾向（中方）
-                get_user_political(uidlist,thatday,theday)
+            #     get_user_political(uidlist,thatday,theday)
                 time9 = time.time()
                 print('政治倾向：', time9 - time8)
             print('总用时',time.time()-start_time)

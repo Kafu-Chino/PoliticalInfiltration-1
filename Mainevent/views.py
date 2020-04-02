@@ -63,10 +63,10 @@ class Show_event(APIView):
                         info_rat = None
                     if weibo_count != 0:
                         info_rat = float(info_count/weibo_count)
-                    jre.append({"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
+                    jre.append({"eid":eid,"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
                             "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':figure_rat,'sensitive_info_ratio':info_rat})
                 else:
-                    jre.append({"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
+                    jre.append({"eid":item["e_id"],"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
                                 "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':None,'sensitive_info_ratio':None})
             return JsonResponse(jre,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
@@ -173,10 +173,10 @@ class search_event(APIView):
                         info_rat = None
                     if weibo_count != 0:
                         info_rat = float(info_count/weibo_count)
-                    jre.append({"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
+                    jre.append({"eid":eid,"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
                             "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':figure_rat,'sensitive_info_ratio':info_rat})
                 else:
-                    jre.append({"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
+                    jre.append({"eid":eid,"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
                                 "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':None,'sensitive_info_ratio':None})
             re = json.dumps(list(jre),ensure_ascii=False)
             re = json.loads(re)
@@ -191,13 +191,13 @@ class Add_event(APIView):
     """
     添加新的事件计算任务
     """
-    def post(self, request):
-        event_name = request.POST.get("event_name")
-        keywords_dict = request.POST.get("keywords_dict")
-        sensitive_word_white = request.POST.get("sensitive_word_white")
-        sensitive_word_black = request.POST.get("sensitive_word_black")
-        begin_date = request.POST.get("begin_date")
-        end_date = request.POST.get("end_date")
+    def get(self, request):
+        event_name = request.GET.get("event_name")
+        keywords_dict = request.GET.get("keywords_dict")
+        sensitive_word_white = request.GET.get("sensitive_word_white")
+        sensitive_word_black = request.GET.get("sensitive_word_black")
+        begin_date = request.GET.get("begin_date")
+        end_date = request.GET.get("end_date")
 
         if not event_name or not keywords_dict:
             return JsonResponse({"status":400, "info": "添加失败，缺少必填项！"},safe=False)
@@ -247,18 +247,20 @@ class Event_trend(APIView):
         """获取事件id:eid"""
         event_id = request.GET.get('eid') 
         res_dict= defaultdict(dict)
-        hot = {}
-        sensitive = {}
-        neg = {}
+        hot = []
+        sensitive = []
+        neg = []
+        date = []
         times = time.time()
         result = Event_Analyze.objects.filter(event_name = event_id)
         if result.exists():
             for re in result:
-                date = re.into_date.strftime('%Y-%m-%d')
-                hot[date] = re.hot_index
-                sensitive[date] = re.sensitive_index
-                neg[date] = re.negative_index
+                date.append(re.into_date.strftime('%Y-%m-%d'))
+                hot.append(re.hot_index)
+                sensitive.append(re.sensitive_index) 
+                neg.append(re.negative_index)
                 #print(hot)
+            res_dict["date"] = date
             res_dict["hot_index"] = hot
             res_dict["sensitive_index"] = sensitive
             res_dict["negative_index"] = neg
@@ -302,7 +304,7 @@ class related_figure(APIView):
                     "information":[{"text": text1, "hazard_index": hazard_index1},{}]
                 }
         """
-        res_dict = []
+        res_dict = defaultdict(list)
         eid = request.GET.get('eid')
         limit = request.GET.get("limit")
         page_id = request.GET.get('page_id')
@@ -315,7 +317,8 @@ class related_figure(APIView):
             #print(e)
             res = res_event[0].figure.all()[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
             for f in res:
-                res_dict.append({"f_id": f.f_id, "nick_name": f.nick_name,"fansnum":f.fansnum,"friendsnum":f.friendsnum})
+                res_dict['table'].append(["f_id","nick_name","fansnum","friendsnum"])
+                res_dict['data'].append([f.f_id, f.nick_name,f.fansnum,f.friendsnum])
             return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "无相关人物"},safe=False)
@@ -348,7 +351,7 @@ class related_info(APIView):
                     "information":[{"text": text1, "hazard_index": hazard_index1},{}]
                 }
         """
-        res_dict = []
+        res_dict = defaultdict(list)
         eid = request.GET.get('eid')
         limit = request.GET.get("limit")
         page_id = request.GET.get('page_id')
@@ -363,8 +366,8 @@ class related_info(APIView):
             for i in res1:
                 lt = time.localtime(i.timestamp)
                 itime = time.strftime('%Y-%m-%d %H:%M:%S',lt)
-                #print(itime)
-                res_dict.append({'text': i.text,'time':itime,'geo':i.geo})
+                res_dict['table'].append(['text','time','geo'])
+                res_dict['data'].append([i.text,itime,i.geo])
                 #print(res_dict["info"])
             return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False}) #
         else:
@@ -495,17 +498,27 @@ class semantic_tl(APIView):
     """事件语义分析之时间轴"""
     def get(self,request):
         eid = request.GET.get('eid')
-        result = Event.objects.filter(e_id=eid).first().information.all().filter(~Q(message_type=3)).order_by("timestamp")
+        result = Event.objects.filter(e_id=eid).first().information.all().filter(~Q(message_type=3)).order_by("timestamp")    #.order_by("-hazard_index")
         #print(result)
         info_dict = defaultdict(list)
         tl_dict ={}
+        timeline =[]
         if result.exists():
+            '''
+            for re in result:
+                date = time.strftime('%Y-%m-%d',time.localtime(re[0].timestamp))
+                timeline["date"].append(date)
+                timeline["content"].append({"source":re[0].uid,"text":re[0].text,"hazard_index":re[0].hazard_index})
+            '''
             for re in result:
                 date = time.strftime('%Y-%m-%d',time.localtime(re.timestamp))
-                info_dict[date].append({"source":re.uid,"text":re.text,"hazard_index":re.hazard_index})
+                info_dict[date].append({"日期":date,"发博用户":re.uid,"微博内容":re.text,"危害指数":re.hazard_index})
+                #info_dict[date].append({"date":date,"source":re.uid,"text":re.text,"hazard_index":re.hazard_index})
             for k,v in info_dict.items():
-                tl_dict[k]=sorted(v,key=operator.itemgetter('hazard_index'),reverse=True)[:1]
-            return JsonResponse(tl_dict,safe=False,json_dumps_params={'ensure_ascii':False}) #
+                #timeline.append(sorted(v,key=operator.itemgetter('危害指数'),reverse=True)[:1][0])
+                timeline.append(sorted(v,key=operator.itemgetter('危害指数'),reverse=True)[:1][0])
+            #print(timeline)
+            return JsonResponse(timeline,safe=False,json_dumps_params={'ensure_ascii':False}) #
         else:
             return JsonResponse({"status":400, "error": "无敏感信息"},safe=False)
 
@@ -517,18 +530,26 @@ class semantic_topic(APIView):
         eid = request.GET.get('eid')
         result = Event_Semantic.objects.filter(e_id=eid).values("topics")
         topics = defaultdict(dict)
+        themes = defaultdict(list)
         if result.exists():
-            for re in result:
+            #print(result)
+            #for re in result:
                 #print(re["topics"]['0'])
-                for i in range(5):
-                    for k,v in re["topics"][str(i)].items():
+            for i in range(5):
+                for k,v in result[0]["topics"][str(i)].items():
                     #dict(zip(re["topics"][i]['主题'],re["topics"][i]['概率']))
-                        try:
-                            topics[str(i)][k] += float(v)
-                        except:
-                            topics[str(i)][k] = float(v)
-                    topics[str(i)] = dict(sorted(topics[str(i)].items(),key=lambda x:x[1],reverse=True)[:10])
-            return JsonResponse(topics,safe=False,json_dumps_params={'ensure_ascii':False}) #
+                    try:
+                        topics[str(i)][k] += float(v)
+                    except:
+                        topics[str(i)][k] = float(v)
+                topic = dict(sorted(topics[str(i)].items(),key=lambda x:x[1],reverse=True)[:10])
+                    #print(topic)
+                    #break
+                for k,v in topic.items():
+                        #print(k,v)
+                    themes[str(i)].append({"name":k,"values":v})
+            #print(themes)
+            return JsonResponse(themes,safe=False,json_dumps_params={'ensure_ascii':False}) #
         else:
             return JsonResponse({"status":400, "error": "无主题信息"},safe=False)
 
@@ -638,7 +659,7 @@ class Event_Group(APIView):
             global_senword = sorted(global_senword.items(), key=lambda x:x[1], reverse=True)[:10]
             event_senword = sorted(event_senword.items(), key=lambda x:x[1], reverse=True)[:10]
 
-            hashtag = {item[0]: item[1] for item in hashtag}
+            hashtag = [{"name": item[0], "value": item[1]} for item in hashtag]
             global_senword = {item[0]: item[1] for item in global_senword}
             event_senword = {item[0]: item[1] for item in event_senword}
 
@@ -657,7 +678,7 @@ class first_info_trend(APIView):
     def get(self, request):
         """获取事件id:eid"""
         event_id = request.GET.get('eid') 
-        res_dict= defaultdict(dict)
+        res_dict= defaultdict(list)
         hot = {}
         sensitive = {}
         neg = {}
@@ -672,9 +693,11 @@ class first_info_trend(APIView):
                 result = Event_Analyze.objects.filter(event_name = event_id)
             if result.exists():
                 for re in result:
+                    #res_dict["date"].append(re.into_date.strftime('%Y-%m-%d'))
                     date = re.into_date.strftime('%Y-%m-%d')
                 #hot[date] = re.hot_index
                     sensitive[date] = re.sensitive_index
+                    #res_dict["sensitive"].append()
                 #neg[date] = re.negative_index
                 #print(hot)
                 #res_dict.append({"hot_index":re.hot_index,"sensitive_index":re.sensitive_index,"negative_index":re.negative_index})
@@ -715,22 +738,24 @@ class first_sensitive(APIView):
     def get(self, request):
         eid = request.GET.get('eid')
         results = Event_Hashtag_Senwords.objects.filter(e_id=eid, show_status=1)
-        global_senword = {}
+        global_senwords = []
         if results.exists():
             #hashtag = results[0].hashtag
-            print(results[0].global_senword)
+            #print(results[0].global_senword)
             global_senword = results[0].global_senword
             #event_senword = results[0].event_senword
 
             #hashtag = sorted(hashtag.items(), key=lambda x:x[1], reverse=True)[:100]
             global_senword = sorted(global_senword.items(), key=lambda x:x[1], reverse=True)[:50]
             #event_senword = sorted(event_senword.items(), key=lambda x:x[1], reverse=True)[:10]
-
+            #print(global_senword)
             #hashtag = {item[0]: item[1] for item in hashtag}
-            global_senword = {item[0]: item[1] for item in global_senword}
+            for item in global_senword:
+                #print(item[0])
+                global_senwords.append({"name":item[0],"values": item[1]})
             #event_senword = {item[0]: item[1] for item in event_senword}
 
-        return JsonResponse(global_senword, safe=False)
+        return JsonResponse(global_senwords, safe=False)
 
 
 class first_figure(APIView):
