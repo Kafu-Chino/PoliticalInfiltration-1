@@ -54,7 +54,7 @@ class Show_sensitive_word_transform(APIView):
     """展示通用敏感词变型，点击敏感词传入prototype"""
     def get(self, request):
         prototype = request.GET.get("prototype")
-        result = SensitiveWord.objects.filter(prototype=prototype).values('transform')
+        result = SensitiveWord.objects.filter(prototype=prototype).exclude(transform=None).values('transform')
         if not result.exists():
             return JsonResponse({"status":400, "error": "无敏感词变型"},safe=False)
         else:
@@ -111,6 +111,8 @@ class Delete_sensitive_word_transform(APIView):
         """人工删除敏感词：输入敏感词变型transform;输出状态及提示：400 状态错误，201删除成功"""
         transform = request.GET.get("transform")
         result = SensitiveWord.objects.filter(transform=transform)
+        if transform==None:
+            return JsonResponse({"status": 400, "error": "敏感词变型不能为空"}, safe=False,json_dumps_params={'ensure_ascii': False})
         if result.exists():
             try:
                 SensitiveWord.objects.filter(transform=transform).delete()
