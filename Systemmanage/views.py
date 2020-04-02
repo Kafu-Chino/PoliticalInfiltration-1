@@ -129,10 +129,10 @@ class Delete_sensitive_word_prototype(APIView):
     def get(self,request):
         """人工删除敏感词：输入敏感词prototype;输出状态及提示：400 状态错误，201删除成功"""
         prototype = request.GET.get("prototype")
-        result = SensitiveWord.objects.filter(prototype=prototype)
+        result = SensitiveWord.objects.filter(prototype=prototype, perspective_bias=0)
         if result.exists():
             try:
-                SensitiveWord.objects.filter(prototype=prototype).delete()
+                SensitiveWord.objects.filter(prototype=prototype, perspective_bias=0).delete()
                 return JsonResponse({"status":201, "msg": "敏感词及其变型已删除"},safe=False,json_dumps_params={'ensure_ascii':False})
             except:
                 return JsonResponse({"status":400, "error": "删除失败"},safe=False,json_dumps_params={'ensure_ascii':False})
