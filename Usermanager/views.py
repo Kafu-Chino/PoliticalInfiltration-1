@@ -17,19 +17,27 @@ class User_Info(APIView):
         """
         判断当前登录用户是否是权限为1或权限为2的非普通用户，是则查询User数据库，返回查询用户信息（如未设查询条件则查询所有），用户名和权限;否则，返回提示无权限
         格式: {"status":1,"result":[{"username": username, "role": role},{},...]};
-              {"status":0,"message":"请先登录！"};
+              {"status":0,"result":"无匹配结果！"};
+              {"status":0,"result":"请先登录！"};
               {"status":0,"result":"暂无权限查看！"}
         """
+        d = {1: "超级管理员", 2: "管理员", 3: "普通用户"}
         res_dict = {}
         try:
             if request.session['role'] == 1 or request.session['role'] == 2:
                 keyword = request.GET.get('keyword')
                 if not keyword:
-                    result = User.objects.all().values("username", "role")
+                    result = list(User.objects.all().values("username", "role"))
                 else:
-                    result = User.objects.filter(username__contains=keyword).values("username", "role")
-                res_dict["status"] = 1
-                res_dict["result"] = list(result) if len(list(result)) > 0 else "无匹配结果"
+                    result = list(User.objects.filter(username__contains=keyword).values("username", "role"))
+                if len(result) > 0:
+                    res_dict["status"] = 1
+                    for item in result:
+                        item["role"] = d[item["role"]]
+                        res_dict["result"] = result
+                else:
+                    res_dict["status"] = 0
+                    res_dict["result"] = "无匹配结果！"
             else:
                 res_dict["status"] = 0
                 res_dict["result"] = "暂无权限查看！"
