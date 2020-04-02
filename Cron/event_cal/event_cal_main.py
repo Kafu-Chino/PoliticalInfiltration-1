@@ -56,7 +56,7 @@ def event_cal_main(info, n, start_date, end_date):
 
     print('获取事件相关微博')
     # 获取事件相关微博，计算情感极性，并存入事件索引（没有索引就创建一个）
-    save_event_data(e_id, n, SENTIMENT_POS, SENTIMENT_NEG)
+    # save_event_data(e_id, n, SENTIMENT_POS, SENTIMENT_NEG)
 
     print('敏感词过滤，精确敏感信息入库')
     # 对新获取的事件相关微博进行敏感词过滤，并将包含精确敏感词的信息入库

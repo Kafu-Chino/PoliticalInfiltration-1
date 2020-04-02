@@ -16,6 +16,7 @@ import os
 import pandas as pd
 from elasticsearch import helpers
 import sys
+import math
 
 sys.path.append('../../')
 from Config.db_utils import ees, pi_cur
@@ -74,8 +75,8 @@ def bert_vec(texts):
     return vec
 
 
-def ANN_cal(e_id, vec, y):
-    index = ngtpy.Index(str(e_id) + '.anng')
+def ANN_cal(index, vec, y):
+    # index = ngtpy.Index(str(e_id) + '.anng')
     label = []
     for i in vec:
         results = index.search(i, size=8)
@@ -108,9 +109,8 @@ def create_ANN(e_id, pos_data, neg_data):
     objects = np.concatenate((nX1, nX2))
     index.batch_insert(objects)
     index.build_index()
-    index.save()
     y = np.concatenate((np.ones(len(nX1), dtype=int), np.zeros(len(nX2), dtype=int)))
-    return y
+    return index, y
 
 
 def get_pos(POS_NUM):
@@ -180,11 +180,18 @@ def get_neg_data(e_index, NEG_NUM):
 def sensitivity(e_id, data, e_index, POS_NUM, NEG_NUM):
     # data = dict_slice(data, 0, 25)   # 测试代码，采样一小部分数据
     data, texts = data_process(data)
-    vec = bert_vec(texts)
     pos_data = get_pos_data(e_id, POS_NUM)
     neg_data = get_neg_data(e_index, NEG_NUM)
-    y = create_ANN(e_id, pos_data, neg_data)
-    label = ANN_cal(e_id, vec, y)
+    index, y = create_ANN(e_id, pos_data, neg_data)  #返回index 取消保存
+    batch_num = 12800
+    batch_all = math.ceil(len(texts) / batch_num)
+    label = []
+    for batch_epoch in range(batch_all):
+        texts_batch = texts[batch_epoch * batch_num: (batch_epoch + 1) * batch_num]
+        print("文本{}至{}， 共{}".format(batch_epoch * batch_num, (batch_epoch + 1) * batch_num, len(texts)))
+        vec = bert_vec(texts)
+        label_batch = ANN_cal(index, vec, y) # eid改成index
+        label.extend(label_batch)
     for i, j in zip(list(data.keys()), label):
         if j == 0:
             del data[i]
@@ -201,3 +208,5 @@ def dict_slice(ori_dict, start, end):
     """
     slice_dict = {k: ori_dict[k] for k in list(ori_dict.keys())[start:end]}
     return slice_dict
+
+
