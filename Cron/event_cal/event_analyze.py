@@ -60,6 +60,7 @@ def event_analyze(e_id,data,date=thedate):
     user_list ={}
     user_count = 0
     pattern = re.compile(r'(\u4e2d\u56fd)')
+    pattern2 = re.compile(r'(\u672a\u77e5)')
     #pattern1 = re.compile(r'(\u9999\u6e2f|\u6fb3\u95e8|\u5b81\u590f|\u5e7f\u897f|\u65b0\u7586|\u897f\u85cf|\u5185\u8499\u53e4|\u9ed1\u9f99\u6c5f)')
     #pattern2 = re.compile(r'([\u4e00-\u9fa5]{2,5}?(\u7701|\u5e02|\u81ea\u6cbb\u533a))')  #\u7701省   \u5e02市     \u81ea\u6cbb\u533a自治区
     #result = Event.objects.filter(e_id=eid).first().information.all().filter(timestamp__range=(start_time,end_time))  #.count()
@@ -73,21 +74,25 @@ def event_analyze(e_id,data,date=thedate):
             sensitive += 1
             p = pattern.match(i['geo'])
             if p is None:
-                try:
-                    out_info_dict[i['geo']] += 1
-                except:
-                    out_info_dict[i['geo']] = 1
+                p2 = pattern2.match(i['geo'])
+                if p2 is None:
+                    geo = i['geo'].split('&')[0]
+                    try:
+                        out_info_dict[geo] += 1
+                    except:
+                        out_info_dict[geo] = 1
             else:
+                geo = i['geo'].split('&')[1]
                 try:
-                    in_info_dict[i['geo']] += 1
+                    in_info_dict[geo] += 1
                 except:
-                    in_info_dict[i['geo']] = 1
+                    in_info_dict[geo] = 1
 
     for item in data:
         #weibo_count += 1
         #day = item['_source']["time"][0:10]
             #  后期使用if item["sentiment_polarity"]<0:
-        if int(item["sentiment_polarity"])<0:
+        if int(item["sentiment"])<0:
             negative += 1
         try:
             user_list[item["uid"]] = 1
@@ -95,15 +100,19 @@ def event_analyze(e_id,data,date=thedate):
             continue
         k = pattern.match(item["geo"])
         if k is None:
-            try:
-                out_dict[item["geo"]] += 1
-            except:
-                out_dict[item["geo"]] = 1
+            k2 = pattern2.match(item['geo'])
+            if k2 is None:
+                geo = item['geo'].split('&')[0]
+                try:
+                    out_dict[geo] += 1
+                except:
+                    out_dict[geo] = 1
         else:
+            geo = item['geo'].split('&')[1]
             try:
-                in_dict[item["geo"]] += 1
+                in_dict[geo] += 1
             except:
-                in_dict[item["geo"]] = 1
+                in_dict[geo] = 1
     user_count = len(user_list.keys())
     in_json = json.dumps(in_dict)
     out_json = json.dumps(out_dict)
@@ -122,57 +131,7 @@ def event_analyze(e_id,data,date=thedate):
                             "into_date":date,
                             "timestamp":end_time}
     sql_insert_many("Event_Analyze", "e_id", analyze_dict)
-        #print(item['_source']["geo"])
-'''
-        k1 = pattern1.match(item['_source']["geo"])
-        if k1 is None:
-            k2 = pattern2.match(item['_source']["geo"])
-            if k2 is None:
-                k3 = re.match(r'.+(\u7701)',item['_source']["geo"])
-                if k3 is None:
-                    try:
-                        out_dict[item['_source']["geo"]] += 1
-                    except:
-                        out_dict[item['_source']["geo"]] = 1
-                else:
-                    #print(k3.group()[-3:])
-                    try:
-                        in_dict[k3.group()[-3:]] += 1
-                    except:
-                        in_dict[k3.group()[-3:]] = 1
-            else:
-                #print(k2.group())
-                try:
-                    in_dict[k2.group()] += 1
-                except:
-                    in_dict[k2.group()] = 1
-        else:
-            #print(k1.group())
-            try:
-                in_dict[k1.group()] += 1
-            except:
-                in_dict[k1.group()] = 1
-    #print(user_count,weibo_count)
-    #thedate = datetime.date.today()
-    for k in data_dict.keys():
-        all_dict[k] = len(data_dict[k])
-        if k not in sdata_dict.keys():
-            negative_dict[k] = 0
-        else:
-            negative_dict[k] = len(sdata_dict[k])
-        if k not in idata_dict.keys():
-            sensitive_dict[k] = 0
-        else:
-            sensitive_dict[k] = len(idata_dict[k])
-    all_json = json.dumps(all_dict)
-    sensitive_json = json.dumps(sensitive_dict)
-    negative_json = json.dumps(negative_dict)
-'''
-    #in_info_json = json.dumps(in_info_dict)
-    #out_info_json = json.dumps(out_info_dict)
-    #sql = 'insert into Event_analyze values (%s,%s,%s,%s,%s,%s)' % (e_id,e_id,all_json,sensitive_json,negative_json,thedate)
-    #sql = 'insert into Event_analyze values (%s,%s,%s,%s,%s,%s)' % (e_id,e_id,pymysql.escape_string(all_json),pymysql.escape_string(sensitive_json),pymysql.escape_string(negative_json),thedate)
-    #'insert into Event_Analyze(e_id,event_name,hot_index,sensitive_index,negative_index,into_date) values ("{}","{}","{}","{}","{}","{}")'.format(e_id,e_id,all_json,sensitive_json,negative_json,thedate))
+
 
 
 
@@ -188,5 +147,4 @@ if __name__ == '__main__':
     eid = 'xianggangshijian_1581919160'
     event_analyze("weibo_all",eid,)
     '''
-    eid = 'xianggang_1582357500'
-    event_analyze("xianggang_1582357500",eid,'2019-08-06')
+    #eid = 'xianggang_1582357500'

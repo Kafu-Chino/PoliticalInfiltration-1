@@ -29,7 +29,9 @@ class Show_event(APIView):
             page_id = 1
         if limit is None:
             limit = 10
-        result = Event.objects.values('e_id','event_name','keywords_dict','begin_date','end_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        count = Event.objects.aggregate(count = Count('e_id'))['count']
+        #print(count)
+        result = Event.objects.values('e_id','event_name','keywords_dict','begin_date','end_date').order_by('-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
         index_list = {}
         jre=[]
         #t1 = time.time()
@@ -37,11 +39,11 @@ class Show_event(APIView):
             for item in result:
                 weibo_count = 0
                 user_count = 0
-                sdate = item['begin_date'].strftime('%Y-%m-%d %H:%M:%S')
+                sdate = item['begin_date'].strftime('%Y-%m-%d')
                 if item['end_date'] is None:
-                    edate = " "
+                    edate = "至今"
                 else:
-                    edate = item['end_date'].strftime('%Y-%m-%d %H:%M:%S')
+                    edate = item['end_date'].strftime('%Y-%m-%d')
                 eid = item['e_id']
                 e_re = Event.objects.filter(e_id =eid).first()
                 figure_count = len(e_re.figure.all())
@@ -56,19 +58,21 @@ class Show_event(APIView):
                     figure_rat = 0
                     info_rat = 0
                     if user_count is None:
-                        figure_rat = None
+                        figure_rat = 0
                     if user_count != 0:
-                        figure_rat = float(figure_count/user_count)
+                        figure_rat = '%.2f%%' % float(figure_count/user_count * 100)
                     if weibo_count is None:
-                        info_rat = None
+                        info_rat = 0
                     if weibo_count != 0:
-                        info_rat = float(info_count/weibo_count)
+                        info_rat = '%.2f%%' % float(info_count/weibo_count*100)
                     jre.append({"eid":eid,"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
-                            "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':figure_rat,'sensitive_info_ratio':info_rat})
+                            "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':figure_rat,'sensitive_info_ratio':info_rat,'count':count})
                 else:
                     jre.append({"eid":item["e_id"],"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
-                                "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':None,'sensitive_info_ratio':None})
-            return JsonResponse(jre,safe=False,json_dumps_params={'ensure_ascii':False})
+                                "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':0,'sensitive_info_ratio':0,'count':count})
+            re = json.dumps(jre,ensure_ascii=False)
+            re = json.loads(re)
+            return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "无事件"},safe=False)
 
@@ -81,17 +85,18 @@ class Show_event_info(APIView):
         eid = request.GET.get("eid")
         result = Event.objects.filter(e_id =eid).values('event_name','keywords_dict','begin_date','end_date')
         #item = Event.objects.filter(e_id =eid).values('event_name','keywords_dict','begin_date','end_date').first()
+        
         weibo_count = 0
         user_count = 0
         jre = {}
         if result.exists():
         #if len(item):
             for item in result:
-                sdate = item['begin_date'].strftime('%Y-%m-%d %H:%M:%S')
+                sdate = item['begin_date'].strftime('%Y-%m-%d')
                 if item['end_date'] is None:
-                    edate = " "
+                    edate = "至今"
                 else:
-                    edate = item['end_date'].strftime('%Y-%m-%d %H:%M:%S')
+                    edate = item['end_date'].strftime('%Y-%m-%d')
                 e_re = Event.objects.filter(e_id =eid).first()
                 figure_count = len(e_re.figure.all())
                 info_count = len(e_re.information.all())
@@ -103,13 +108,13 @@ class Show_event_info(APIView):
                     figure_rat = 0
                     info_rat = 0
                     if user_count is None:
-                        figure_rat = None
+                        figure_rat = 0
                     if user_count != 0:
-                        figure_rat = float(figure_count/user_count)
+                        figure_rat = '%.2f%%' % float(figure_count/user_count * 100)
                     if weibo_count is None:
-                        info_rat = None
+                        info_rat = 0
                     if weibo_count != 0:
-                        info_rat = float(info_count/weibo_count)
+                        info_rat = '%.2f%%' % float(info_count/weibo_count * 100)
                     jre["event_name"]=item['event_name']
                     jre["keywords_dict"]=item['keywords_dict']
                     jre["begin_date"] = sdate
@@ -142,16 +147,20 @@ class search_event(APIView):
             page_id = 1
         if limit is None:
             limit = 10
-        result = Event.objects.filter(event_name__contains = name).values('e_id','event_name','keywords_dict','begin_date','end_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        result = Event.objects.filter(event_name__contains = name).values('e_id','event_name','keywords_dict','begin_date','end_date').order_by('-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        #count = Event.objects.filter(event_name__contains = name).aggregate(count = Count('e_id'))['count']
+        count = len(Event.objects.filter(event_name__contains = name))
+        #print(len(result))
         if result.exists():
             for item in result:
+                #count += 1
                 weibo_count = 0
                 user_count = 0
-                sdate = item['begin_date'].strftime('%Y-%m-%d %H:%M:%S')
+                sdate = item['begin_date'].strftime('%Y-%m-%d')
                 if item['end_date'] is None:
-                    edate = " "
+                    edate = "至今"
                 else:
-                    edate = item['end_date'].strftime('%Y-%m-%d %H:%M:%S')
+                    edate = item['end_date'].strftime('%Y-%m-%d')
                 eid = item['e_id']
                 e_re = Event.objects.filter(e_id =eid).first()
                 figure_count = len(e_re.figure.all())
@@ -166,23 +175,22 @@ class search_event(APIView):
                     figure_rat = 0
                     info_rat = 0
                     if user_count is None:
-                        figure_rat = None
+                        figure_rat = 0
                     if user_count != 0:
-                        figure_rat = float(figure_count/user_count)
+                        figure_rat = '%.2f%%' % float(figure_count/user_count * 100)
                     if weibo_count is None:
-                        info_rat = None
+                        info_rat = 0
                     if weibo_count != 0:
-                        info_rat = float(info_count/weibo_count)
+                        info_rat = '%.2f%%' % float(info_count/weibo_count * 100)
                     jre.append({"eid":eid,"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
-                            "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':figure_rat,'sensitive_info_ratio':info_rat})
+                            "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':figure_rat,'sensitive_info_ratio':info_rat,'count':count})
                 else:
-                    jre.append({"eid":eid,"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
-                                "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':None,'sensitive_info_ratio':None})
-            re = json.dumps(list(jre),ensure_ascii=False)
-            re = json.loads(re)
-            return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False})
+                    jre.append({"eid":item["e_id"],"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
+                                "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':0,'sensitive_info_ratio':0,'count':count})
+            return JsonResponse(jre,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
-            return JsonResponse({"status":400, "error": "该事件不存在"},safe=False)
+            return JsonResponse({"status":400, "error": "无事件"},safe=False)
+
 
 
 
@@ -315,7 +323,9 @@ class related_figure(APIView):
         res_event = Event.objects.filter(e_id=eid)  #.first().event_set.all()
         if res_event.exists():
             #print(e)
-            res = res_event[0].figure.all()[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+            res = res_event[0].figure.all().order_by('-fansnum')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+            count = len(res_event[0].figure.all())
+            res_dict['count'] = count
             for f in res:
                 res_dict['table'].append(["f_id","nick_name","fansnum","friendsnum"])
                 res_dict['data'].append([f.f_id, f.nick_name,f.fansnum,f.friendsnum])
@@ -362,7 +372,10 @@ class related_info(APIView):
         res_event = Event.objects.filter(e_id=eid)  #.first().event_set.all()
         if res_event.exists():
             #print(e)
-            res1 = res_event[0].information.all()[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+            res1 = res_event[0].information.all().order_by('-timestamp')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+            count = len(res_event[0].information.all())
+            res_dict['count'] = count
+            #print(count)
             for i in res1:
                 lt = time.localtime(i.timestamp)
                 itime = time.strftime('%Y-%m-%d %H:%M:%S',lt)
@@ -418,14 +431,18 @@ class event_geo_in(APIView):
         eid = request.GET.get('eid')
         result = Event_Analyze.objects.filter(event_name =eid).values('geo_weibo_inland')
         geo_dict={}
+        b = '未知'
         #print(type(result))
         if result.exists():
             for re in result:
                 for k,v in re["geo_weibo_inland"].items():
-                    try:
-                        geo_dict[k] += v
-                    except:
-                        geo_dict[k] = v
+                    if k == "未知":
+                        continue
+                    else:
+                        try:
+                            geo_dict[k] += v
+                        except:
+                            geo_dict[k] = v
                 geo_dict=dict(sorted(geo_dict.items(),key=lambda x:x[1],reverse=True)[:10])
             return JsonResponse(geo_dict,safe=False,json_dumps_params={'ensure_ascii':False}) #
         else:
@@ -466,10 +483,13 @@ class info_geo_in(APIView):
         if result.exists():
             for re in result:
                 for k,v in re["geo_info_inland"].items():
-                    try:
-                        geo_dict[k] += v
-                    except:
-                        geo_dict[k] = v
+                    if k == "未知":
+                        continue
+                    else:
+                        try:
+                            geo_dict[k] += v
+                        except:
+                            geo_dict[k] = v
                 geo_dict=dict(sorted(geo_dict.items(),key=lambda x:x[1],reverse=True)[:10])
             return JsonResponse(geo_dict,safe=False,json_dumps_params={'ensure_ascii':False}) #
         else:
@@ -511,8 +531,14 @@ class semantic_tl(APIView):
                 timeline["content"].append({"source":re[0].uid,"text":re[0].text,"hazard_index":re[0].hazard_index})
             '''
             for re in result:
+                #fresult = Event.objects.filter(e_id=eid).first().figure.all().filter(f_id=re.uid).values('nick_name')
+                #if fresult.exists():
+                    #nick = fresult[0]['nick_name']
+                #else:
+                    #nick = re.uid
+
                 date = time.strftime('%Y-%m-%d',time.localtime(re.timestamp))
-                info_dict[date].append({"日期":date,"发博用户":re.uid,"微博内容":re.text,"危害指数":re.hazard_index})
+                info_dict[date].append({"日期":date,"发博用户昵称":re.uid,"微博内容":re.text,"危害指数":int(re.hazard_index)})
                 #info_dict[date].append({"date":date,"source":re.uid,"text":re.text,"hazard_index":re.hazard_index})
             for k,v in info_dict.items():
                 #timeline.append(sorted(v,key=operator.itemgetter('危害指数'),reverse=True)[:1][0])
