@@ -141,7 +141,7 @@ class User_Behavior(APIView):
                     originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"), retweetnum_s=Sum("retweetnum"),
                     sensitivenum_s=Sum("sensitivenum"))
                 if len(result):
-                    res_dict['date'].append(time.strftime("%Y-%m-%d", time.localtime((date_dict[i]))))
+                    res_dict['date'].append(time.strftime("%Y-%m", time.localtime((date_dict[i]))))
                     if result['originalnum_s']:
                         res_dict['originalnum'].append(result['originalnum_s']) 
                     else:
@@ -159,7 +159,7 @@ class User_Behavior(APIView):
                     else:
                         res_dict['sensitivenum'].append(0)
                 else:
-                    res_dict['date'].append(ts2date(date_dict[i+1]))
+                    res_dict['date'].append(time.strftime("%Y-%m", time.localtime((date_dict[i]))))
                     res_dict['originalnum'].append(0) 
                     res_dict['commentnum'].append(0)
                     res_dict['retweetnum'].append(0)
@@ -235,7 +235,7 @@ class User_Activity(APIView):
             cal_date = (t + datetime.timedelta(days=-90)).timestamp()
 
         day_result = UserActivity.objects.filter(uid=uid, timestamp__gte=cal_date,timestamp__lte=t.timestamp()).values("geo", "send_ip").annotate(
-            statusnum_s=Sum("statusnum"), sensitivenum_s=Sum("sensitivenum")).order_by("-sensitivenum_s")
+            statusnum_s=Sum("statusnum"), sensitivenum_s=Sum("sensitivenum")).order_by("-statusnum_s")[:5]   #之前按敏感微博总数
         if day_result.exists():
             res_dict["day_result"]=list(day_result)
         else:
@@ -298,7 +298,7 @@ class Show_topic(APIView):
                     #print(new_topic)
             re = sorted(new_topic.items(),key=lambda x:x[1],reverse=True)[:5]
             for item in re:
-                re2.append({"name":item[0],"value":item[1]})
+                re2.append({"name":item[0],"value":'%.4f' % item[1]})
             #print(type(re))
             #re = json.dumps(re,ensure_ascii=False)
             #re = json.load(re,ensure_ascii=False)
@@ -355,7 +355,7 @@ class Show_keyword(APIView):
             has = sorted(ht.items(),key=lambda x:x[1],reverse=True)[:5]
                 #print(sw)
             for item in key:
-                re1["keywords"].append({"name":item[0],"value":item[1]})
+                re1["keywords"].append({"name":item[0],"value":'%.4f' % item[1]})
             for item in has:
                 re1["hastags"].append({"name":item[0],"value":item[1]})
             for k,v in sw.items():
@@ -465,8 +465,8 @@ class Show_contact(APIView):
         max_count = int(request.GET.get("max_count", 9999999999))
 
         message_type_dic = {
-        	2: "评论",
-        	3: "转发"
+            2: "评论",
+            3: "转发"
         }
         # 时间范围内的数据获取，该用户上游和下游的节点连接
         try:
@@ -529,11 +529,23 @@ class Show_contact(APIView):
                         node_list.append(target_node)
                         node_set.add(key[1])
 
+        # 限制整体返回的数量，防止画图卡顿
+        link_list = sorted(link_list,key=lambda x:x["value"],reverse=True)[:100]
+        retrict_node_set = []
+        for node_link in link_list:
+            retrict_node_set.append(node_link["source"])
+            retrict_node_set.append(node_link["target"])
+        retrict_node_set = set(retrict_node_set)
+        # return JsonResponse({"s":str(retrict_node_set)}, safe=False)
+
         # 标记节点属性，如果为节点自身，标记为1，如果节点在敏感库内，标记为2，其他标记为3
         node_set.remove(uid)
         contain_result = Figure.objects.filter(uid__in=list(node_set)).values()
         contain_set = set([item["uid"] for item in contain_result])
+        node_list_new = []
         for node in node_list:
+            if node["name"] not in retrict_node_set:
+                continue
             if node["id"] == uid:
                 node["value"] = 1
             elif node["id"] in contain_set:
@@ -541,9 +553,10 @@ class Show_contact(APIView):
             else:
                 node["value"] = 3
             node.pop("id")
+            node_list_new.append(node)
 
         social_contact = {
-            'node': node_list, 
+            'node': node_list_new, 
             'link': link_list
         }
 
@@ -616,6 +629,7 @@ class Show_figure(APIView):
         if limit is None:
             limit = 10
         result = Figure.objects.all()[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        count = len(Figure.objects.all())
         res_list = []
         if result.exists():
             for item in result:
@@ -623,10 +637,19 @@ class Show_figure(APIView):
                 info_count = 0
                 #sdate = item.begin_date.strftime('%Y-%m-%d %H:%M:%S')
                 #edate = item.end_date.strftime('%Y-%m-%d %H:%M:%S')
+                if item.create_at is None:
+                    create_date = "未知"
+                else:
+                    create_date = item.create_at
+                if item.user_location is None:
+                    addr = "未知"
+                else:
+                    addr = item.user_location
                 fid = item.f_id
                 event_count = Figure.objects.get(f_id=fid).event.all().count()
                 info_count = Information.objects.filter(uid=fid).count()
-                res_list.append({"f_id":fid,"nick_name":item.nick_name,"fansnum":item.fansnum,'friendsnum':item.friendsnum,'create_at':item.create_at,'event_count':event_count,'info_count':info_count,'user_location':item.user_location})
+                res_list.append({"f_id":fid,"nick_name":item.nick_name,"fansnum":item.fansnum,'friendsnum':item.friendsnum,'create_at':create_date,'event_count':event_count,'info_count':info_count,'user_location':addr,'count':count})
+            
             '''
             page = Paginator(res_list, limit)
             if page_id:
@@ -647,6 +670,50 @@ class Show_figure(APIView):
             return JsonResponse({"status":400, "error": "无人物"},safe=False)
 
 
+
+
+class search_figure(APIView):
+    """展示所搜寻人物信息"""
+    def get(self, request):
+        """展示人物,该文档返回Figure表中存在的需要展示的数据，返回字段f_id为用户账号，nick_name为昵称
+          fansnum粉丝数,friendsnum关注数,political政治倾向,domain领域,user_location地点"""
+        info = request.GET.get("info")
+        res_list = []
+        limit = request.GET.get("limit")
+        page_id = request.GET.get('page_id')
+        if page_id is None:
+            page_id = 1
+        if limit is None:
+            limit = 10
+        result = Figure.objects.filter(Q(nick_name__contains = info) | Q(uid__contains = info))[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]  #.values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')
+        count = len(Figure.objects.filter(Q(nick_name__contains = info) | Q(uid__contains = info)))
+        res_list = []
+        if result.exists():
+            for item in result:
+                event_count = 0
+                info_count = 0
+                #sdate = item.begin_date.strftime('%Y-%m-%d %H:%M:%S')
+                #edate = item.end_date.strftime('%Y-%m-%d %H:%M:%S')
+                if item.create_at is None:
+                    create_date = "未知"
+                else:
+                    create_date = item.create_at
+                if item.user_location is None:
+                    addr = "未知"
+                else:
+                    addr = item.user_location
+                fid = item.f_id
+                event_count = Figure.objects.get(f_id=fid).event.all().count()
+                info_count = Information.objects.filter(uid=fid).count()
+                res_list.append({"f_id":fid,"nick_name":item.nick_name,"fansnum":item.fansnum,'friendsnum':item.friendsnum,'create_at':create_date,'event_count':event_count,'info_count':info_count,'user_location':addr,'count':count})
+            res=sorted(res_list,key=operator.itemgetter('info_count'),reverse=True)
+            return JsonResponse(res,safe=False,json_dumps_params={'ensure_ascii':False})
+        else:
+            return JsonResponse({"status":400, "error": "该人物不存在"},safe=False,json_dumps_params={'ensure_ascii':False})
+
+
+
+
 class show_figure_info(APIView):
     """展示人物详细信息"""
     def get(self,request):
@@ -656,7 +723,7 @@ class show_figure_info(APIView):
         info_count = 0
         res_dict = {}
         fid = request.GET.get("uid")
-        res = Figure.objects.filter(f_id=fid).values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location','create_at')
+        res = Figure.objects.filter(f_id=fid).values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location','create_at','sex','user_birth')
         if res.exists():
             res_event = Figure.objects.get(f_id=fid).event.all()
             event_count = Figure.objects.get(f_id=fid).event.all().count()
@@ -667,10 +734,31 @@ class show_figure_info(APIView):
                 res_dict["fansnum"]=re["fansnum"]
                 res_dict['friendsnum']=re['friendsnum']
                 #print(re["create_at"])
-                res_dict['create_at']=re['create_at']
-                res_dict['user_location']=re['user_location']
-                res_dict["domain"]=re["domain"]
-                res_dict["political"]=re["political"]
+                if re['create_at'] is None:
+                    create_date = "未知"
+                else:
+                    create_date = re['create_at']
+                if re['user_location'] is None:
+                    addr = "未知"
+                else:
+                    addr = re['user_location']
+                if re['sex'] is None:
+                    sex = '未知'
+                else:
+                    sex = re['sex']
+                if re['user_birth'] is None:
+                    age = "未知"
+                else:
+                    if re['user_birth'] < "1000-00-00":
+                        age = "未知"
+                    else:
+                        age = datetime.date.today().year - int(re['user_birth'][:4])
+                res_dict['create_at']=create_date
+                res_dict['user_location']=addr
+                res_dict["domain"]=domain_dict[re["domain"]]
+                res_dict["political"]=political_dict[re["political"]]
+                res_dict['age'] = age
+                res_dict['sex'] = sex
             res_dict['event_count']=event_count
             res_dict['info_count']=info_count
             return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
@@ -712,7 +800,10 @@ class related_info(APIView):
             page_id = 1
         if limit is None:
             limit = 10
-        res = Information.objects.filter(uid=fid)[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        res = Information.objects.filter(uid=fid).order_by('-timestamp')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        count = len(Information.objects.filter(uid=fid))
+        res_dict['count'] = count
+        #print(len(res))
         if res.exists():
             for i in res:
                 lt = time.localtime(i.timestamp)
@@ -737,7 +828,7 @@ class related_info(APIView):
             '''
             return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False}) #
         else:
-            return JsonResponse({"status":400, "error": "无相关人物和信息"},safe=False)
+            return JsonResponse({"status":400, "error": "无相关信息"},safe=False)
 
 
 
@@ -754,13 +845,18 @@ class related_event(APIView):
             limit = 10
         res = Figure.objects.filter(uid=fid)
         if res.exists():
-            res_event = Figure.objects.get(f_id=fid).event.all()[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+            res_event = Figure.objects.get(f_id=fid).event.all().order_by('-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+            count = len(Figure.objects.get(f_id=fid).event.all())
+            res_dict['count'] = count
             for e in res_event:
                 #lt = time.localtime(i.timestamp)
                 #itime = time.strftime('%Y-%m-%d %H:%M:%S',lt)
                 #print(itime)
-                sdate = e.begin_date.strftime('%Y-%m-%d %H:%M:%S')
-                edate = e.end_date.strftime('%Y-%m-%d %H:%M:%S')
+                sdate = e.begin_date.strftime('%Y-%m-%d')
+                if e.end_date is None:
+                    edate = '至今'
+                else:
+                    edate = e.end_date.strftime('%Y-%m-%d')
                 res_dict['table'].append(['event_name','keywords','begin_date','end_date'])
                 res_dict['data'].append([e.event_name,e.keywords_dict,sdate,edate])
             '''
@@ -780,41 +876,7 @@ class related_event(APIView):
             '''
             return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False}) #
         else:
-            return JsonResponse({"status":400, "error": "无相关人物和信息"},safe=False)
-
-
-
-
-class search_figure(APIView):
-    """展示所搜寻人物信息"""
-    def get(self, request):
-        """展示人物,该文档返回Figure表中存在的需要展示的数据，返回字段f_id为用户账号，nick_name为昵称
-          fansnum粉丝数,friendsnum关注数,political政治倾向,domain领域,user_location地点"""
-        info = request.GET.get("info")
-        res_list = []
-        limit = request.GET.get("limit")
-        page_id = request.GET.get('page_id')
-        if page_id is None:
-            page_id = 1
-        if limit is None:
-            limit = 10
-        result = Figure.objects.filter(Q(nick_name__contains = info) | Q(uid__contains = info))[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]  #.values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')
-        if result.exists():
-            for item in result:
-                event_count = 0
-                info_count = 0
-                #sdate = item.begin_date.strftime('%Y-%m-%d %H:%M:%S')
-                #edate = item.end_date.strftime('%Y-%m-%d %H:%M:%S')
-                fid = item.f_id
-                event_count = Figure.objects.get(f_id=fid).event.all().count()
-                info_count = Information.objects.filter(uid=fid).count()
-                res_list.append({"f_id":fid,"nick_name":item.nick_name,"fansnum":item.fansnum,'friendsnum':item.friendsnum,'create_at':item.create_at,'event_count':event_count,'info_count':info_count,'user_location':item.user_location})
-            #re = json.dumps(list(result),ensure_ascii=False)
-            #re = json.loads(re)
-            res=sorted(res_list,key=operator.itemgetter('info_count'),reverse=True)
-            return JsonResponse(res,safe=False,json_dumps_params={'ensure_ascii':False})
-        else:
-            return JsonResponse({"status":400, "error": "该人物不存在"},safe=False,json_dumps_params={'ensure_ascii':False})
+            return JsonResponse({"status":400, "error": "无相关事件"},safe=False)
 
 
 
