@@ -32,12 +32,12 @@ def test_sample(table):
 def db_connect():
     es = Elasticsearch(hosts=[{'host': ES_HOST, 'port': ES_PORT}], timeout=1000)
     db = pymysql.connect(
-        host='219.224.135.12',
-        port=3306,
-        user='root',
-        passwd='mysql3306',
+        host=DB_HOST,
+        port=DB_PORT,
+        user=DB_USER,
+        passwd=DB_PASSWORD,
         db='PoliticalInfiltration',
-        charset='utf8'
+        charset=DB_CHARSET
     )
     return es,db
 
