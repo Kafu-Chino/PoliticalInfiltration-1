@@ -9,7 +9,7 @@ import time,datetime
 from collections import defaultdict
 from textrank4zh import TextRank4Keyword, TextRank4Sentence
 from Cron.profile_cal.data_process_utils import wordcount
-from Cron.profile_cal.data_get_utils import sql_insert_many
+from Cron.profile_cal.data_utils import sql_insert_many
 from Config.db_utils import es, pi_cur, conn
 
 cursor = pi_cur()

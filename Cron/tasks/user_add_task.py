@@ -2,7 +2,7 @@ import sys
 sys.path.append('../../')
 from Config.db_utils import pi_cur, conn
 from Cron.profile_cal.profile_cal_main import profile_cal_main
-from Cron.profile_cal.data_utils import get_uid_list
+from Cron.profile_cal.data_utils import get_uid_list1
 
 #更新人物计算状态
 def update_cal_status(uid_list, computestatus):
@@ -14,7 +14,7 @@ def update_cal_status(uid_list, computestatus):
     conn.commit()
 
 def user_add_cal():
-    uid_list = get_uid_list(0)
+    uid_list = get_uid_list1(0)
     # 更新为计算中
     update_cal_status(uid_list,1)
     #启动计算

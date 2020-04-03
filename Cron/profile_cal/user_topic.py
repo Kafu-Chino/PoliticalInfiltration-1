@@ -8,7 +8,7 @@ import numpy as np
 from collections import defaultdict
 import pandas as pd
 #from pandas import DataFrame 
-from Cron.profile_cal.data_get_utils import sql_insert_many
+from Cron.profile_cal.data_utils import sql_insert_many
 from Config.db_utils import es, pi_cur, conn
 from Cron.profile_cal.user_domain import get_user_domain
 cursor = pi_cur()
