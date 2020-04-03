@@ -9,7 +9,7 @@ import datetime
 from pandas import DataFrame
 from Mainevent.models import *
 from collections import defaultdict
-from Cron.profile_cal.data_get_utils import sql_insert_many
+from Cron.profile_cal.data_utils import sql_insert_many
 from Config.db_utils import es, pi_cur, conn
 cursor = pi_cur()
 
