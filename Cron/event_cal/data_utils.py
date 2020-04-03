@@ -301,8 +301,8 @@ def event_sensitivity(e_id,data_dict):
         cursor = pi_cur()
         sql = 'insert into Event_information set event_id=%s,information_id=%s'
         val = []
-        for i in data_dict:
-            val.append((e_id,i))
+        for i, j in data_dict.items():
+            val.append((e_id, j.get('source',None)+i))
         # 执行sql语句
         n = cursor.executemany(sql, val)
         print("入库成功 %d 条" % n)
