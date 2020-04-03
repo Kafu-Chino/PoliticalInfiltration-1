@@ -156,7 +156,7 @@ def get_neg_data(e_index, NEG_NUM):
     mid = []
     vec = []
     es_result = list(es_result)
-    if len(es_result) > 100000:
+    if len(es_result) > 150000:
         index_list = set(np.random.choice(range(len(es_result)), size=NEG_NUM, replace=False))
         for index, item in enumerate(es_result):
             if index not in index_list:
