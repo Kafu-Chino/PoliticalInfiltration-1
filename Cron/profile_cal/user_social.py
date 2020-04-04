@@ -4,7 +4,7 @@ sys.path.append("../../")
 import os
 import time
 import datetime
-from Cron.profile_cal.data_utils import sql_insert_many, get_uid_list
+from Cron.profile_cal.data_utils import sql_insert_many1, get_uid_list
 from Config.db_utils import es, pi_cur#, es_floww
 from Config.time_utils import *
 from elasticsearch.helpers import scan
@@ -20,7 +20,7 @@ def get_user_social(uidlist, date_data, date,n):
     }
     """
     # 上游数据补充查询
-    list_all = set(get_uid_list(n))
+    # list_all = set(get_uid_list(n))
     query_body = {
         "query":{
             "bool":{
@@ -81,7 +81,7 @@ def get_user_social(uidlist, date_data, date,n):
 
     # 用户昵称es库查询
     cursor = pi_cur()
-    sql = "SELECT uid, nick_name from Figure where uid in ('{}'')".format("','".join(uidlist))
+    sql = "SELECT uid, nick_name from Figure where uid in ('{}')".format("','".join(uidlist))
     cursor.execute(sql)
     result = cursor.fetchall()
     nick_name_dic = {item["uid"]: item["nick_name"] for item in result}
@@ -115,7 +115,7 @@ def get_user_social(uidlist, date_data, date,n):
                         "timestamp": date2ts(date),
                         "store_date": date,
                     }
-    sql_insert_many("UserSocialContact", "uc_id", insert_dic)
+    sql_insert_many1("UserSocialContact", "uc_id", insert_dic)
 
 if __name__ == "__main__":
     cursor = pi_cur()

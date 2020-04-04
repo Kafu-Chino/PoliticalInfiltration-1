@@ -32,6 +32,6 @@ def information_daily(date):
 
 
 if __name__ == '__main__':
-    date = today()
-    # date = '2019-07-16'
+    # date = today()
+    date = '2019-07-16'
     information_daily(date)

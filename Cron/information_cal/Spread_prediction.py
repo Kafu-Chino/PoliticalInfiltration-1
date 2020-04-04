@@ -23,17 +23,23 @@ def func3(x,a,b,c):
 def func4(x,a,b):
     return b * np.exp(-a * x)
 
-def get_data():
+def get_data(midlist):
     cursor = pi_cur()
-    sql = 'select * from Informationspread order by timestamp ASC '
-    cursor.execute(sql)
+    mids = ""
+    for m in midlist:
+        mids += m + ","
+    sql = "select * from Informationspread where  mid in (%s) order by timestamp ASC" %','.join(['%s']*len(midlist))
+
+    # sql = "select * from Informationspread where mid in ('%s') order by timestamp ASC "% mids[:-1]
+    cursor.execute(sql,midlist)
     results = cursor.fetchall()
+    print(results)
     return results
 
 
-def data_process():
+def data_process(midlist):
     message_dict = {}
-    for message in get_data():
+    for message in get_data(midlist):
         if message['mid'] in message_dict.keys():
             message['days'] = (message['store_date'] - message_dict[message['mid']]['date']).days+1
             message_dict[message['mid']]['list'].append(message)
@@ -50,6 +56,7 @@ def fit(m_dict):
     pre_dict = {}
     total_num = 0
     right_num = 0
+    print(m_dict)
     p0 = (0.5, 0.5)
     p1 = (0.5, 0.5)
     save_dict = {}
@@ -57,8 +64,6 @@ def fit(m_dict):
         retweet = []
         comment = []
         days = []
-
-
         if len( m_dict[mid]['list'])>3:
             save_dict[mid] = {}
             for i in m_dict[mid]['list']:
@@ -67,15 +72,20 @@ def fit(m_dict):
                 days.append(i['days'])
             # print(m_dict[mid]['list'][len( m_dict[mid]['list'])-1])
             days_t = [m_dict[mid]['list'][len( m_dict[mid]['list'])-1]['days']+1,m_dict[mid]['list'][len( m_dict[mid]['list'])-1]['days']+2]
-
             re = np.array(retweet)
             co = np.array(comment)
             day = np.array(days)
             param_bounds = ([0,0], [2000000,100000])
-            popt1, pcov1 = curve_fit(func4, day, co,maxfev=10000,p0=p0,bounds=param_bounds)#,p0=p0,bounds=param_bounds)
+            try:
+                popt1, pcov1 = curve_fit(func4, day, co,maxfev=10000,p0=p0,bounds=param_bounds)#,p0=p0,bounds=param_bounds)
+            except:
+                popt1 = p0
             p0 = popt1
             # print(p0)
-            popt2, pcov2 = curve_fit(func4, day, re,maxfev=10000,p0=p1,bounds=param_bounds)#,p0=p1,bounds=param_bounds)
+            try:
+                popt2, pcov2 = curve_fit(func4, day, re,maxfev=10000,p0=p1,bounds=param_bounds)#,p0=p1,bounds=param_bounds)
+            except:
+                popt2 = p1
             p1 = popt2
             # print(p1)
             #验证
@@ -136,8 +146,11 @@ def save(save_dict):
         conn.rollback()
         print('错误')
 
-def prediction():
-    fit(data_process())
+def prediction(mid_dic):
+    midlist = []
+    for item in mid_dic:
+        midlist.append(item['mid'])
+    fit(data_process(midlist))
 
 
 
@@ -147,4 +160,4 @@ def prediction():
 
 
 if __name__ == '__main__':
-    fit(data_process())
+    fit(data_process(["c_4406640931952257","c_4406683806166512"]))

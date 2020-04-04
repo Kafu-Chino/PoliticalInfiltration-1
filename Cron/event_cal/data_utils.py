@@ -259,17 +259,17 @@ def save_event_data(e_id, n, SENTIMENT_POS, SENTIMENT_NEG):
                 for message in data_list:
                     messages.append(message)
                     data_dict[message['mid']]=message['text']
-            sentiment_dict = sentiment_polarities(data_dict, SENTIMENT_POS, SENTIMENT_NEG)
-            save = []
-            for message in messages:
-                message['sentiment_polarity'] = sentiment_dict[message['mid']]
-                message['source'] = '新浪'
-                save.append(message)
-            if ees.indices.exists(index=e_index):
-                event_es_save(save,e_index)
-            else:
-                create_event_index(e_index)
-                event_es_save(save, e_index)
+        sentiment_dict = sentiment_polarities(data_dict, SENTIMENT_POS, SENTIMENT_NEG)
+        save = []
+        for message in messages:
+            message['sentiment_polarity'] = sentiment_dict[message['mid']]
+            message['source'] = '新浪'
+            save.append(message)
+        if ees.indices.exists(index=e_index):
+            event_es_save(save,e_index)
+        else:
+            create_event_index(e_index)
+            event_es_save(save, e_index)
 
 
 
@@ -301,8 +301,8 @@ def event_sensitivity(e_id,data_dict):
         cursor = pi_cur()
         sql = 'insert into Event_information set event_id=%s,information_id=%s'
         val = []
-        for i in data_dict:
-            val.append((e_id,i))
+        for i, j in data_dict.items():
+            val.append((e_id, j.get('source',None)+i))
         # 执行sql语句
         n = cursor.executemany(sql, val)
         print("入库成功 %d 条" % n)
