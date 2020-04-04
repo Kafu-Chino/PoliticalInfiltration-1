@@ -6,7 +6,7 @@ import jieba
 from pandas import DataFrame
 from collections import defaultdict
 
-from Cron.profile_cal.data_utils import sql_insert_many
+from Cron.profile_cal.data_utils import sql_insert_many1
 from Config.time_utils import *
 from Config.db_utils import es, pi_cur, conn
 
@@ -72,7 +72,7 @@ def wordcount(text_dict,date):
             "wordcount":word_json,
             "store_date":date
         }
-    sql_insert_many("WordCount", "uwc_id", user_wc)
+    sql_insert_many1("WordCount", "uwc_id", user_wc)
     return word_dict
 
 class Weibo_utils:

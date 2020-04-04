@@ -7,7 +7,7 @@ import datetime
 import numpy as np
 from collections import defaultdict
 import pandas as pd
-from Cron.profile_cal.data_get_utils import sql_insert_many
+from Cron.profile_cal.data_utils import sql_insert_many
 from Config.db_utils import es, pi_cur, conn
 
 cursor = pi_cur()

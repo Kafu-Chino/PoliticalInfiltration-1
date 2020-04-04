@@ -156,7 +156,7 @@ def get_neg_data(e_index, NEG_NUM):
     mid = []
     vec = []
     es_result = list(es_result)
-    if len(es_result) > 100000:
+    if len(es_result) > 150000:
         index_list = set(np.random.choice(range(len(es_result)), size=NEG_NUM, replace=False))
         for index, item in enumerate(es_result):
             if index not in index_list:
@@ -189,7 +189,7 @@ def sensitivity(e_id, data, e_index, POS_NUM, NEG_NUM):
     for batch_epoch in range(batch_all):
         texts_batch = texts[batch_epoch * batch_num: (batch_epoch + 1) * batch_num]
         print("文本{}至{}， 共{}".format(batch_epoch * batch_num, (batch_epoch + 1) * batch_num, len(texts)))
-        vec = bert_vec(texts)
+        vec = bert_vec(texts_batch)
         label_batch = ANN_cal(index, vec, y) # eid改成index
         label.extend(label_batch)
     for i, j in zip(list(data.keys()), label):
@@ -210,3 +210,11 @@ def dict_slice(ori_dict, start, end):
     return slice_dict
 
 
+if __name__ == '__main__':
+    data = {'mid1':{'text':'封了号，删了消息，禁言了，就能高枕无忧？事实上传递消息的里面也有持正面态度的，一起杀？一起禁？同样一件事如果得到广泛的讨论，得出结论可能更接近事实，今天一言堂的后果，不就是大家用另一种方式来传播了吗？'},
+            'mid2':{'text':'今天在fb上看了直播，，没有一百多万也不只十几万，，应该是几十万  把几十万人都认为被外部势力挑动 这个理由有点牵强'},
+            'mid3':{'text':' 因为内地有死刑，且常规情况量刑更重执行更严...//@陈琛CHENC:先了解他们为什么游行.因为要颁布一条法令 部分香港犯罪分子要引渡到国内审判，请问这有什么问题？？香港人是不是不知道自己是中国的一部分？？还有10几年你们使劲跳[微笑]'},
+            'mid4':{'text':'#外交部回应香港游行#为什么我什么都不知道 '},
+            'mid5':{'text':'很多人为反对而反对而已//@不是不是大明湖畔夏雨荷的女儿:你们真的看了么[微笑] 修改原因是某香港人在台湾杀人  因为香港台湾没有签协议 所以不能移交到香港审讯  所以补充类似发生这样的事情  就移交大陆审讯  眼睛是个好东西不要盲目跟风 谁被洗脑谁知道[微笑] http://t.cn/AiCCGOOx'},}
+    n_data = sensitivity('test_abc',data,'weibo_all',10,10)
+    print(n_data)

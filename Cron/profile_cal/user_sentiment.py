@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+  #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 @author: Hu
@@ -9,7 +9,7 @@
 """
 import sys
 sys.path.append("../../")
-from Cron.profile_cal.data_utils import sql_insert_many
+from Cron.profile_cal.data_utils import sql_insert_many1
 from Config.db_utils import pi_cur
 from Config.time_utils import today, date2ts
 import pickle
@@ -57,7 +57,7 @@ def cal_user_emotion(word_dict, thedate):
             sentiment_dict['store_date'] = thedate
             user_sentiment_dict['%s_%s' % (str(sentiment_dict['timestamp']), uid)] = sentiment_dict
             print("no data")
-    sql_insert_many("UserSentiment", "us_id", user_sentiment_dict)
+    sql_insert_many1("UserSentiment", "us_id", user_sentiment_dict)
 
 
 def main():
