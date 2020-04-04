@@ -29,9 +29,9 @@ class Show_event(APIView):
             page_id = 1
         if limit is None:
             limit = 10
-        count = Event.objects.aggregate(count = Count('e_id'))['count']
+        count = Event.objects.filter(cal_status=2).aggregate(count = Count('e_id'))['count']
         #print(count)
-        result = Event.objects.values('e_id','event_name','keywords_dict','begin_date','end_date').order_by('-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        result = Event.objects.filter(cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date').order_by('-monitor_status','-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
         index_list = {}
         jre=[]
         #t1 = time.time()
@@ -147,9 +147,9 @@ class search_event(APIView):
             page_id = 1
         if limit is None:
             limit = 10
-        result = Event.objects.filter(event_name__contains = name).values('e_id','event_name','keywords_dict','begin_date','end_date').order_by('-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        result = Event.objects.filter(event_name__contains = name,cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date').order_by('-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
         #count = Event.objects.filter(event_name__contains = name).aggregate(count = Count('e_id'))['count']
-        count = len(Event.objects.filter(event_name__contains = name))
+        count = len(Event.objects.filter(event_name__contains = name,cal_status=2))
         #print(len(result))
         if result.exists():
             for item in result:
@@ -293,7 +293,7 @@ class representative_info(APIView):
         res = []
         e = Event.objects.filter(e_id = event_id)
         for item in e:
-            info = item.information.all().filter(timestamp__range=(ts1,ts2) ).order_by("-hazard_index")[:5]
+            info = item.information.all().filter(timestamp__range=(ts1,ts2),cal_status=2).order_by("-hazard_index")[:5]
             for i in info:
                 lt = time.localtime(i.timestamp)
                 itime = time.strftime("%Y-%m-%d %H:%M:%S",lt)
@@ -372,8 +372,8 @@ class related_info(APIView):
         res_event = Event.objects.filter(e_id=eid)  #.first().event_set.all()
         if res_event.exists():
             #print(e)
-            res1 = res_event[0].information.all().order_by('-timestamp')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
-            count = len(res_event[0].information.all())
+            res1 = res_event[0].information.all().filter(cal_status=2).order_by('-timestamp')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+            count = len(res_event[0].information.all().filter(cal_status=2))
             res_dict['count'] = count
             #print(count)
             for i in res1:
@@ -518,7 +518,7 @@ class semantic_tl(APIView):
     """事件语义分析之时间轴"""
     def get(self,request):
         eid = request.GET.get('eid')
-        result = Event.objects.filter(e_id=eid).first().information.all().filter(~Q(message_type=3)).order_by("timestamp")    #.order_by("-hazard_index")
+        result = Event.objects.filter(e_id=eid).first().information.all().filter(~Q(message_type=3),cal_status=2).order_by("timestamp")    #.order_by("-hazard_index")
         #print(result)
         info_dict = defaultdict(list)
         tl_dict ={}
@@ -803,7 +803,7 @@ class first_figure(APIView):
                 result = Figure.objects.filter(f_id = re["uid"])
                 #print(result)
                 if result.exists():
-                    res_dict.append({"nick_name":result[0].nick_name,"info_count":re["info_count"]})
+                    res_dict.append({"nick_name":result[0].nick_name,"info_count":re["info_count"],"uid":re["uid"]})
             return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "未找到该事件敏感人物"},safe=False)
@@ -817,7 +817,7 @@ class first_info(APIView):
         res_event = Event.objects.filter(e_id=eid)  #.first().event_set.all()
         if res_event.exists():
             #print(e)
-            res = res_event[0].information.all().order_by('-hazard_index')[:5]
+            res = res_event[0].information.all().filter(cal_status=2).order_by('-hazard_index')[:5]
             for i in res:
                 lt = time.localtime(i.timestamp)
                 itime = time.strftime('%Y-%m-%d %H:%M:%S',lt)
@@ -830,7 +830,7 @@ class first_info(APIView):
 class first_event(APIView):
     def get(self, request):
         res_dict = []
-        result = Event.objects.filter(monitor_status=1).order_by('-end_date')[:12]
+        result = Event.objects.filter(monitor_status=1,cal_status=2).order_by('-end_date')[:12]
         if result.exists():
             for res in result:
                 '''
