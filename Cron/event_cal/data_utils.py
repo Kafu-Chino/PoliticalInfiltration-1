@@ -291,6 +291,48 @@ def sensitivity_store(data_dict):
         n = cursor.executemany(sql, val)
         print("入库成功 %d 条" % n)
         conn.commit()
+    uid_list = [int(j['uid']) for _i,j in data_dict.items() if j.get('uid',None)!=None]
+    nick_name(uid_list)
+
+
+# 昵称入库
+def nick_name(uid_list):
+    uid_list = list(set(uid_list))
+    query_body = {
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "bool": {
+                            "should": [
+                                {"terms": {
+                                    "u_id": uid_list
+                                }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    }
+
+    r = elasticsearch.helpers.scan(es, index="weibo_user_big", query=query_body)
+    data_dict = {}
+    for item in r:
+        uid = item['_source']["u_id"]
+        data_dict[uid] = item['_source']['name']
+    # print(data_dict)
+    cursor = pi_cur()
+    sql = 'UPDATE Information SET nick_name=%s where uid=%s'
+    val = []
+    for i, j in data_dict.items():
+        val.append((j, str(i)))
+    # print(val)
+    # 执行sql语句
+    n = cursor.executemany(sql, val)
+    print("update success %s" %n)
+    conn.commit()
 
 
 # 敏感信息和事件关联入库
