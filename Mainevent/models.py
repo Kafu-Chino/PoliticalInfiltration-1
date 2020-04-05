@@ -40,6 +40,7 @@ class Information(models.Model):
     cal_status = models.IntegerField(default=0)
     monitor_status = models.IntegerField(default=1)
     add_manully = models.BooleanField(null=True,default=0)
+    nick_name  = models.CharField(max_length=100, blank=True, null=True)
 
     class Meta():
         db_table = 'Information'
