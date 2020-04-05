@@ -800,8 +800,8 @@ class related_info(APIView):
             page_id = 1
         if limit is None:
             limit = 10
-        res = Information.objects.filter(uid=fid).order_by('-timestamp')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
-        count = len(Information.objects.filter(uid=fid))
+        res = Information.objects.filter(uid=fid,cal_status=2).order_by('-timestamp')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        count = len(Information.objects.filter(uid=fid,cal_status=2))
         res_dict['count'] = count
         #print(len(res))
         if res.exists():
@@ -845,8 +845,8 @@ class related_event(APIView):
             limit = 10
         res = Figure.objects.filter(uid=fid)
         if res.exists():
-            res_event = Figure.objects.get(f_id=fid).event.all().order_by('-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
-            count = len(Figure.objects.get(f_id=fid).event.all())
+            res_event = Figure.objects.get(f_id=fid).event.all().filter(cal_status=2).order_by('-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+            count = len(Figure.objects.get(f_id=fid).event.all().filter(cal_status=2))
             res_dict['count'] = count
             for e in res_event:
                 #lt = time.localtime(i.timestamp)
