@@ -821,7 +821,11 @@ class first_info(APIView):
             for i in res:
                 lt = time.localtime(i.timestamp)
                 itime = time.strftime('%Y-%m-%d %H:%M:%S',lt)
-                res_dict.append({"uid":i.uid,"time":itime,"text":i.text})
+                if i.nick_name is None:
+                    nick = i.uid
+                else:
+                    nick = i.nick_name
+                res_dict.append({"uid":nick,"time":itime,"text":i.text})
             return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "未找到该事件敏感信息"},safe=False)
