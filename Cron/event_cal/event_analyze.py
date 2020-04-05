@@ -92,7 +92,7 @@ def event_analyze(e_id,data,date=thedate):
         #weibo_count += 1
         #day = item['_source']["time"][0:10]
             #  后期使用if item["sentiment_polarity"]<0:
-        if int(item["sentiment"])<0:
+        if int(item["sentiment_polarity"])<0:
             negative += 1
         try:
             user_list[item["uid"]] = 1
