@@ -55,21 +55,21 @@ class Show_event(APIView):
                     for re in all_re:
                         weibo_count += int(re['weibo_count'])
                         user_count += int(re['user_count'])
-                    figure_rat = 0
-                    info_rat = 0
+                    figure_rat = '0%'
+                    info_rat = '0%'
                     if user_count is None:
-                        figure_rat = 0
+                        figure_rat = '-'
                     if user_count != 0:
                         figure_rat = '%.2f%%' % float(figure_count/user_count * 100)
                     if weibo_count is None:
-                        info_rat = 0
+                        info_rat = '-'
                     if weibo_count != 0:
                         info_rat = '%.2f%%' % float(info_count/weibo_count*100)
                     jre.append({"eid":eid,"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
                             "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':figure_rat,'sensitive_info_ratio':info_rat,'count':count})
                 else:
                     jre.append({"eid":item["e_id"],"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
-                                "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':0,'sensitive_info_ratio':0,'count':count})
+                                "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':'-','sensitive_info_ratio':'-','count':count})
             re = json.dumps(jre,ensure_ascii=False)
             re = json.loads(re)
             return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False})
