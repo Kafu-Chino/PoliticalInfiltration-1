@@ -203,7 +203,7 @@ class User_Behavior(APIView):
         else:
             return JsonResponse({"status":400, "error": "未找到该用户活动信息"},safe=False,json_dumps_params={'ensure_ascii':False}) 
 '''
-
+import re
 class User_Activity(APIView):
     """用户地域特征接口"""
 
@@ -236,8 +236,18 @@ class User_Activity(APIView):
 
         day_result = UserActivity.objects.filter(uid=uid, timestamp__gte=cal_date,timestamp__lte=t.timestamp()).values("geo", "send_ip").annotate(
             statusnum_s=Sum("statusnum"), sensitivenum_s=Sum("sensitivenum")).order_by("-statusnum_s")[:5]   #之前按敏感微博总数
+        pattern = re.compile(r'(\u4e2d\u56fd)')
+        pattern2 = re.compile(r'(\u672a\u77e5)')
         if day_result.exists():
-            res_dict["day_result"]=list(day_result)
+            for res in day_result:
+                p = pattern.match(res['geo'])
+                if p is None:
+                    p2 = pattern2.match(res['geo'])
+                    if p2 is None:
+                        geo = res['geo'].split('&')[0]
+                else:
+                    geo = res['geo'].split('&')[1]
+                res_dict["day_result"].append({'geo':geo,"statusnum_s":res['statusnum_s'],"sensitivenum_s":res['sensitivenum_s'],'send_ip':res['send_ip']})
         else:
             res_dict["day_result"] = {"geo":None,"send_ip":None,"statusnum_s":None,"sensitivenum_s":None}
         geo_map_result = UserActivity.objects.filter(uid=uid, timestamp__gte=cal_date).values("geo").annotate(
@@ -246,7 +256,14 @@ class User_Activity(APIView):
         #res_dict["geo_map_result"] = list(geo_map_result)
         if geo_map_result.exists():
             for item in geo_map_result:
-                res_dict["geo_map_result"].append({"name":item["geo"],"value":item["statusnum_s"]})
+                p = pattern.match(item['geo'])
+                if p is None:
+                    p2 = pattern2.match(item['geo'])
+                    if p2 is None:
+                        geo = item['geo'].split('&')[0]
+                else:
+                    geo = item['geo'].split('&')[1]
+                res_dict["geo_map_result"].append({"name":geo,"value":item["statusnum_s"]})
         else:
             res_dict["geo_map_result"].append({"name":None,"value":None})
 

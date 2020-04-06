@@ -55,21 +55,21 @@ class Show_event(APIView):
                     for re in all_re:
                         weibo_count += int(re['weibo_count'])
                         user_count += int(re['user_count'])
-                    figure_rat = 0
-                    info_rat = 0
+                    figure_rat = '0%'
+                    info_rat = '0%'
                     if user_count is None:
-                        figure_rat = 0
+                        figure_rat = '-'
                     if user_count != 0:
                         figure_rat = '%.2f%%' % float(figure_count/user_count * 100)
                     if weibo_count is None:
-                        info_rat = 0
+                        info_rat = '-'
                     if weibo_count != 0:
                         info_rat = '%.2f%%' % float(info_count/weibo_count*100)
                     jre.append({"eid":eid,"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
                             "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':figure_rat,'sensitive_info_ratio':info_rat,'count':count})
                 else:
                     jre.append({"eid":item["e_id"],"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
-                                "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':0,'sensitive_info_ratio':0,'count':count})
+                                "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':'-','sensitive_info_ratio':'-','count':count})
             re = json.dumps(jre,ensure_ascii=False)
             re = json.loads(re)
             return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False})
@@ -297,7 +297,11 @@ class representative_info(APIView):
             for i in info:
                 lt = time.localtime(i.timestamp)
                 itime = time.strftime("%Y-%m-%d %H:%M:%S",lt)
-                res.append({"uid":i.uid,"geo":i.geo,"date":itime,"text":i.text,"hazard":i.hazard_index})
+                if i.nick_name is None:
+                    nick = i.uid
+                else:
+                    nick = i.nick_name
+                res.append({"uid":nick,"geo":i.geo,"date":itime,"text":i.text,"hazard":'%.0f' % i.hazard_index})
         return JsonResponse(res,safe=False,json_dumps_params={'ensure_ascii':False})
 
 
@@ -503,12 +507,16 @@ class geo_info(APIView):
         geo = request.GET.get('geo')
         eid = request.GET.get('eid')
         info_dict=[]
-        result = Event.objects.filter(e_id=eid).first().information.all().filter(geo__contains=geo).order_by("-hazard_index")[:5]
+        result = Event.objects.filter(e_id=eid).first().information.all().filter(geo__contains=geo,cal_status=2).order_by("-hazard_index")[:5]
         if result.exists():
             for i in result:
                 lt = time.localtime(i.timestamp)
                 itime = time.strftime('%Y-%m-%d %H:%M:%S',lt)
-                info_dict.append({"text":i.text,"geo":i.geo,"time":itime,"hazard":i.hazard_index})
+                if i.nick_name is None:
+                    nick = i.uid
+                else:
+                    nick = i.nick_name
+                info_dict.append({"uid":nick,"text":i.text,"geo":i.geo,"time":itime,"hazard":'%.0f' % i.hazard_index})
             return JsonResponse(info_dict,safe=False,json_dumps_params={'ensure_ascii':False}) #
         else:
             return JsonResponse({"status":400, "error": "无敏感信息"},safe=False)
@@ -536,9 +544,12 @@ class semantic_tl(APIView):
                     #nick = fresult[0]['nick_name']
                 #else:
                     #nick = re.uid
-
+                if re.nick_name is None:
+                    nick = re.uid
+                else:
+                    nick = re.nick_name
                 date = time.strftime('%Y-%m-%d',time.localtime(re.timestamp))
-                info_dict[date].append({"日期":date,"发博用户昵称":re.uid,"微博内容":re.text,"危害指数":int(re.hazard_index)})
+                info_dict[date].append({"日期":date,"发博用户昵称":nick,"微博内容":re.text,"危害指数":'%.0f' % re.hazard_index})
                 #info_dict[date].append({"date":date,"source":re.uid,"text":re.text,"hazard_index":re.hazard_index})
             for k,v in info_dict.items():
                 #timeline.append(sorted(v,key=operator.itemgetter('危害指数'),reverse=True)[:1][0])
@@ -588,7 +599,7 @@ class semantic_info(APIView):
         topic = request.GET.get('topic')
         #topic = topic.encode("unicode_escape")
         #pattern = re.compile(r'topic')
-        result = Event.objects.filter(e_id=eid).first().information.all().filter(text__contains=topic).order_by("-hazard_index")[:5]
+        result = Event.objects.filter(e_id=eid).first().information.all().filter(text__contains=topic,cal_status=2).order_by("-hazard_index")[:5]
         #result = Event.objects.filter(e_id=eid).first().information.all()
         #print(result)
         
@@ -596,7 +607,11 @@ class semantic_info(APIView):
         if result.exists():
             for res in result:
                 itime = time.strftime('%Y-%m-%d %H-%M-%S',time.localtime(res.timestamp))
-                info_dict.append({"text":res.text,"time":itime,"uid":res.uid,"geo":res.geo,"hazard":res.hazard_index})
+                if res.nick_name is None:
+                    nick = res.uid
+                else:
+                    nick = res.nick_name
+                info_dict.append({"text":res.text,"time":itime,"uid":nick,"geo":res.geo,"hazard":'%.0f' % res.hazard_index})
                 #k = pattern.search(res.text)
                 #if k:
                     #itime = time.strftime('%Y-%m-%d %H-%M-%S',time.localtime(res.timestamp))
@@ -821,7 +836,11 @@ class first_info(APIView):
             for i in res:
                 lt = time.localtime(i.timestamp)
                 itime = time.strftime('%Y-%m-%d %H:%M:%S',lt)
-                res_dict.append({"uid":i.uid,"time":itime,"text":i.text})
+                if i.nick_name is None:
+                    nick = i.uid
+                else:
+                    nick = i.nick_name
+                res_dict.append({"uid":nick,"time":itime,"text":i.text})
             return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "未找到该事件敏感信息"},safe=False)
