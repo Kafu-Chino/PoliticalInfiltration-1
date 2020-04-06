@@ -920,7 +920,7 @@ class User_Sentiment(APIView):
         date = date2ts(date)
         # 每日情绪特征，从当前日期往前推7天展示 积极微博数，中性微博数，消极微博数
         if n_type == "日":
-            dl = get_datelist_v2(ts2date(date - 6 * 86400),ts2date(date))
+            dl = get_datelist_v2(ts2date(date - 149 * 86400),ts2date(date))
             # result = UserSentiment.objects.filter(uid=uid, timestamp__gte=date2ts(dl[0]), timestamp__lte=date).values("store_date").annotate(positive_s=Sum("positive"), nuetral_s=Sum("nuetral"), negtive_s=Sum("negtive"))
             # for d in dl:
             #     r = {}
@@ -940,10 +940,10 @@ class User_Sentiment(APIView):
         # 每周情绪特征，从当前日期往前推5周展示 积极微博数，中性微博数，消极微博数
         if n_type == "周":
             date_dict = {}
-            for i in range(1,6):
+            for i in range(1,23):
                 date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(weeks=(-1 * i))).timestamp()
             date_dict[0] = date
-            for i in [4, 3, 2, 1, 0]:
+            for i in [21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4, 3, 2, 1, 0]:
                 result = UserSentiment.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
                                                      timestamp__lt=date_dict[i]).aggregate(
                     positive_s=Sum("positive"), nuetral_s=Sum("nuetral"), negtive_s=Sum("negtive"))
@@ -966,18 +966,22 @@ class User_Sentiment(APIView):
                                                      timestamp__lt=date_dict[i]).aggregate(
                     positive_s=Sum("positive"), nuetral_s=Sum("nuetral"), negtive_s=Sum("negtive"))
                 if result['positive_s'] != None:
-                    res_dict['positive'][ts2date(date_dict[i])] = result['positive_s']
-                    res_dict['nuetral'][ts2date(date_dict[i])] = result['nuetral_s']
-                    res_dict['negtive'][ts2date(date_dict[i])] = result['negtive_s']
+                    res_dict['positive'][time.strftime("%Y-%m", time.localtime(date_dict[i]))] = result['positive_s']
+                    res_dict['nuetral'][time.strftime("%Y-%m", time.localtime(date_dict[i]))] = result['nuetral_s']
+                    res_dict['negtive'][time.strftime("%Y-%m", time.localtime(date_dict[i]))] = result['negtive_s']
                 else:
-                    res_dict['positive'][ts2date(date_dict[i])] = 0
-                    res_dict['nuetral'][ts2date(date_dict[i])] = 0
-                    res_dict['negtive'][ts2date(date_dict[i])] = 0
+                    res_dict['positive'][time.strftime("%Y-%m", time.localtime(date_dict[i]))] = 0
+                    res_dict['nuetral'][time.strftime("%Y-%m", time.localtime(date_dict[i]))] = 0
+                    res_dict['negtive'][time.strftime("%Y-%m", time.localtime(date_dict[i]))] = 0
         n_res = defaultdict(dict)
         n_res['date'] = list(res_dict['positive'].keys())
         n_res['positive_num'] = list(res_dict['positive'].values())
         n_res['nuetral_num'] = list(res_dict['nuetral'].values())
         n_res['negtive_num'] = list(res_dict['negtive'].values())
+        n_res['date'].reverse()
+        n_res['positive_num'].reverse()
+        n_res['nuetral_num'].reverse()
+        n_res['negtive_num'].reverse()
         return JsonResponse(n_res)
 
 class User_Influence(APIView):
