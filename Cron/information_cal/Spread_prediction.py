@@ -28,7 +28,7 @@ def get_data(midlist):
     mids = ""
     for m in midlist:
         mids += m + ","
-    sql = "select * from Informationspread where  mid in (%s) order by timestamp ASC" %','.join(['%s']*len(midlist))
+    sql = "select * from Informationspread where  mid in (%s) and predict = 0 order by timestamp ASC" %','.join(['%s']*len(midlist))
 
     # sql = "select * from Informationspread where mid in ('%s') order by timestamp ASC "% mids[:-1]
     cursor.execute(sql,midlist)
@@ -136,7 +136,7 @@ def save(save_dict):
         # print(mid)
         for date in save_dict[mid]:
             timestamp = date2ts(date)
-            val.append((mid+str(timestamp),mid,timestamp,int(save_dict[mid][date]['retweet']),int(save_dict[mid][date]['comment']),save_dict[mid][date]['message_type'],date,1))
+            val.append((str(timestamp) + "_" + mid,mid,timestamp,int(save_dict[mid][date]['retweet']),int(save_dict[mid][date]['comment']),save_dict[mid][date]['message_type'],date,1))
     sql = 'insert into Informationspread(is_id,mid,timestamp,retweet_count,comment_count,message_type,store_date,predict) values (%s,%s,%s,%s,%s,%s,%s,%s )'
     cursor = conn.cursor()
     try:
