@@ -33,7 +33,7 @@ def get_data(midlist):
     # sql = "select * from Informationspread where mid in ('%s') order by timestamp ASC "% mids[:-1]
     cursor.execute(sql,midlist)
     results = cursor.fetchall()
-    print(results)
+    # print(results)
     return results
 
 
@@ -56,7 +56,7 @@ def fit(m_dict):
     pre_dict = {}
     total_num = 0
     right_num = 0
-    print(m_dict)
+    # print(m_dict)
     p0 = (0.5, 0.5)
     p1 = (0.5, 0.5)
     save_dict = {}
@@ -126,14 +126,14 @@ def fit(m_dict):
                 save_dict[mid][date]['retweet'] = retweet_pred[i]
                 save_dict[mid][date]['comment'] = comment_pred[i]
                 save_dict[mid][date]['message_type'] = m_dict[mid]['message_type']
-    print(save_dict)
+    # print(save_dict)
     save(save_dict)
 
 
 def save(save_dict):
     val = []
     for mid in save_dict:
-        print(mid)
+        # print(mid)
         for date in save_dict[mid]:
             timestamp = date2ts(date)
             val.append((mid+str(timestamp),mid,timestamp,int(save_dict[mid][date]['retweet']),int(save_dict[mid][date]['comment']),save_dict[mid][date]['message_type'],date,1))

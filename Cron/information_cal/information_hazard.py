@@ -105,11 +105,14 @@ def get_trend(mid_dic, start_date, end_date):
                 "store_date": date,
                 "message_type": message_type_dic[mid]
             }
+    print("插入统计结果")
     sql_insert_many("Informationspread", "is_id", insert_dic)
 
 
     # 计算危害指数并更新
+    print("更新危害指数")
     hazard_index_dic = cal_hazard_index(mid_dic, insert_dic, start_date, end_date)
+    print("危害指数更新完毕")
 
 
 def cal_hazard_index(mid_dic, insert_dic, start_date, end_date):
