@@ -645,8 +645,8 @@ class Show_figure(APIView):
             page_id = 1
         if limit is None:
             limit = 10
-        result = Figure.objects.all()[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
-        count = len(Figure.objects.all())
+        result = Figure.objects.filter(computestatus=2)[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        count = len(Figure.objects.filter(computestatus=2))
         res_list = []
         if result.exists():
             for item in result:
@@ -826,8 +826,8 @@ class related_info(APIView):
                 lt = time.localtime(i.timestamp)
                 itime = time.strftime('%Y-%m-%d %H:%M:%S',lt)
                 #print(itime)
-                res_dict['table'].append(['text','time','geo'])
-                res_dict['data'].append([i.text,itime,i.geo])
+                res_dict['table'].append(['text','time','geo','id'])
+                res_dict['data'].append([i.text,itime,i.geo,i.i_id])
             '''
             page = Paginator(res_dict, limit)
             #page_id = request.GET.get('page_id')
@@ -874,8 +874,8 @@ class related_event(APIView):
                     edate = '至今'
                 else:
                     edate = e.end_date.strftime('%Y-%m-%d')
-                res_dict['table'].append(['event_name','keywords','begin_date','end_date'])
-                res_dict['data'].append([e.event_name,e.keywords_dict,sdate,edate])
+                res_dict['table'].append(['event_name','keywords','begin_date','end_date','id'])
+                res_dict['data'].append([e.event_name,e.keywords_dict,sdate,edate,e.e_id])
             '''
             page = Paginator(res_dict, limit)
             #page_id = request.GET.get('page_id')

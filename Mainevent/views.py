@@ -193,6 +193,21 @@ class search_event(APIView):
 
 
 
+class delete_event(APIView):
+    """删除事件"""
+    def get(self, request):
+        eid = request.GET.get("eid")
+        result = Figure.objects.filter(e_id=eid)
+        if result.exists():
+            try:
+                Event.objects.filter(e_id=eid).delete() 
+                return JsonResponse({"status":201, "msg": "事件已删除"},safe=False,json_dumps_params={'ensure_ascii':False})
+            except:
+                return JsonResponse({"status":400, "error": "删除失败"},safe=False,json_dumps_params={'ensure_ascii':False})
+        else:
+            return JsonResponse({"status":400, "error": "事件不存在"},safe=False,json_dumps_params={'ensure_ascii':False})
+
+
 
 
 class Add_event(APIView):
@@ -383,8 +398,8 @@ class related_info(APIView):
             for i in res1:
                 lt = time.localtime(i.timestamp)
                 itime = time.strftime('%Y-%m-%d %H:%M:%S',lt)
-                res_dict['table'].append(['text','time','geo'])
-                res_dict['data'].append([i.text,itime,i.geo])
+                res_dict['table'].append(['text','time','geo','id'])
+                res_dict['data'].append([i.text,itime,i.geo,i.i_id])
                 #print(res_dict["info"])
             return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False}) #
         else:
@@ -840,7 +855,7 @@ class first_info(APIView):
                     nick = i.uid
                 else:
                     nick = i.nick_name
-                res_dict.append({"uid":nick,"time":itime,"text":i.text})
+                res_dict.append({"uid":nick,"time":itime,"text":i.text,"i_id":i.i_id})
             return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "未找到该事件敏感信息"},safe=False)
@@ -849,7 +864,7 @@ class first_info(APIView):
 class first_event(APIView):
     def get(self, request):
         res_dict = []
-        result = Event.objects.filter(monitor_status=1,cal_status=2).order_by('-end_date')[:12]
+        result = Event.objects.filter(cal_status=2).order_by('-end_date')[:12]
         if result.exists():
             for res in result:
                 '''
