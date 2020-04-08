@@ -28,7 +28,7 @@ class Show_Info(APIView):
             "message_type": MSG_TYPE_DIC[result[0]["message_type"]]
         }
         if result[0]["hazard_index"]:
-            res["hazard_index"] = result[0]["hazard_index"]
+            res["hazard_index"] = int(result[0]["hazard_index"])
         else:
             res["hazard_index"] = "无"
         return JsonResponse(res,safe=False,json_dumps_params={'ensure_ascii':False})

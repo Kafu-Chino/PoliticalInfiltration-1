@@ -45,9 +45,9 @@ class Show_sensitive_word(APIView):
         if not result.exists():
             return JsonResponse({"status":400, "error": "无通用敏感词"},safe=False)
         else:
-	        data = json.dumps(list(result))
-	        results = json.loads(data)
-	        return JsonResponse(results, safe=False)
+            data = json.dumps(list(result))
+            results = json.loads(data)
+            return JsonResponse(results, safe=False)
 
 
 class Show_sensitive_word_transform(APIView):
@@ -455,7 +455,10 @@ class Recal_event(APIView):
         e_id = request.GET.get("e_id")
 
         # Event表的迁移
-        event_obj = Event.objects.get(e_id=e_id)
+        try:
+            event_obj = Event.objects.get(e_id=e_id)
+        except:
+            return JsonResponse({"status": 500, "info": "事件不存在"}, safe=False)
 
         event_name_pinyin = Pinyin().get_pinyin(event_obj.event_name, '')
         e_id_new = "{}_{}".format(event_name_pinyin, str(int(time.time())))
