@@ -978,11 +978,9 @@ class User_Sentiment(APIView):
         n_res['positive_num'] = list(res_dict['positive'].values())
         n_res['nuetral_num'] = list(res_dict['nuetral'].values())
         n_res['negtive_num'] = list(res_dict['negtive'].values())
-        n_res['date'].reverse()
-        n_res['positive_num'].reverse()
-        n_res['nuetral_num'].reverse()
-        n_res['negtive_num'].reverse()
         return JsonResponse(n_res)
+
+
 
 class User_Influence(APIView):
     """用户影响力特征接口"""
