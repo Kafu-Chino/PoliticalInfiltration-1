@@ -55,7 +55,7 @@ def event_daily(date):
             stop_percent = get_event_para(e_id, 'stop_percent')
         except:
             stop_percent = 0.05
-            store_event_para(e_id, 'weibo_num')
+            store_event_para(e_id, 'stop_percent')
 
         # 更新为“计算中”
         update_cal_status(e_id, 1)

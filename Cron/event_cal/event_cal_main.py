@@ -57,7 +57,7 @@ def event_cal_main(info, n, start_date, end_date):
         stop_percent = get_event_para(e_id, 'stop_percent')
     except:
         stop_percent = 0.05
-        store_event_para(e_id, 'weibo_num')
+        store_event_para(e_id, 'stop_percent')
 
     print('获取事件相关微博')
     # 获取事件相关微博，计算情感极性，并存入事件索引（没有索引就创建一个）
