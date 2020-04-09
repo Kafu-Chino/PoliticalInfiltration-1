@@ -54,6 +54,7 @@ class Event(models.Model):
     es_index_name = models.CharField(max_length=100, null=True)
     cal_status = models.IntegerField(default=0)
     monitor_status = models.IntegerField(default=1)
+    count_max = models.IntegerField(default=100000)
     information = models.ManyToManyField(Information, related_name="event")
     figure = models.ManyToManyField(Figure, related_name="event")
 
