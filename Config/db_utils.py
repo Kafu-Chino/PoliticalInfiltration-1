@@ -50,7 +50,7 @@ def get_global_para(para_name):
 
 def get_event_para(e_id, para_name):
     cursor = pi_cur()
-    sql = "select prototype from EventParameter where e_id = '{}' and p_name = '{}'".format(e_id, para_name)
+    sql = "select p_value from EventParameter where e_id = '{}' and p_name = '{}'".format(e_id, para_name)
     cursor.execute(sql)
     result = cursor.fetchone()
     return float(result["p_value"])
