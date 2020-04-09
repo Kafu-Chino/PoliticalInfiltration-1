@@ -65,7 +65,7 @@ def event_daily(date):
 
         if new_max_num > max_num:
             # 更新峰值
-            update_count_max(e_id, max_num)
+            update_count_max(e_id, new_max_num)
         if new_max_num < max_num * stop_percent:
             # 更新为“停止监测”
             update_monitor_status(e_id, 0)

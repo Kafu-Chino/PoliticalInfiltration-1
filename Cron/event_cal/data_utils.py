@@ -388,6 +388,6 @@ def store_event_para(e_id, p_name):
     'pos_num':(e_id+'_pos_num','pos_num',1000,e_id,'敏感计算时正类数量'),
     'neg_num':(e_id+'_neg_num','neg_num',15000,e_id,'敏感计算时负类数量'),
     'weibo_num':(e_id+'_weibo_num','weibo_num',100000,e_id,'每日LDA聚类时采样的微博总数'),
-    'stop_percent':(eid+'_stop_percent','stop_percent',0.05,e_id,'停止监测的信息数量阈值（峰值的百分比）')}
+    'stop_percent':(e_id+'_stop_percent','stop_percent',0.05,e_id,'停止监测的信息数量阈值（峰值的百分比）')}
     cursor.executemany(sql, [parameters[p_name]])
     conn.commit()
