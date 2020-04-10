@@ -37,9 +37,14 @@ def save_figure(save_dict):
     cusor = pi_cur()
     val = []
     for uid in save_dict:
-        val.append((uid,uid,save_dict[uid]))
-    sql = "INSERT INTO Figure(f_id,uid,identitystatus,computestatus,monitorstatus) VALUE(%s,%s,%s,0,1) ON DUPLICATE KEY UPDATE " \
-          "uid=values(uid),f_id=values(f_id),identitystatus=values(identitystatus)"
+        cursor.execute('select count(*) from Event_figure where figure_id = %s',re['f_id'])
+        #print(cursor.fetchone())
+        event_count = cursor.fetchone()['count(*)']
+        cursor.execute('select count(*) from Information where uid = %s',re['f_id'])
+        info_count = cursor.fetchone()['count(*)']
+        val.append((uid,uid,save_dict[uid],info_count,event_count))
+    sql = "INSERT INTO Figure(f_id,uid,identitystatus,info_count,event_count,computestatus,monitorstatus) VALUE(%s,%s,%s,%s,%s,0,1) ON DUPLICATE KEY UPDATE " \
+          "uid=values(uid),f_id=values(f_id),identitystatus=values(identitystatus),info_count=values(info_count),event_count=values(event_count)"
     # try:
     cusor.executemany(sql,val)
     # 获取所有记录列表
