@@ -39,30 +39,33 @@ class Show_event(APIView):
             for item in result:
                 weibo_count = 0
                 user_count = 0
+                #figure_count = 0
+                info_count = 0 
                 sdate = item['begin_date'].strftime('%Y-%m-%d')
                 if item['end_date'] is None:
                     edate = "至今"
                 else:
                     edate = item['end_date'].strftime('%Y-%m-%d')
                 eid = item['e_id']
-                e_re = Event.objects.filter(e_id =eid).first()
-                figure_count = len(e_re.figure.all())
+                #e_re = Event.objects.filter(e_id =eid).first()
+                #figure_count = len(e_re.figure.all())
                 #print(figure_count)
-                info_count = len(e_re.information.all())
+                #info_count = len(e_re.information.all())
                 #print(info_count)
-                all_re = Event_Analyze.objects.filter(event_name =eid).values('weibo_count','user_count')
+                all_re = Event_Analyze.objects.filter(event_name =eid).values('weibo_count','user_count','info_count','figure_count')
                 if all_re.exists():
-                    weibo_count = all_re[0]['weibo_count']
-                    user_count = all_re[0]['user_count']
-                    #for re in all_re:
-                        #weibo_count += int(re['weibo_count'])
-                        #user_count += int(re['user_count'])
+                    #weibo_count = all_re[0]['weibo_count']
+                    #user_count = all_re[0]['user_count']
+                    for re in all_re:
+                        weibo_count += int(re['weibo_count'])
+                        user_count += int(re['user_count'])
+                        info_count += int(re['info_count'])
                     figure_rat = '0%'
                     info_rat = '0%'
                     if user_count is None:
                         figure_rat = '-'
                     if user_count != 0:
-                        figure_rat = '%.2f%%' % float(figure_count/user_count * 100)
+                        figure_rat = '%.2f%%' % float(all_re[0]['figure_count']/user_count * 100)
                     if weibo_count is None:
                         info_rat = '-'
                     if weibo_count != 0:
@@ -88,35 +91,45 @@ class Show_event_info(APIView):
         result = Event.objects.filter(e_id =eid).values('event_name','keywords_dict','begin_date','end_date')
         #item = Event.objects.filter(e_id =eid).values('event_name','keywords_dict','begin_date','end_date').first()
         
-        weibo_count = 0
-        user_count = 0
+        #weibo_count = 0
+        #user_count = 0
         jre = {}
         if result.exists():
         #if len(item):
             for item in result:
+                weibo_count = 0
+                user_count = 0
+                #figure_count = 0
+                info_count = 0 
                 sdate = item['begin_date'].strftime('%Y-%m-%d')
                 if item['end_date'] is None:
                     edate = "至今"
                 else:
                     edate = item['end_date'].strftime('%Y-%m-%d')
-                e_re = Event.objects.filter(e_id =eid).first()
-                figure_count = len(e_re.figure.all())
-                info_count = len(e_re.information.all())
-                all_re = Event_Analyze.objects.filter(event_name =eid).values('weibo_count','user_count')
+                #eid = item['e_id']
+                #e_re = Event.objects.filter(e_id =eid).first()
+                #figure_count = len(e_re.figure.all())
+                #print(figure_count)
+                #info_count = len(e_re.information.all())
+                #print(info_count)
+                all_re = Event_Analyze.objects.filter(event_name =eid).values('weibo_count','user_count','info_count','figure_count')
                 if all_re.exists():
+                    #weibo_count = all_re[0]['weibo_count']
+                    #user_count = all_re[0]['user_count']
                     for re in all_re:
-                        weibo_count += re['weibo_count']
-                        user_count += re['user_count']
-                    figure_rat = 0
-                    info_rat = 0
+                        weibo_count += int(re['weibo_count'])
+                        user_count += int(re['user_count'])
+                        info_count += int(re['info_count'])
+                    figure_rat = '0%'
+                    info_rat = '0%'
                     if user_count is None:
-                        figure_rat = 0
+                        figure_rat = '-'
                     if user_count != 0:
-                        figure_rat = '%.2f%%' % float(figure_count/user_count * 100)
+                        figure_rat = '%.2f%%' % float(all_re[0]['figure_count']/user_count * 100)
                     if weibo_count is None:
-                        info_rat = 0
+                        info_rat = '-'
                     if weibo_count != 0:
-                        info_rat = '%.2f%%' % float(info_count/weibo_count * 100)
+                        info_rat = '%.2f%%' % float(info_count/weibo_count*100)
                     jre["event_name"]=item['event_name']
                     jre["keywords_dict"]=item['keywords_dict']
                     jre["begin_date"] = sdate
@@ -151,42 +164,43 @@ class search_event(APIView):
             limit = 10
         result = Event.objects.filter(event_name__contains = name,cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date').order_by('-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
         #count = Event.objects.filter(event_name__contains = name).aggregate(count = Count('e_id'))['count']
-        #count = len(Event.objects.filter(event_name__contains = name,cal_status=2))
+        count = len(Event.objects.filter(event_name__contains = name,cal_status=2))
         #print(len(result))
         if result.exists():
             for item in result:
-                #count += 1
                 weibo_count = 0
                 user_count = 0
+                #figure_count = 0
+                info_count = 0 
                 sdate = item['begin_date'].strftime('%Y-%m-%d')
                 if item['end_date'] is None:
                     edate = "至今"
                 else:
                     edate = item['end_date'].strftime('%Y-%m-%d')
                 eid = item['e_id']
-                e_re = Event.objects.filter(e_id =eid).first()
-                figure_count = len(e_re.figure.all())
+                #e_re = Event.objects.filter(e_id =eid).first()
+                #figure_count = len(e_re.figure.all())
                 #print(figure_count)
-                info_count = len(e_re.information.all())
+                #info_count = len(e_re.information.all())
                 #print(info_count)
-                all_re = Event_Analyze.objects.filter(event_name =eid).values('weibo_count','user_count')
-                
+                all_re = Event_Analyze.objects.filter(event_name =eid).values('weibo_count','user_count','info_count','figure_count')
                 if all_re.exists():
-                    weibo_count = all_re[0]['weibo_count']
-                    user_count = all_re[0]['user_count']
-                    #for re in all_re:
-                        #weibo_count += int(re['weibo_count'])
-                        #user_count += int(re['user_count'])
+                    #weibo_count = all_re[0]['weibo_count']
+                    #user_count = all_re[0]['user_count']
+                    for re in all_re:
+                        weibo_count += int(re['weibo_count'])
+                        user_count += int(re['user_count'])
+                        info_count += int(re['info_count'])
                     figure_rat = '0%'
                     info_rat = '0%'
                     if user_count is None:
                         figure_rat = '-'
                     if user_count != 0:
-                        figure_rat = '%.2f%%' % float(figure_count/user_count * 100)
+                        figure_rat = '%.2f%%' % float(all_re[0]['figure_count']/user_count * 100)
                     if weibo_count is None:
                         info_rat = '-'
                     if weibo_count != 0:
-                        info_rat = '%.2f%%' % float(info_count/weibo_count * 100)
+                        info_rat = '%.2f%%' % float(info_count/weibo_count*100)
                     jre.append({"eid":eid,"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
                             "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':figure_rat,'sensitive_info_ratio':info_rat,'count':count})
                 else:
