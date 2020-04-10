@@ -19,6 +19,8 @@ class Figure(models.Model):
     identitystatus = models.IntegerField(default=0)  # 确认状态：0为未确认为敏感用户，1为已确认
     into_date = models.DateField(blank=True, null=True)
     user_location = models.CharField(max_length=100, blank=True, null=True)
+    event_count = models.IntegerField(blank=True, null=True)
+    figure_count = models.IntegerField(blank=True, null=True)
 
     class Meta():
         db_table = 'Figure'
@@ -75,6 +77,9 @@ class Event_Analyze(models.Model):
     geo_info_inland = JSONField()
     geo_info_outland = JSONField()
     into_date = models.DateField(blank=True, null=True)
+    info_count = models.IntegerField(blank=True, null=True)
+    figure_count = models.IntegerField(blank=True, null=True)
+
     class Meta():
         db_table = 'Event_Analyze'
 
