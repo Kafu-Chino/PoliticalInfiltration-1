@@ -64,10 +64,13 @@ def event_analyze(e_id,data,date=thedate):
     #pattern1 = re.compile(r'(\u9999\u6e2f|\u6fb3\u95e8|\u5b81\u590f|\u5e7f\u897f|\u65b0\u7586|\u897f\u85cf|\u5185\u8499\u53e4|\u9ed1\u9f99\u6c5f)')
     #pattern2 = re.compile(r'([\u4e00-\u9fa5]{2,5}?(\u7701|\u5e02|\u81ea\u6cbb\u533a))')  #\u7701省   \u5e02市     \u81ea\u6cbb\u533a自治区
     #result = Event.objects.filter(e_id=eid).first().information.all().filter(timestamp__range=(start_time,end_time))  #.count()
+    cursor.execute('select figure_id from Event_figure ef where ef.event_id = %s ',(e_id))
+    figure_count = len(cursor.fetchall())
     cursor.execute('select Information.geo from Event_information ei \
             left join Information on ei.information_id = Information.i_id \
             where ei.event_id = %s and Information.timestamp<=%s and Information.timestamp>=%s',(e_id,end_time,start_time))
     result = cursor.fetchall()
+    info_count = len(result)
     if len(result):
         for i in result:
             #print(i['geo'])
@@ -128,6 +131,8 @@ def event_analyze(e_id,data,date=thedate):
                             "geo_info_outland":out_info_json,
                             "user_count":user_count,
                             "weibo_count":weibo_count,
+                            "info_count":info_count,
+                            "figure_count":figure_count,
                             "into_date":date,
                             "timestamp":end_time}
     sql_insert_many("Event_Analyze", "e_id", analyze_dict)
