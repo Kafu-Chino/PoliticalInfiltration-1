@@ -20,7 +20,7 @@ class Figure(models.Model):
     into_date = models.DateField(blank=True, null=True)
     user_location = models.CharField(max_length=100, blank=True, null=True)
     event_count = models.IntegerField(blank=True, null=True)
-    figure_count = models.IntegerField(blank=True, null=True)
+    info_count = models.IntegerField(blank=True, null=True)
 
     class Meta():
         db_table = 'Figure'
