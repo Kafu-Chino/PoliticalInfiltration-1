@@ -10,6 +10,8 @@ urlpatterns = [
     path('eventadd/',views.Add_event.as_view()),
     path('einfoshow/',views.Show_event_info.as_view()),
     path('esearch/',views.search_event.as_view()),
+    path('show_cal_event/',views.show_cal_event.as_view()),
+    path('delete_cal_event/',views.delete_cal_event.as_view()),
     path('related_info/',views.related_info.as_view()),
     path('related_figure/',views.related_figure.as_view()),
     path('geo_out/',views.event_geo_out.as_view()),

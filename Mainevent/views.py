@@ -29,7 +29,7 @@ class Show_event(APIView):
             page_id = 1
         if limit is None:
             limit = 10
-        count = Event.objects.filter(cal_status=2).aggregate(count = Count('e_id'))['count']
+        count = len(Event.objects.filter(cal_status=2))
         #print(count)
         result = Event.objects.filter(cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date').order_by('-monitor_status','-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
         index_list = {}
@@ -52,9 +52,11 @@ class Show_event(APIView):
                 #print(info_count)
                 all_re = Event_Analyze.objects.filter(event_name =eid).values('weibo_count','user_count')
                 if all_re.exists():
-                    for re in all_re:
-                        weibo_count += int(re['weibo_count'])
-                        user_count += int(re['user_count'])
+                    weibo_count = all_re[0]['weibo_count']
+                    user_count = all_re[0]['user_count']
+                    #for re in all_re:
+                        #weibo_count += int(re['weibo_count'])
+                        #user_count += int(re['user_count'])
                     figure_rat = '0%'
                     info_rat = '0%'
                     if user_count is None:
@@ -70,9 +72,9 @@ class Show_event(APIView):
                 else:
                     jre.append({"eid":item["e_id"],"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
                                 "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':'-','sensitive_info_ratio':'-','count':count})
-            re = json.dumps(jre,ensure_ascii=False)
-            re = json.loads(re)
-            return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False})
+            #re = json.dumps(jre,ensure_ascii=False)
+            #re = json.loads(re)
+            return JsonResponse(jre,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "无事件"},safe=False)
 
@@ -128,9 +130,9 @@ class Show_event_info(APIView):
                     jre["keywords_dict"]=item['keywords_dict']
                     jre["begin_date"] = sdate
                     jre['end_date'] = edate
-            re = json.dumps(jre,ensure_ascii=False)
-            re = json.loads(re)
-            return JsonResponse(re,safe=False,json_dumps_params={'ensure_ascii':False})
+            #re = json.dumps(jre,ensure_ascii=False)
+            #re = json.loads(re)
+            return JsonResponse(jre,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "无事件详情"},safe=False)
 
@@ -149,7 +151,7 @@ class search_event(APIView):
             limit = 10
         result = Event.objects.filter(event_name__contains = name,cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date').order_by('-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
         #count = Event.objects.filter(event_name__contains = name).aggregate(count = Count('e_id'))['count']
-        count = len(Event.objects.filter(event_name__contains = name,cal_status=2))
+        #count = len(Event.objects.filter(event_name__contains = name,cal_status=2))
         #print(len(result))
         if result.exists():
             for item in result:
@@ -168,25 +170,28 @@ class search_event(APIView):
                 info_count = len(e_re.information.all())
                 #print(info_count)
                 all_re = Event_Analyze.objects.filter(event_name =eid).values('weibo_count','user_count')
+                
                 if all_re.exists():
-                    for re in all_re:
-                        weibo_count += int(re['weibo_count'])
-                        user_count += int(re['user_count'])
-                    figure_rat = 0
-                    info_rat = 0
+                    weibo_count = all_re[0]['weibo_count']
+                    user_count = all_re[0]['user_count']
+                    #for re in all_re:
+                        #weibo_count += int(re['weibo_count'])
+                        #user_count += int(re['user_count'])
+                    figure_rat = '0%'
+                    info_rat = '0%'
                     if user_count is None:
-                        figure_rat = 0
+                        figure_rat = '-'
                     if user_count != 0:
                         figure_rat = '%.2f%%' % float(figure_count/user_count * 100)
                     if weibo_count is None:
-                        info_rat = 0
+                        info_rat = '-'
                     if weibo_count != 0:
                         info_rat = '%.2f%%' % float(info_count/weibo_count * 100)
                     jre.append({"eid":eid,"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
                             "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':figure_rat,'sensitive_info_ratio':info_rat,'count':count})
                 else:
                     jre.append({"eid":item["e_id"],"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
-                                "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':0,'sensitive_info_ratio':0,'count':count})
+                                "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':'-','sensitive_info_ratio':'-','count':count})
             return JsonResponse(jre,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "无事件"},safe=False)
@@ -197,11 +202,49 @@ class delete_event(APIView):
     """删除事件"""
     def get(self, request):
         eid = request.GET.get("eid")
-        result = Figure.objects.filter(e_id=eid)
+        result = Event.objects.filter(e_id=eid)
         if result.exists():
             try:
                 Event.objects.filter(e_id=eid).delete() 
                 return JsonResponse({"status":201, "msg": "事件已删除"},safe=False,json_dumps_params={'ensure_ascii':False})
+            except:
+                return JsonResponse({"status":400, "error": "删除失败"},safe=False,json_dumps_params={'ensure_ascii':False})
+        else:
+            return JsonResponse({"status":400, "error": "事件不存在"},safe=False,json_dumps_params={'ensure_ascii':False})
+
+
+class show_cal_event(APIView):
+    """展示事件计算任务"""
+    def get(self, request):
+        jre = []
+        result = Event.objects.filter(cal_status__in=[0,1]).values('e_id','event_name','begin_date','end_date','cal_status')
+        if result.exists():
+            for item in result:
+                sdate = item['begin_date'].strftime('%Y-%m-%d')
+                if item['end_date'] is None:
+                    edate = "至今"
+                else:
+                    edate = item['end_date'].strftime('%Y-%m-%d')
+                jre.append({"eid":item["e_id"],"event_name":item['event_name'],"cal_status":item['cal_status'],\
+                                "begin_date":sdate,"end_date":edate})
+            return JsonResponse(jre,safe=False,json_dumps_params={'ensure_ascii':False})
+        else:
+            return JsonResponse({"status":400, "error": "事件任务不存在"},safe=False,json_dumps_params={'ensure_ascii':False})
+
+
+
+
+
+
+class delete_cal_event(APIView):
+    """删除事件计算任务"""
+    def get(self, request):
+        eid = request.GET.get("eid")
+        result = Event.objects.filter(e_id=eid)
+        if result.exists():
+            try:
+                Event.objects.filter(e_id=eid).delete() 
+                return JsonResponse({"status":201, "msg": "计算任务已删除"},safe=False,json_dumps_params={'ensure_ascii':False})
             except:
                 return JsonResponse({"status":400, "error": "删除失败"},safe=False,json_dumps_params={'ensure_ascii':False})
         else:
