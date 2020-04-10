@@ -1,7 +1,7 @@
 import sys
 sys.path.append('../../')
 from Config.time_utils import *
-from Config.db_utils import pi_cur, conn
+from Config.db_utils import pi_cur, conn, get_event_para
 from Cron.event_cal.data_utils import get_edic_daily
 from Cron.event_cal.event_cal_main import event_cal_main
 
@@ -12,6 +12,26 @@ def update_cal_status(eid, cal_status):
     sql = "UPDATE Event SET cal_status = %s WHERE e_id = %s"
 
     params = [(cal_status, eid)]
+    n = cursor.executemany(sql, params)
+    conn.commit()
+
+
+# 更新事件库监测状态
+def update_monitor_status(eid, status):
+    cursor = pi_cur()
+    sql = "UPDATE Event SET monitor_status = %s WHERE e_id = %s"
+
+    params = [(status, eid)]
+    n = cursor.executemany(sql, params)
+    conn.commit()
+
+
+# 更新事件库峰值
+def update_count_max(eid, max_num):
+    cursor = pi_cur()
+    sql = "UPDATE Event SET count_max = %s WHERE e_id = %s"
+
+    params = [(max_num, eid)]
     n = cursor.executemany(sql, params)
     conn.commit()
 
@@ -30,12 +50,25 @@ def event_daily(date):
     for e_item in eid_dic:
         e_id = e_item['e_id']
         e_name = e_item['event_name']
+        max_num = e_item['count_max']
+        try:
+            stop_percent = get_event_para(e_id, 'stop_percent')
+        except:
+            stop_percent = 0.05
+            store_event_para(e_id, 'stop_percent')
 
         # 更新为“计算中”
         update_cal_status(e_id, 1)
 
         # 事件计算
-        event_cal_main(e_item, 1, start_date, end_date)
+        new_max_num = event_cal_main(e_item, 1, start_date, end_date)
+
+        if new_max_num > max_num:
+            # 更新峰值
+            update_count_max(e_id, new_max_num)
+        if new_max_num < max_num * stop_percent:
+            # 更新为“停止监测”
+            update_monitor_status(e_id, 0)
 
         # 更新为“计算完成”
         update_cal_status(e_id, 2)

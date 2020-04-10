@@ -25,6 +25,16 @@ def update_monitor_status(eid, status):
     conn.commit()
 
 
+# 更新事件库峰值
+def update_count_max(eid, max_num):
+    cursor = pi_cur()
+    sql = "UPDATE Event SET count_max = %s WHERE e_id = %s"
+
+    params = [(max_num, eid)]
+    n = cursor.executemany(sql, params)
+    conn.commit()
+
+
 # 对新添加的事件进行计算
 def event_add():
     # 获取新添加的事件（监测中未计算的）
@@ -42,7 +52,10 @@ def event_add():
         end_date = e_item['end_date']
 
         # 事件计算
-        event_cal_main(e_item, 0, start_date, end_date)
+        max_num = event_cal_main(e_item, 0, start_date, end_date)
+
+        # 更新峰值
+        update_count_max(e_id, max_num)
 
         # 更新为“计算完成”
         update_cal_status([e_item], 2)

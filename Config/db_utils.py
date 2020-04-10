@@ -54,3 +54,27 @@ def get_event_para(e_id, para_name):
     cursor.execute(sql)
     result = cursor.fetchone()
     return float(result["p_value"])
+
+def get_global_senwords(contain_change=False):
+    cursor = pi_cur()
+    if contain_change:
+        sql = "SELECT prototype, transform FROM SensitiveWord WHERE perspective_bias = 0"
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        prototype = [item["prototype"] for item in result]
+        transform = [item["transform"] for item in result]
+        result = list(set(prototype)) + transform
+    else:
+        sql = "SELECT prototype FROM SensitiveWord WHERE perspective_bias = 0 GROUP BY prototype"
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        result = [item["prototype"] for item in result]
+    return result
+
+def get_event_senwords(e_id, perspective=2):  # 1为白名单，2为黑名单
+    cursor = pi_cur()
+    sql = "SELECT prototype FROM SensitiveWord WHERE perspective_bias = {} AND e_id = '{}'".format(perspective, e_id)
+    cursor.execute(sql)
+    result = cursor.fetchall()
+    result = [item["prototype"] for item in result]
+    return result

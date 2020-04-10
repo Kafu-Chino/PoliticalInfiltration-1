@@ -53,6 +53,11 @@ def event_cal_main(info, n, start_date, end_date):
     except:
         WEIBO_NUM = 100000
         store_event_para(e_id, 'weibo_num')
+    try:
+        stop_percent = get_event_para(e_id, 'stop_percent')
+    except:
+        stop_percent = 0.05
+        store_event_para(e_id, 'stop_percent')
 
     print('获取事件相关微博')
     # 获取事件相关微博，计算情感极性，并存入事件索引（没有索引就创建一个）
@@ -85,9 +90,13 @@ def event_cal_main(info, n, start_date, end_date):
     # t1 = time.time()
     # print('取数据',t1-t0)
 
+    max_num = 0
     for date in data_dict:
         print(date)
-        print(len(data_dict[date]))
+        info_num = len(data_dict[date])
+        print(info_num)
+        if info_num > max_num:
+            max_num = info_num
         # 事件语义分析
         # t1 = time.time()
         event_semantic(e_id, e_name, data_dict[date], date, WEIBO_NUM)
@@ -102,6 +111,7 @@ def event_cal_main(info, n, start_date, end_date):
     event_hashtag_senwords(e_id, data_dict, n)
     # t4 = time.time()
     # print('特殊',t4-t3)
+    return max_num
 
 
 def main():

@@ -14,6 +14,7 @@ def get_mid_dic_caled():
     sql = 'select * from Information where cal_status = 2 and monitor_status = 1 and add_manully = 0'
     cursor.execute(sql)
     result = cursor.fetchall()
+
     return result
 
 # 取不为人工添加的、且未计算的信息

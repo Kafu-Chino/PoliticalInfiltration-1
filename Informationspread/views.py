@@ -134,7 +134,7 @@ class Info_spread(APIView):
         print (res_dict['retweet_count'])
         n_res['retweet_count_pred'].append(n_res['retweet_count'][len(res_dict['retweet_count'].values())-1])
         # n_res['comment_count_pred'].append(list(res_dict['comment_count'].values())[len(res_dict['retweet_count'].values())-1])
-        for i in range(2):
+        for i in range(len(res_dict['retweet_count_pred'])):
             n_res['retweet_count_pred'].append(list(res_dict['retweet_count_pred'].values())[i]+list(res_dict['comment_count_pred'].values())[i])
         # n_res['retweet_count_pred'].extend(list(res_dict['retweet_count_pred'].values()))
         # n_res['comment_count_pred'].extend(list(res_dict['comment_count_pred'].values()))

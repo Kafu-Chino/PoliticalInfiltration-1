@@ -3,7 +3,7 @@ import sys
 import json
 sys.path.append("../../")
 
-from Config.db_utils import es, pi_cur, conn
+from Config.db_utils import es, pi_cur, conn, get_global_senwords, get_event_senwords
 from Config.time_utils import *
 from Cron.event_cal.data_utils import sql_insert_many
 
@@ -11,15 +11,9 @@ from Cron.event_cal.data_utils import sql_insert_many
 # 统计事件在一段时间内的微博信息
 def event_hashtag_senwords(e_id, data_dict, n):
     # 正则规则构建，包括全局敏感词、事件敏感词、hashtag
-    global_senwords_list = []
-    with open('../event_cal/sensitive_words_list_add.txt','r',encoding='utf-8') as f:
-        for l in  f.readlines():
-            global_senwords_list.append(l.strip())
+    global_senwords_list = get_global_senwords(contain_change=False)
 
-    event_senwords_list = []
-    with open('../event_cal/高精度敏感词.txt','r',encoding='utf-8') as f:
-        for l in  f.readlines():
-            event_senwords_list.append(l.strip())
+    event_senwords_list = get_event_senwords(e_id, perspective=2)
 
     re_global_senwords = re.compile('|'.join(global_senwords_list))
     re_event_senwords = re.compile('|'.join(event_senwords_list))

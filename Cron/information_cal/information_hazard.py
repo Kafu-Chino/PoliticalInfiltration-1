@@ -101,9 +101,10 @@ def get_trend(mid_dic, start_date, end_date):
                 "comment_count": result_dic[date][mid]["comment_count"],
                 "retweet_count": result_dic[date][mid]["retweet_count"], 
                 "timestamp": date2ts(date),
-                "hazard_index": 50,
+                "hazard_index": basic_fraction,
                 "store_date": date,
-                "message_type": message_type_dic[mid]
+                "message_type": message_type_dic[mid],
+                "predict": 0
             }
     print("插入统计结果")
     sql_insert_many("Informationspread", "is_id", insert_dic)
