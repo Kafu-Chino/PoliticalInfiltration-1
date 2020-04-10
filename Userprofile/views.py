@@ -518,6 +518,13 @@ class Show_contact(APIView):
                 }
             result_sta[key]["message_type"][item['message_type']] += item["count"]
 
+        if len(result_sta) == 0:
+            social_contact = {
+                'node': [], 
+                'link': []
+            }
+            return JsonResponse(social_contact, safe=False)
+
         # 形成节点、边的列表，展示节点和边的属性
         node_list = []
         link_list = []
