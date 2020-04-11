@@ -639,15 +639,15 @@ class semantic_topic(APIView):
         eid = request.GET.get('eid')
         result = Event_Semantic.objects.filter(e_id=eid).values("topics")
         topics = defaultdict(dict)
-        
-        the=[]
+        the = []
+        #the=defaultdict(list)
         if result.exists():
             #print(result)
             #for re in result:
                 #print(re["topics"]['0'])
             for i in range(5):
                 t=[]
-                themes = {}
+                themes = defaultdict(list)
                 for k,v in result[0]["topics"][str(i)].items():
                     #dict(zip(re["topics"][i]['主题'],re["topics"][i]['概率']))
                     try:
@@ -659,8 +659,12 @@ class semantic_topic(APIView):
                     #break
                 for k,v in topic.items():
                         #print(k,v)
-                        t.append({"name":k,"values":v})
-                themes[str(i)] = t
+                        t.append({"value":v,"absName":'2',"name":k,"children":[]})
+                themes['value'] = 12-2*(i+1)
+                themes['absName'] = 'root'
+                themes['name'] = str(i)
+                themes['children'] = t
+                
             #print(themes)
                 the.append(themes)
             return JsonResponse(the,safe=False,json_dumps_params={'ensure_ascii':False}) #
