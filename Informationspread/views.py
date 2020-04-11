@@ -18,8 +18,10 @@ ABS_PATH = os.path.dirname(os.path.abspath(__file__))
 
 class Show_Info(APIView):
     def get(self,request):
-        mid = request.GET.get('mid')
-        result = Information.objects.filter(mid=mid).values("uid",'text','timestamp','geo','message_type','hazard_index')
+        i_id = request.GET.get('i_id')
+        result = Information.objects.filter(i_id=i_id).values("uid",'text','timestamp','geo','message_type','hazard_index')
+        if len(result) == 0:
+        	return JsonResponse({},safe=False,json_dumps_params={'ensure_ascii':False})
         res = {
             "uid": result[0]["uid"],
             "text": result[0]["text"],
