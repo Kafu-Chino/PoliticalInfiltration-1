@@ -985,10 +985,13 @@ class funs_num(APIView):
     """群体粉丝数分布展示"""
     def get(self,request):
         e_id = request.GET.get('e_id')
-        result = EventAnalysisShow.objects.filter(e_id =e_id).values('funs_num')[0]['funs_num']
-        # create_time_dict={}
-        print(result)
-        print(type(result))
+        result = EventAnalysisShow.objects.filter(e_id =e_id).values('funs_num')
+        if result.exists():
+            result = result[0]['funs_num']
+        else:
+            result = {}
+        # print(result)
+        # print(type(result))
         return JsonResponse(result)
 
 
@@ -996,8 +999,11 @@ class friends_num(APIView):
     """群体粉丝数分布展示"""
     def get(self,request):
         e_id = request.GET.get('e_id')
-        result = EventAnalysisShow.objects.filter(e_id =e_id).values('friends_num')[0]['friends_num']
-        # create_time_dict={}
-        print(result)
-        print(type(result))
+        result = EventAnalysisShow.objects.filter(e_id =e_id).values('friends_num')
+        if result.exists():
+            result = result[0]['friends_num']
+        else:
+            result = {}
+        # print(result)
+        # print(type(result))
         return JsonResponse(result)
