@@ -946,9 +946,13 @@ class create_time(APIView):
     """群体账号创建时间展示"""
     def get(self,request):
         e_id = request.GET.get('e_id')
-        result = EventAnalysisShow.objects.filter(e_id =e_id).values('create_time')[0]['create_time']
-        print(result)
-        print(type(result))
+        result = EventAnalysisShow.objects.filter(e_id =e_id).values('create_time')
+        if result.exists():
+            result = result[0]['create_time']
+        else:
+            result = {}
+        # print(result)
+        # print(type(result))
         return JsonResponse(result)
 
 
@@ -956,10 +960,13 @@ class age(APIView):
     """群体年龄分布展示"""
     def get(self,request):
         e_id = request.GET.get('e_id')
-        result = EventAnalysisShow.objects.filter(e_id =e_id).values('age')[0]['age']
-        # create_time_dict={}
-        print(result)
-        print(type(result))
+        result = EventAnalysisShow.objects.filter(e_id =e_id).values('age')
+        if result.exists():
+            result = result[0]['age']
+        else:
+            result = {}
+        # print(result)
+        # print(type(result))
         return JsonResponse(result)
 
 
