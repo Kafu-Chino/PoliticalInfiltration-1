@@ -34,20 +34,21 @@ def insert_uid(uid_list,e_id):
         print('错误')
         conn.rollback()
 def save_figure(save_dict):
-    cusor = pi_cur()
+    cursor = pi_cur()
     val = []
     for uid in save_dict:
-        cursor.execute('select count(*) from Event_figure where figure_id = %s',re['f_id'])
+        cursor.execute('select count(*) from Event_figure where figure_id = %s',uid)
         #print(cursor.fetchone())
         event_count = cursor.fetchone()['count(*)']
-        cursor.execute('select count(*) from Information where uid = %s',re['f_id'])
+        cursor.execute('select count(*) from Information where uid = %s',uid)
         info_count = cursor.fetchone()['count(*)']
         val.append((uid,uid,save_dict[uid],info_count,event_count))
     sql = "INSERT INTO Figure(f_id,uid,identitystatus,info_count,event_count,computestatus,monitorstatus) VALUE(%s,%s,%s,%s,%s,0,1) ON DUPLICATE KEY UPDATE " \
           "uid=values(uid),f_id=values(f_id),identitystatus=values(identitystatus),info_count=values(info_count),event_count=values(event_count)"
     # try:
-    cusor.executemany(sql,val)
+    cursor.executemany(sql,val)
     # 获取所有记录列表
+
     conn.commit()
     # except:
     #     print('错误')
@@ -79,6 +80,6 @@ if __name__ == '__main__':
             'uid':'1'
         }
     }
-    e_id = 'xianggang_1582357500'
+    e_id = 'xianggangshijian_1581919160'
     figure_add(uid_dict,e_id)
 
