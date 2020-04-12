@@ -12,6 +12,16 @@ def get_event(uid_list):
     results = cusor.fetchall()
     return results
 
+def get_info(uid_list):
+    uids = ''
+    for uid in uid_list:
+        uids += uid + ','
+    cusor = pi_cur()
+    sql = 'select uid,mid from Information where uid in (%s)' %uids[:-1]
+    cusor.execute(sql)
+    results = cusor.fetchall()
+    return results
+
 def insert_uid(uid_list,e_id):
     uids = ''
     for uid in uid_list:
@@ -37,18 +47,17 @@ def save_figure(save_dict):
     cursor = pi_cur()
     val = []
     for uid in save_dict:
-        cursor.execute('select count(*) from Event_figure where figure_id = %s',uid)
-        #print(cursor.fetchone())
+        cursor.execute('select count(*) from Event_figure where figure_id = %s', uid)
+        # print(cursor.fetchone())
         event_count = cursor.fetchone()['count(*)']
-        cursor.execute('select count(*) from Information where uid = %s',uid)
+        cursor.execute('select count(*) from Information where uid = %s', uid)
         info_count = cursor.fetchone()['count(*)']
-        val.append((uid,uid,save_dict[uid],info_count,event_count))
+        val.append((uid, uid, save_dict[uid], info_count, event_count))
     sql = "INSERT INTO Figure(f_id,uid,identitystatus,info_count,event_count,computestatus,monitorstatus) VALUE(%s,%s,%s,%s,%s,0,1) ON DUPLICATE KEY UPDATE " \
           "uid=values(uid),f_id=values(f_id),identitystatus=values(identitystatus),info_count=values(info_count),event_count=values(event_count)"
     # try:
     cursor.executemany(sql,val)
     # 获取所有记录列表
-
     conn.commit()
     # except:
     #     print('错误')
@@ -59,15 +68,16 @@ def save_figure(save_dict):
 def figure_add(uid_dict,e_id):
     uid_list = list(set([item['uid'] for item in uid_dict.values()]))
     insert_uid(uid_list,e_id)
-    eid_uid = get_event(uid_list)
+    # eid_uid = get_event(uid_list)
+    uid_mid = get_info(uid_list)
     total_dict = {}
     for uid in uid_list:
         total_dict[uid] = 0
-    for item in eid_uid:
-        total_dict[item['figure_id']] += 1
+    for item in uid_mid:
+        total_dict[item['uid']] += 1
     save_dict = {}
     for uid in uid_list:
-        if total_dict[uid]>2:
+        if total_dict[uid]>3:
             save_dict[uid] = 1
         else:
             save_dict[uid] = 0
@@ -76,8 +86,8 @@ def figure_add(uid_dict,e_id):
 
 if __name__ == '__main__':
     uid_dict = {
-        '1':{
-            'uid':'1'
+        '2':{
+            'uid':'2'
         }
     }
     e_id = 'xianggangshijian_1581919160'
