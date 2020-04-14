@@ -598,7 +598,7 @@ class semantic_tl(APIView):
     """事件语义分析之时间轴"""
     def get(self,request):
         eid = request.GET.get('eid')
-        result = Event.objects.filter(e_id=eid).first().information.all().filter(~Q(message_type=3),cal_status=2).order_by("timestamp")    #.order_by("-hazard_index")
+        result = Event.objects.filter(e_id=eid).first().information.all().filter(~Q(message_type=3),cal_status=2).order_by("timestamp","-hazard_index")    #.order_by()
         #print(result)
         info_dict = defaultdict(list)
         tl_dict ={}
@@ -624,7 +624,7 @@ class semantic_tl(APIView):
                 info_dict[date].append({"日期":date,"发博用户昵称":nick,"微博内容":re.text,"危害指数":'%.0f' % re.hazard_index})
                 #info_dict[date].append({"date":date,"source":re.uid,"text":re.text,"hazard_index":re.hazard_index})
             for k,v in info_dict.items():
-                #timeline.append(sorted(v,key=operator.itemgetter('危害指数'),reverse=True)[:1][0])
+                #timeline.append(sorted(v,key=operator.itemgetter('危害指数'),reverse=True))
                 timeline.append(sorted(v,key=operator.itemgetter('危害指数'),reverse=True)[:1][0])
             #print(timeline)
             return JsonResponse(timeline,safe=False,json_dumps_params={'ensure_ascii':False}) #
@@ -899,7 +899,11 @@ class first_figure(APIView):
                 result = Figure.objects.filter(f_id = re["uid"])
                 #print(result)
                 if result.exists():
-                    res_dict.append({"nick_name":result[0].nick_name,"info_count":re["info_count"],"uid":re["uid"]})
+                    if result[0].nick_name is None:
+                        nick = re["uid"]
+                    else:
+                        nick = result[0].nick_name
+                    res_dict.append({"nick_name":nick,"info_count":re["info_count"],"uid":re["uid"]})
             return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "未找到该事件敏感人物"},safe=False)

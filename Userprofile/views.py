@@ -788,8 +788,16 @@ class show_figure_info(APIView):
                         age = datetime.date.today().year - int(re['user_birth'][:4])
                 res_dict['create_at']=create_date
                 res_dict['user_location']=addr
-                res_dict["domain"]=domain_dict[re["domain"]]
-                res_dict["political"]=political_dict[re["political"]]
+                if re["domain"] is None:
+                    domain = re["domain"]
+                else:
+                    domain = domain_dict[re["domain"]]
+                if re["political"] is None:
+                    political = re["political"]
+                else:
+                    political = political_dict[re["political"]]
+                res_dict["domain"]=domain
+                res_dict["political"]=political
                 res_dict['age'] = age
                 res_dict['sex'] = sex
             res_dict['event_count']=re['event_count']
