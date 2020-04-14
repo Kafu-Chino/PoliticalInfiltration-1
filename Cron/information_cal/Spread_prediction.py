@@ -23,12 +23,13 @@ def func3(x,a,b,c):
 def func4(x,a,b):
     return b * np.exp(-a * x)
 
-def get_data(midlist):
+def get_data(midlist,start_time,end_time):
     cursor = pi_cur()
     mids = ""
     for m in midlist:
         mids += m + ","
-    sql = "select * from Informationspread where  mid in (%s) and predict = 0 order by timestamp ASC" %','.join(['%s']*len(midlist))
+    sql = "select * from Informationspread where  mid in (%s) and predict is NULL and timestamp>%s and timestamp<%s order by timestamp ASC" %(','.join(['%s']*len(midlist)),start_time,end_time
+                                                                                                                                              )
 
     # sql = "select * from Informationspread where mid in ('%s') order by timestamp ASC "% mids[:-1]
     cursor.execute(sql,midlist)
@@ -39,7 +40,9 @@ def get_data(midlist):
 
 def data_process(midlist):
     message_dict = {}
-    for message in get_data(midlist):
+    end_time = int(time.mktime(datetime.date.today().timetuple()))
+    start_time = end_time-86400*10
+    for message in get_data(midlist,start_time,end_time):
         if message['mid'] in message_dict.keys():
             message['days'] = (message['store_date'] - message_dict[message['mid']]['date']).days+1
             message_dict[message['mid']]['list'].append(message)
@@ -136,8 +139,8 @@ def save(save_dict):
         # print(mid)
         for date in save_dict[mid]:
             timestamp = date2ts(date)
-            val.append((str(timestamp) + "_" + mid,mid,timestamp,int(save_dict[mid][date]['retweet']),int(save_dict[mid][date]['comment']),save_dict[mid][date]['message_type'],date,1))
-    sql = 'insert into Informationspread(is_id,mid,timestamp,retweet_count,comment_count,message_type,store_date,predict) values (%s,%s,%s,%s,%s,%s,%s,%s )'
+            val.append((mid+str(timestamp),mid,timestamp,int(save_dict[mid][date]['retweet']),int(save_dict[mid][date]['comment']),save_dict[mid][date]['message_type'],date,1))
+    sql = 'replace into Informationspread(is_id,mid,timestamp,retweet_count,comment_count,message_type,store_date,predict) values (%s,%s,%s,%s,%s,%s,%s,%s )'
     cursor = conn.cursor()
     try:
         cursor.executemany(sql, val)
