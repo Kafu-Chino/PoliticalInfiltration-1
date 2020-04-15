@@ -35,14 +35,14 @@ def getEveryDay(begin_date,end_date):
 # 批量计算用户
 def profile_cal_uidlist(uidlist,n):
     if n == 0:
-        # end_date = datetime.datetime.today()- datetime.timedelta(days=1)
+        end_date = datetime.datetime.today()- datetime.timedelta(days=1)
         # start_date = datetime.datetime.strptime(str(datetime.datetime.today() - datetime.timedelta(days=20))[:10],
         #                                         "%Y-%m-%d")
 
-        end_date = '2019-08-25'
-        start_date = '2019-06-01'
-        # start_date = datetime.datetime.strptime(str(datetime.datetime.strptime(end_date,"%Y-%m-%d") - datetime.timedelta(days=20))[:10],
-        #                                         "%Y-%m-%d")
+        # end_date = '2019-08-25'
+        # start_date = '2019-06-01'
+        start_date = datetime.datetime.strptime(str(datetime.datetime.strptime(end_date,"%Y-%m-%d") - datetime.timedelta(days=20))[:10],
+                                                "%Y-%m-%d")
         date_list = getEveryDay(str(start_date)[:10], str(end_date)[:10])
         # date_list.pop(20)
     else:
