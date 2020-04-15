@@ -6,6 +6,7 @@ from Config.time_utils import *
 from Cron.event_cal.data_utils import get_event_info
 from Cron.event_cal.data_utils import sensitivity_store,event_sensitivity
 from Cron.event_cal.event_semantic import Weibo_utils
+from Cron.event_cal.figure_add import figure_add
 import re
 # 创建一个dfa对象
 
@@ -49,10 +50,11 @@ def querry(e_index,start_es,end_es):
     list = []
     for line in results:
         list.append(line['_source'])
+    yield list
     for i in range(0, int(total / 10000) + 1):
         # scroll参数必须指定否则会报错
         query_scroll = ees.scroll(scroll_id=scroll_id, scroll='5m')['hits']['hits']
-
+        list = []
         for line in query_scroll:
             list.append(line['_source'])
         yield list
@@ -82,7 +84,10 @@ def sensitive_word_filter(n,e_id):
         end_ts = int(time.mktime(datetime.date.today().timetuple()))
         start_ts = end_ts-86400
     data_dict = {}
+    num = 0
     for data_list in querry(e_index,start_ts,end_ts):
+        num += 1
+        print(num)
         for message in data_list:
             if not dfa.exists(message['text']):
                 data_dict[message['mid']] = {}
@@ -91,7 +96,7 @@ def sensitive_word_filter(n,e_id):
                 data_dict[message['mid']]['root_uid'] = message['root_uid']
                 data_dict[message['mid']]['root_mid'] = message['root_mid']
                 data_dict[message['mid']]['timestamp'] = message['timestamp']
-                data_dict[message['mid']]['send_ip'] = message['ip']
+                # data_dict[message['mid']]['send_ip'] = message['ip']
                 data_dict[message['mid']]['geo'] = message['geo']
                 data_dict[message['mid']]['message_type'] = message['message_type']
                 data_dict[message['mid']]['source'] = message['source']
@@ -117,6 +122,7 @@ def sensitive_word_filter(n,e_id):
             new_data_dict[mid] = data_dict[mid]
     sensitivity_store(save_data_dict)
     event_sensitivity(e_id,save_data_dict)
+    figure_add(save_data_dict,e_id)
     return new_data_dict
 if __name__ == '__main__':
-    sensitive_word_filter(0,'xianggang_1582357500')
+    sensitive_word_filter(0,'xianggangshijian_1581919160')
