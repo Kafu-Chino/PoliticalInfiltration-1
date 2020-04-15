@@ -27,8 +27,9 @@ def weibo_move(data):
             result = Weibo_utils()
             result.remove_c_t(item)
             text = result.remove_nochn(item)
-            cutWords = [k for k in jieba.cut(text) if k not in stopwords and k!=' ']
-            cut_list.append(cutWords)
+            cutWords = [k for k in jieba.cut(text) if k not in stopwords and k!=' ' and len(k)>1]
+            if cutWords:
+                cut_list.append(cutWords)
         return cut_list
     else:
         raise Exception("无微博内容")
@@ -68,7 +69,10 @@ def data_process(data, WEIBO_NUM):
     corpus = [dictionary.doc2bow(text) for text in cut_list]
     tfidf = models.TfidfModel(corpus)
     corpus_tfidf = tfidf[corpus]
-    return corpus_tfidf, dictionary
+    n = 1
+    if cut_list:
+        n = 0
+    return corpus_tfidf, dictionary, n
 
 
 # 事件LDA聚类
@@ -91,9 +95,12 @@ def lda_analyze(corpusTfidf, dictionary, num_topics=10, iterations=50, workers=6
 
 # 事件语义分析
 def event_semantic(e_id, e_name, data, thedate, WEIBO_NUM):
-    corpus_tfidf, dictionary = data_process(data, int(WEIBO_NUM))
-    result = lda_analyze(corpus_tfidf, dictionary, num_topics=5)
-    result = json.dumps(result)
+    corpus_tfidf, dictionary, n = data_process(data, int(WEIBO_NUM))
+    if n:
+        result = None
+    else:
+        result = lda_analyze(corpus_tfidf, dictionary, num_topics=5)
+        result = json.dumps(result)
     timestamp = date2ts(thedate)
     es_id = str(timestamp) + e_id
     # sql = "insert into Event_Semantic set es_id=%s,e_id=%s,e_name=%s,topics=%s,timestamp=%s,into_date=%s" % (es_id,e_id,e_name,result,timestamp,thedate)

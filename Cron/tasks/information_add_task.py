@@ -46,5 +46,5 @@ def information_add(date):
 
 if __name__ == '__main__':
     date = today()
-    # date = '2019-08-26'
+    # date = '2019-06-21'
     information_add(date)
