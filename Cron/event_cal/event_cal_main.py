@@ -115,10 +115,13 @@ def event_cal_main(info, n, start_date, end_date):
 
 
 def main():
-    data_dict = get_event_data("xianggang_1582357500", "2019-08-08", "2019-08-08")
-    event_hashtag_senwords("xianggang_1582357500", data_dict, 1)
-    # for date in data_dict:
-    #     event_semantic("xianggang_1582357500", '香港', data_dict[date],date,100000)
+    data_dict = get_event_data("event_muji", "2019-09-10", "2019-11-24")
+    # event_hashtag_senwords("xianggang_1582357500", data_dict, 1)
+    for date in data_dict:
+        print(date)
+        info_num = len(data_dict[date])
+        print(info_num)
+        event_semantic("event_muji", 'muji', data_dict[date],date,100000)
 
 if __name__ == '__main__':
     main()
