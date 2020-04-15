@@ -32,6 +32,10 @@ def information_daily(date):
 
 
 if __name__ == '__main__':
-    # date = today()
-    date = '2019-08-26'
+    date = today()
+    # date = '2019-08-26'
     information_daily(date)
+    # for date in get_datelist_v2("2019-06-22", "2019-11-29"):
+    #     print(date)
+    #     information_daily(date)
+    #     print('\n\n')

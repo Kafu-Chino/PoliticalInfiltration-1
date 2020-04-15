@@ -28,7 +28,7 @@ def get_data(midlist,start_time,end_time):
     mids = ""
     for m in midlist:
         mids += m + ","
-    sql = "select * from Informationspread where  mid in (%s) and predict is NULL and timestamp>%s and timestamp<%s order by timestamp ASC" %(','.join(['%s']*len(midlist)),start_time,end_time
+    sql = "select * from Informationspread where  mid in (%s) and predict = 0 and timestamp>%s and timestamp<%s order by timestamp ASC" %(','.join(['%s']*len(midlist)),start_time,end_time
                                                                                                                                               )
 
     # sql = "select * from Informationspread where mid in ('%s') order by timestamp ASC "% mids[:-1]
@@ -38,9 +38,9 @@ def get_data(midlist,start_time,end_time):
     return results
 
 
-def data_process(midlist):
+def data_process(midlist, end_time):
     message_dict = {}
-    end_time = int(time.mktime(datetime.date.today().timetuple()))
+    end_time = date2ts(end_time)
     start_time = end_time-86400*10
     for message in get_data(midlist,start_time,end_time):
         if message['mid'] in message_dict.keys():
@@ -139,7 +139,7 @@ def save(save_dict):
         # print(mid)
         for date in save_dict[mid]:
             timestamp = date2ts(date)
-            val.append((mid+str(timestamp),mid,timestamp,int(save_dict[mid][date]['retweet']),int(save_dict[mid][date]['comment']),save_dict[mid][date]['message_type'],date,1))
+            val.append((str(timestamp) + "_" + mid,mid,timestamp,int(save_dict[mid][date]['retweet']),int(save_dict[mid][date]['comment']),save_dict[mid][date]['message_type'],date,1))
     sql = 'replace into Informationspread(is_id,mid,timestamp,retweet_count,comment_count,message_type,store_date,predict) values (%s,%s,%s,%s,%s,%s,%s,%s )'
     cursor = conn.cursor()
     try:
@@ -149,11 +149,13 @@ def save(save_dict):
         conn.rollback()
         print('错误')
 
-def prediction(mid_dic):
+def prediction(mid_dic, date):
     midlist = []
     for item in mid_dic:
         midlist.append(item['mid'])
-    fit(data_process(midlist))
+    print("开始进行传播预测")
+    fit(data_process(midlist, date))
+    print("传播预测结束")
 
 
 

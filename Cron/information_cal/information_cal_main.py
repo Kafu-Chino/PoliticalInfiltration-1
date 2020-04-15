@@ -13,7 +13,7 @@ def information_cal_batch(mid_dic_batch, start_date, end_date):
 
     # 计算信息传播态势和危害指数
     get_trend(mid_dic_batch, start_date, end_date)
-    prediction(mid_dic_batch)
+    prediction(mid_dic_batch, end_date)
 
 
 if __name__ == '__main__':
