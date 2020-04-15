@@ -1046,9 +1046,10 @@ class User_Influence(APIView):
         date = date2ts(date)
         # 每日影响力特征，从当前日期往前推7天展示 影响力 活跃度 重要度 敏感度
         if n_type == "日":
-            dl = get_datelist_v2(ts2date(date - 6 * 86400), ts2date(date))
+            dl = get_datelist_v2(ts2date(date - 149 * 86400), ts2date(date))
+            # dl = get_datelist_v2(ts2date(date - 6 * 86400), ts2date(date))
             for d in dl:
-                result =  NewUserInfluence.objects.filter(uid=uid, store_date__gte=d, store_date__lte=d).values('influence','importance','sensitity','activity')
+                result =  NewUserInfluence.objects.filter(uid=uid, timestamp__gte=d, timestamp__lte=d).values('influence','importance','sensitity','activity')
                 if result.exists():
                     res_dict['influence'][d] = result[0]['influence']
                     res_dict['importance'][d] = result[0]['importance']
@@ -1062,11 +1063,14 @@ class User_Influence(APIView):
         # 每周影响力特征，从当前日期往前推5周展示
         if n_type == "周":
             date_dict = {}
-            for i in range(1, 6):
-                date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(
-                    weeks=(-1 * i))).timestamp()
+            for i in range(1,23):
+                date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(weeks=(-1 * i))).timestamp()
+            # for i in range(1, 6):
+            #     date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(
+            #         weeks=(-1 * i))).timestamp()
             date_dict[0] = date
-            for i in [4, 3, 2, 1, 0]:
+            for i in [21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]:
+            # for i in [4, 3, 2, 1, 0]:
                 result = NewUserInfluence.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
                                                        timestamp__lt=date_dict[i]).aggregate(
                     influence=Avg("influence"), importance=Avg("importance"),
@@ -1084,9 +1088,12 @@ class User_Influence(APIView):
         # 每月情绪特征，从当前日期往前推5月展示
         if n_type == "月":
             date_dict = {}
-            for i in range(1, 6):
-                date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(
-                    days=(-30 * i))).timestamp()
+            # for i in range(1, 6):
+            #     date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(
+            #         days=(-30 * i))).timestamp()
+            # date_dict[0] = date
+            for i in range(1,6):
+                date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(days=(-30 * i))).timestamp()
             date_dict[0] = date
             for i in [4, 3, 2, 1, 0]:
                 result = NewUserInfluence.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
