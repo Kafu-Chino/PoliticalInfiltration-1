@@ -22,12 +22,17 @@ class Show_Info(APIView):
         result = Information.objects.filter(i_id=i_id).values("uid",'text','timestamp','geo','message_type','hazard_index')
         if len(result) == 0:
         	return JsonResponse({},safe=False,json_dumps_params={'ensure_ascii':False})
+
+        try:
+            message_type = MSG_TYPE_DIC[result[0]["message_type"]]
+        except:
+            message_type = "未知"
         res = {
             "uid": result[0]["uid"],
             "text": result[0]["text"],
             "time": ts2datetime(result[0]["timestamp"]),
             "geo": result[0]["geo"],
-            "message_type": MSG_TYPE_DIC[result[0]["message_type"]]
+            "message_type": message_type
         }
         if result[0]["hazard_index"]:
             res["hazard_index"] = int(result[0]["hazard_index"])
