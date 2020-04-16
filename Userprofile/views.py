@@ -222,9 +222,9 @@ class User_Activity(APIView):
         """
         uid = request.GET.get('uid')
         n_type = request.GET.get('n_type') if request.GET.get('n_type') else 3
-        date = request.GET.get('date')
-        t=datetime.datetime.strptime(date+ " 23:59:59", '%Y-%m-%d %H:%M:%S')
-        #t= datetime.datetime.now()
+        #date = request.GET.get('date')
+        #t=datetime.datetime.strptime(date+ " 23:59:59", '%Y-%m-%d %H:%M:%S')
+        t= datetime.datetime.now()
         res_dict = defaultdict(list)
         cal_date = (t + datetime.timedelta(days=-30)).timestamp()
         if n_type == 1:
@@ -240,6 +240,7 @@ class User_Activity(APIView):
             statusnum_s=Sum("statusnum"), sensitivenum_s=Sum("sensitivenum")).order_by("-statusnum_s")[:5]   #之前按敏感微博总数
         pattern = re.compile(r'(\u4e2d\u56fd)')
         pattern2 = re.compile(r'(\u672a\u77e5)')
+        '''
         if day_result.exists():
             for res in day_result:
                 p = pattern.match(res['geo'])
@@ -252,6 +253,8 @@ class User_Activity(APIView):
                 res_dict["day_result"].append({'geo':geo,"statusnum_s":res['statusnum_s'],"sensitivenum_s":res['sensitivenum_s'],'send_ip':res['send_ip']})
         else:
             res_dict["day_result"] = {"geo":None,"send_ip":None,"statusnum_s":None,"sensitivenum_s":None}
+            '''
+        res_dict["day_result"]=list(day_result)
         geo_map_result = UserActivity.objects.filter(uid=uid, timestamp__gte=cal_date).values("geo").annotate(
             statusnum_s=Sum("statusnum")).order_by("-statusnum_s")
         #print(geo_map_result)
@@ -666,10 +669,23 @@ class Show_figure(APIView):
         res_list = []
         if results.exists():
             for item in result:
+                fid = item.f_id
                 #event_count = 0
                 #info_count = 0
                 #sdate = item.begin_date.strftime('%Y-%m-%d %H:%M:%S')
                 #edate = item.end_date.strftime('%Y-%m-%d %H:%M:%S')
+                if item.nick_name is None:
+                    nick = fid
+                else:
+                    nick = item.nick_name
+                if item.fansnum is None:
+                    fans = "未知"
+                else:
+                    fans = item.fansnum
+                if item.friendsnum is None:
+                    friends = "未知"
+                else:
+                    friends = item.friendsnum
                 if item.create_at is None:
                     create_date = "未知"
                 else:
@@ -678,10 +694,10 @@ class Show_figure(APIView):
                     addr = "未知"
                 else:
                     addr = item.user_location
-                fid = item.f_id
+                
                 #event_count = Figure.objects.get(f_id=fid).event.all().count()
                 #info_count = Information.objects.filter(uid=fid).count()
-                res_list.append({"f_id":fid,"nick_name":item.nick_name,"fansnum":item.fansnum,'friendsnum':item.friendsnum,'create_at':create_date,'event_count':item.event_count,'info_count':item.info_count,'user_location':addr,'count':count})
+                res_list.append({"f_id":fid,"nick_name":nick,"fansnum":fans,'friendsnum':friends,'create_at':create_date,'event_count':item.event_count,'info_count':item.info_count,'user_location':addr,'count':count})
             
             '''
             page = Paginator(res_list, limit)
@@ -727,6 +743,10 @@ class search_figure(APIView):
                 #info_count = 0
                 #sdate = item.begin_date.strftime('%Y-%m-%d %H:%M:%S')
                 #edate = item.end_date.strftime('%Y-%m-%d %H:%M:%S')
+                if item.nick_name is None:
+                    nick = fid
+                else:
+                    nick = item.nick_name
                 if item.create_at is None:
                     create_date = "未知"
                 else:
@@ -738,7 +758,7 @@ class search_figure(APIView):
                 fid = item.f_id
                 #event_count = Figure.objects.get(f_id=fid).event.all().count()
                 #info_count = Information.objects.filter(uid=fid).count()
-                res_list.append({"f_id":fid,"nick_name":item.nick_name,"fansnum":item.fansnum,'friendsnum':item.friendsnum,'create_at':create_date,'event_count':item.event_count,'info_count':item.info_count,'user_location':addr,'count':count})
+                res_list.append({"f_id":fid,"nick_name":nick,"fansnum":item.fansnum,'friendsnum':item.friendsnum,'create_at':create_date,'event_count':item.event_count,'info_count':item.info_count,'user_location':addr,'count':count})
             res=sorted(res_list,key=operator.itemgetter('info_count'),reverse=True)
             return JsonResponse(res,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
@@ -763,9 +783,21 @@ class show_figure_info(APIView):
             #info_count = Information.objects.filter(uid=fid).count()
             res_dict["uid"] = fid
             for re in res:
-                res_dict["nick_name"]=re["nick_name"]
-                res_dict["fansnum"]=re["fansnum"]
-                res_dict['friendsnum']=re['friendsnum']
+                if re["nick_name"] is None:
+                    nick = fid
+                else:
+                    nick = re["nick_name"]
+                if re["fansnum"] is None:
+                    fans = "未知"
+                else:
+                    fans = re["fansnum"]
+                if re["friendsnum"] is None:
+                    friends = "未知"
+                else:
+                    friends = re["friendsnum"]
+                res_dict["nick_name"]= nick
+                res_dict["fansnum"]=fans
+                res_dict['friendsnum']=friends
                 #print(re["create_at"])
                 if re['create_at'] is None:
                     create_date = "未知"
@@ -789,11 +821,11 @@ class show_figure_info(APIView):
                 res_dict['create_at']=create_date
                 res_dict['user_location']=addr
                 if re["domain"] is None:
-                    domain = re["domain"]
+                    domain = "未知"
                 else:
                     domain = domain_dict[re["domain"]]
                 if re["political"] is None:
-                    political = re["political"]
+                    political = "未知"
                 else:
                     political = political_dict[re["political"]]
                 res_dict["domain"]=domain

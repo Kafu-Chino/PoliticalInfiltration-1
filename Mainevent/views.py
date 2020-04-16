@@ -887,7 +887,7 @@ class first_figure(APIView):
         res_dict = []
         res_event = Event.objects.filter(e_id=eid)  #.first().event_set.all()
         if res_event.exists():
-            res = res_event[0].information.all().values("uid").annotate(info_count = Count('uid')).order_by('-info_count')[:10].values("uid","info_count")
+            res = res_event[0].information.all().values("uid").annotate(info_count = Count('i_id')).order_by('-info_count')[:10].values("uid","info_count")
             '''
             #res = res_event[0].information.all().values("uid").annotate(info_count = Count('i_id')).order_by('-info_count')[:10].values_list("uid",flat = True)
             res = list(res)
