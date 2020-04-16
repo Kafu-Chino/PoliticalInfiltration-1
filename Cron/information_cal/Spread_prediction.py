@@ -40,7 +40,7 @@ def get_data(midlist,start_time,end_time):
 
 def data_process(midlist, end_time):
     message_dict = {}
-    end_time = date2ts(end_time)
+    end_time = date2ts(end_time) + 86400*1
     start_time = end_time-86400*10
     for message in get_data(midlist,start_time,end_time):
         if message['mid'] in message_dict.keys():

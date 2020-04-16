@@ -71,7 +71,11 @@ def get_trend(mid_dic, start_date, end_date):
                 ]
             }
         }
-        res = es.search(index='flow_text_{}'.format(date), body=query_body)
+        try:
+        	res = es.search(index='flow_text_{}'.format(date), body=query_body)
+        except:
+        	res = {"aggregations":{"count":{"buckets":[]}}}
+        	print("每日搜索错误")
         # res = es.search(index='weibo_all', body=query_body)
 
         sta_res = res["aggregations"]["count"]["buckets"]
