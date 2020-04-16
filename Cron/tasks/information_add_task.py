@@ -41,10 +41,10 @@ def information_add(date):
         # 更新为“计算完成”
         update_cal_status(mid_dic_batch, 2)
 
-        print("该批次计算完成。")
+        print("该批次计算完成。\n")
 
 
 if __name__ == '__main__':
     date = today()
-    # date = '2019-06-21'
+    date = '2019-06-21'
     information_add(date)
