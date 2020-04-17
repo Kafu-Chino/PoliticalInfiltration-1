@@ -230,6 +230,11 @@ class delete_event(APIView):
 class show_cal_event(APIView):
     """展示事件计算任务"""
     def get(self, request):
+        cal_status_dic = {
+            0: "未计算",
+            1: "计算中",
+            2: "计算完成"
+        }
         jre = []
         result = Event.objects.filter(cal_status__in=[0,1]).values('e_id','event_name','begin_date','end_date','cal_status')
         if result.exists():
@@ -239,7 +244,7 @@ class show_cal_event(APIView):
                     edate = "至今"
                 else:
                     edate = item['end_date'].strftime('%Y-%m-%d')
-                jre.append({"eid":item["e_id"],"event_name":item['event_name'],"cal_status":item['cal_status'],\
+                jre.append({"eid":item["e_id"],"event_name":item['event_name'],"cal_status":cal_status_dic[item['cal_status']],\
                                 "begin_date":sdate,"end_date":edate})
             return JsonResponse(jre,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
@@ -404,7 +409,12 @@ class related_figure(APIView):
             res_dict['count'] = count
             for f in res:
                 res_dict['table'].append(["f_id","nick_name","fansnum","friendsnum"])
-                res_dict['data'].append([f.f_id, f.nick_name,f.fansnum,f.friendsnum])
+                
+                f_id = f.f_id if f.f_id else "未知"
+                nick_name = f.nick_name if f.nick_name else "未知"
+                fansnum = f.fansnum if f.fansnum else "未知"
+                friendsnum = f.friendsnum if f.friendsnum else "未知"
+                res_dict['data'].append([f_id, nick_name,fansnum,friendsnum])
             return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "无相关人物"},safe=False)
