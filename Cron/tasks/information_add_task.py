@@ -22,6 +22,7 @@ def information_add(date):
     # 定时间范围为当前计算日期前一天日期至前二十天内（当天数据当天晚上统一更新计算）
     end_date = ts2date(int(date2ts(date)) - 86400)
     start_date = ts2date(int(date2ts(date)) - 20 * 86400)
+    print(start_date, end_date)
 
     # 获取未计算的信息
     mid_dic = get_mid_dic_notcal()
@@ -46,5 +47,5 @@ def information_add(date):
 
 if __name__ == '__main__':
     date = today()
-    date = '2019-06-21'
+    # date = '2019-06-21'
     information_add(date)

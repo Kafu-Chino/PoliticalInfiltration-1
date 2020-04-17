@@ -5,7 +5,7 @@ import math
 
 from Config.time_utils import *
 from Config.db_utils import es, pi_cur, conn
-from Cron.information_cal.data_utils import get_mid_dic_caled
+from Cron.information_cal.data_utils import get_mid_dic_caled, check_monitor_status
 from Cron.information_cal.information_cal_main import information_cal_batch
 
 # 对库中已有计算好的信息进行计算，在bash里定义每日凌晨运行
@@ -13,6 +13,7 @@ def information_daily(date):
     # 定时间范围为当前计算日期前一天日期（当天凌晨更新计算前一天的数据）
     end_date = ts2date(int(date2ts(date)) - 86400)
     start_date = end_date
+    print(end_date)
 
     # 获取未计算的信息
     mid_dic = get_mid_dic_caled()
@@ -27,15 +28,15 @@ def information_daily(date):
 
         # 计算
         information_cal_batch(mid_dic_batch, start_date, end_date)
+        # check_monitor_status(mid_dic_batch)
 
-        print("该批次计算完成。")
+        print("该批次计算完成。\n")
 
 
 if __name__ == '__main__':
     date = today()
-    # date = '2019-08-26'
+    # date = '2019-06-22'
     information_daily(date)
-    # for date in get_datelist_v2("2019-06-22", "2019-11-29"):
-    #     print(date)
+    # for date in get_datelist_v2("2019-06-23", "2019-11-29"):
     #     information_daily(date)
     #     print('\n\n')
