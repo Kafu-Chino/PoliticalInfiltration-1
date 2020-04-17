@@ -660,9 +660,9 @@ class semantic_topic(APIView):
                 for k,v in topic.items():
                         #print(k,v)
                         t.append({"value":v,"absName":'2',"name":k,"children":[]})
-                themes['value'] = 12-2*(i+1)
+                themes['value'] = 3
                 themes['absName'] = 'root'
-                themes['name'] = str(i)
+                themes['name'] = "主题%s" % str(i)
                 themes['children'] = t
                 
             #print(themes)
