@@ -22,6 +22,7 @@ def information_add(date):
     # 定时间范围为当前计算日期前一天日期至前二十天内（当天数据当天晚上统一更新计算）
     end_date = ts2date(int(date2ts(date)) - 86400)
     start_date = ts2date(int(date2ts(date)) - 20 * 86400)
+    print(start_date, end_date)
 
     # 获取未计算的信息
     mid_dic = get_mid_dic_notcal()
@@ -41,7 +42,7 @@ def information_add(date):
         # 更新为“计算完成”
         update_cal_status(mid_dic_batch, 2)
 
-        print("该批次计算完成。")
+        print("该批次计算完成。\n")
 
 
 if __name__ == '__main__':

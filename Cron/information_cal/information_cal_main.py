@@ -8,7 +8,6 @@ from Cron.information_cal.information_hazard import get_trend
 from Cron.information_cal.data_utils import get_mid_dic_all
 from Cron.information_cal.Spread_prediction import prediction
 
-
 def information_cal_batch(mid_dic_batch, start_date, end_date):
 
     # 计算信息传播态势和危害指数

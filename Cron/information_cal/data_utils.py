@@ -54,3 +54,33 @@ def sql_insert_many(table_name, primary_key, data_dict):
         conn.commit()
     else:  
         print('empty data')
+
+
+def check_monitor_status(mid_dic_batch):
+    midlist = [item["mid"] for item in mid_dic_batch]
+    midlist_format = ""
+    for mid in midlist:
+        midlist_format += "'{}',".format(mid)
+    midlist_format = midlist_format[:-1]
+
+    cursor = pi_cur()
+    sql = "SELECT e.monitor_status, i.i_id FROM `Event` e JOIN Event_information ei ON e.e_id = ei.event_id JOIN Information i ON i.i_id = ei.information_id WHERE i.mid IN ({})".format(midlist_format)
+    cursor.execute(sql)
+    result = cursor.fetchall()
+
+    check_dic = {}
+    for item in result:
+        i_id = item["i_id"]
+        monitor_status = item["monitor_status"]
+        if i_id in check_dic:
+            check_dic[i_id].append(monitor_status)
+        else:
+            check_dic[i_id] = [monitor_status]
+
+    params = []
+    for i_id in check_dic:
+        if sum(check_dic[i_id]) == 0:
+            params.append((0, i_id))
+    sql = "UPDATE Information SET monitor_status = %s WHERE i_id = %s"
+    n = cursor.executemany(sql, params)
+    conn.commit()

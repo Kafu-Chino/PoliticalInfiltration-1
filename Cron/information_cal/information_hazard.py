@@ -1,10 +1,11 @@
+import re
 import sys
 sys.path.append("../../")
 
 from copy import deepcopy
 from collections import defaultdict
 
-from Config.db_utils import es, pi_cur, conn, get_global_para
+from Config.db_utils import es, pi_cur, conn, get_global_para, get_global_senwords
 from Config.time_utils import *
 from Cron.information_cal.data_utils import sql_insert_many
 
@@ -70,7 +71,11 @@ def get_trend(mid_dic, start_date, end_date):
                 ]
             }
         }
-        res = es.search(index='flow_text_{}'.format(date), body=query_body)
+        try:
+        	res = es.search(index='flow_text_{}'.format(date), body=query_body)
+        except:
+        	res = {"aggregations":{"count":{"buckets":[]}}}
+        	print("每日搜索错误")
         # res = es.search(index='weibo_all', body=query_body)
 
         sta_res = res["aggregations"]["count"]["buckets"]
@@ -89,6 +94,14 @@ def get_trend(mid_dic, start_date, end_date):
                 result_dic[date][mid] = {
                     'comment_count': comment_count,
                     'retweet_count': retweet_count,
+                }
+
+        # 如果没有聚合到相关结果，则使对应结果为0
+        for item in mid_dic:
+            if item["mid"] not in result_dic[date]:
+                result_dic[date][item["mid"]] = {
+                    'comment_count': 0,
+                    'retweet_count': 0,
                 }
 
     # 将统计的结果存入数据库中
@@ -117,12 +130,18 @@ def get_trend(mid_dic, start_date, end_date):
 
 
 def cal_hazard_index(mid_dic, insert_dic, start_date, end_date):
+    propagation_fraction = 30
+    sensitive_fraction = 40
+    global_senwords_list = get_global_senwords(contain_change=False)
+    re_global_senwords = re.compile('|'.join(global_senwords_list))
+
     cursor = pi_cur()
     mid_type = {item["mid"]: item["message_type"] for item in mid_dic}
     mid_list = [item["mid"] for item in mid_dic]
+    mid_text = {item["mid"]: item["text"] for item in mid_dic}
 
     hazard_index_dic = defaultdict(dict)
-    # 对过去30天的结果进行聚合
+    # 对过去30天的结果进行聚合，敏感信息判别基础分为50（存于数据库作为参数），因为转发评论产生的分数最多为30分（上面的代码中），因为文本中含有通用敏感词，产生的分数为40分（上面的代码中），最高不超过100分。
     for date in get_datelist_v2(start_date, end_date):
         agg_sql = "SELECT sum(comment_count), sum(retweet_count), mid from Informationspread WHERE `timestamp` >= {} and `timestamp` <= {} and mid in ('{}') GROUP BY mid".format(date2ts(date) - 30 * 86400, date2ts(date), "','".join(mid_list))
         cursor.execute(agg_sql)
@@ -132,14 +151,16 @@ def cal_hazard_index(mid_dic, insert_dic, start_date, end_date):
             mid = item["mid"]
             count = item["sum(comment_count)"] + item["sum(retweet_count)"]
             # 危害指数的计算公式
-            basic_decay = 100 - basic_fraction
             if mid_type[mid] == 1:
-                hazard_index = float(count) * basic_decay / max_count + basic_fraction
+                hazard_index = min(float(count) / max_count, 1) * propagation_fraction + basic_fraction
             else:
-                hazard_index = float(count) * basic_decay * decay_ratio / max_count + basic_fraction
-            if hazard_index > 100:
-                hazard_index = 100
-            hazard_index_dic[date][mid] = hazard_index
+                hazard_index = min(float(count) * decay_ratio / max_count, 1) * propagation_fraction + basic_fraction
+
+            text = mid_text[mid]
+            if len(re_global_senwords.findall(text)):
+                hazard_index += sensitive_fraction
+
+            hazard_index_dic[date][mid] = min(hazard_index, 100)
 
     # 构建更新数据格式
     update_dic = {}
