@@ -56,7 +56,7 @@ class UserActivity(models.Model):
     sensitivenum = models.IntegerField(blank=True, null=True)
     timestamp = models.BigIntegerField(blank=True, null=True)
     send_ip = models.CharField(max_length=1000, blank=True, null=True)
-    geo = models.CharField(max_length=50, blank=True, null=True)
+    geo = models.CharField(max_length=200, blank=True, null=True)
     store_date = models.DateField(blank=True, null=True)
 
     class Meta():

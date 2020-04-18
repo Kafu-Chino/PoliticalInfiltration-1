@@ -20,6 +20,7 @@ from Cron.profile_cal.user_political import get_user_political
 from Cron.profile_cal.user_influence_total import influence_total
 from Cron.profile_cal.user_position import get_user_activity_aggs
 from Cron.profile_cal.user_msg_type import get_msg_type_aggs
+from Cron.profile_cal.monitor import stop_monite,start_monite
 from Config.db_utils import es,conn,pi_cur
 
 def getEveryDay(begin_date,end_date):
@@ -35,12 +36,12 @@ def getEveryDay(begin_date,end_date):
 # 批量计算用户
 def profile_cal_uidlist(uidlist,n):
     if n == 0:
-        end_date = datetime.datetime.today()- datetime.timedelta(days=1)
+        end_date = str(datetime.datetime.today()- datetime.timedelta(days=1))
         # start_date = datetime.datetime.strptime(str(datetime.datetime.today() - datetime.timedelta(days=20))[:10],
         #                                         "%Y-%m-%d")
 
-        # end_date = '2019-08-25'
-        # start_date = '2019-06-01'
+        # end_date = '2019-11-28'
+        # start_date = '2019-11-12'
         start_date = datetime.datetime.strptime(str(datetime.datetime.strptime(end_date,"%Y-%m-%d") - datetime.timedelta(days=20))[:10],
                                                 "%Y-%m-%d")
         date_list = getEveryDay(str(start_date)[:10], str(end_date)[:10])
@@ -86,6 +87,8 @@ def profile_cal_uidlist(uidlist,n):
             get_user_social(uidlist,date_data,date,n)
             time6 = time.time()
             print('社交：', time6 - time5)
+            # 偏好特征（梦丽）
+            get_user_keywords(text_list, word_dict, date, 5)
             # #
             #每星期计算一次
             dayOfWeek = datetime.datetime.strptime(date, "%Y-%m-%d").weekday()
@@ -100,10 +103,9 @@ def profile_cal_uidlist(uidlist,n):
                 topic_domain_cal(uidlist,thatday,theday,thatdate,thedate)
                 time7 = time.time()
                 print('领域：', time7 - time6)
-                # 偏好特征（梦丽）
-                get_user_keywords(text_list, word_dict, date, 5)
+
                 time8 = time.time()
-                print('偏好：', time8 - time7)
+                # print('偏好：', time8 - time7)
             #
             #     #政治倾向（中方）
                 get_user_political(uidlist,thatday,theday)
@@ -115,15 +117,17 @@ def profile_cal_uidlist(uidlist,n):
 
 
 def profile_cal_main(n,uidlist):
-    batch_num = 5000
+    batch_num = 30000
     batch_all = math.ceil(len(uidlist) / batch_num)
     for batch_epoch in range(batch_all):
         uidlist_batch = uidlist[batch_epoch * batch_num: (batch_epoch + 1) * batch_num]
         print("用户{}至{}， 共{}".format(batch_epoch * batch_num, (batch_epoch + 1) * batch_num, len(uidlist)))
 
         profile_cal_uidlist(uidlist_batch,n)
+    stop_monite()
+    start_monite()
 
-        break
+
 
 
 # if __name__ == '__main__':
