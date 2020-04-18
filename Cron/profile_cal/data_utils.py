@@ -9,9 +9,9 @@ from Config.time_utils import *
 def get_uid_list1(n):
     cursor = pi_cur()
     if n ==0:
-        sql = 'select %s from %s where computestatus=0' % ("uid", "Figure")
+        sql = 'select %s from %s where computestatus=0 and monitorstatus=1' % ("uid", "Figure")
     else:
-        sql = 'select %s from %s' % ("uid", "Figure")
+        sql = 'select %s from %s where monitorstatus=1' % ("uid", "Figure")
     cursor.execute(sql)
     result = cursor.fetchall()
     uidlist = [item["uid"] for item in result]
