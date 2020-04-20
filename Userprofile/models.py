@@ -51,7 +51,7 @@ class UserKeyWord(models.Model):
 
 class UserActivity(models.Model):
     ua_id = models.CharField(max_length=100, primary_key=True)
-    uid = models.CharField(max_length=30, blank=True, null=True)
+    uid = models.CharField(max_length=30, blank=True, null=True,db_index=True)
     statusnum = models.IntegerField(blank=True, null=True)
     sensitivenum = models.IntegerField(blank=True, null=True)
     timestamp = models.BigIntegerField(blank=True, null=True)
@@ -105,7 +105,7 @@ class WordCount(models.Model):
 
 class UserSentiment(models.Model):
     us_id = models.CharField(max_length=50, primary_key=True)
-    uid = models.CharField(max_length=30, blank=True, null=True)
+    uid = models.CharField(max_length=30, blank=True, null=True,db_index=True)
     timestamp = models.BigIntegerField(blank=True, null=True)
     negtive = models.IntegerField(blank=True, null=True)
     nuetral = models.IntegerField(blank=True, null=True)
@@ -130,7 +130,7 @@ class UserInfluence(models.Model):
 
 class NewUserInfluence(models.Model):
     uid_ts = models.CharField(max_length=40, primary_key=True)
-    uid = models.CharField(max_length=30, blank=True)
+    uid = models.CharField(max_length=30, blank=True,db_index=True)
     timestamp = models.BigIntegerField(blank=True, null=True)
     influence = models.IntegerField(blank=True, null=True)
     importance = models.IntegerField(blank=True, null=True)
