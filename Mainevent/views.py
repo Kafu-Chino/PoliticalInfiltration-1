@@ -885,7 +885,7 @@ class first_sensitive(APIView):
             #hashtag = {item[0]: item[1] for item in hashtag}
             for item in global_senword:
                 #print(item[0])
-                global_senwords.append({"name":item[0],"values": item[1]})
+                global_senwords.append({"name":item[0],"value": item[1]})
             #event_senword = {item[0]: item[1] for item in event_senword}
 
         return JsonResponse(global_senwords, safe=False)
