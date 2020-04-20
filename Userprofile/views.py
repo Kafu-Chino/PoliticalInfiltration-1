@@ -1077,7 +1077,7 @@ class User_Sentiment(APIView):
                 date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(weeks=(-1 * i))).timestamp()
             date_dict[0] = date
             for i in [21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4, 3, 2, 1, 0]:
-                result = UserSentiment.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
+                result = UserSentiment.objects.filter(uid=uid, timestamp__gt=date_dict[i + 1],
                                                      timestamp__lte=date_dict[i]).aggregate(
                     positive_s=Sum("positive"), nuetral_s=Sum("nuetral"), negtive_s=Sum("negtive"))
                 if result['positive_s'] != None:
@@ -1095,7 +1095,7 @@ class User_Sentiment(APIView):
                 date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(days=(-30 * i))).timestamp()
             date_dict[0] = date
             for i in [4, 3, 2, 1, 0]:
-                result = UserSentiment.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
+                result = UserSentiment.objects.filter(uid=uid, timestamp__gt=date_dict[i + 1],
                                                      timestamp__lte=date_dict[i]).aggregate(
                     positive_s=Sum("positive"), nuetral_s=Sum("nuetral"), negtive_s=Sum("negtive"))
                 if result['positive_s'] != None:
