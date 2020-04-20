@@ -6,11 +6,14 @@ from Cron.profile_cal.data_utils import get_uid_list1
 
 #更新人物计算状态
 def update_cal_status(uid_list, computestatus):
+    uids = ''
+    for uid in uid_list:
+        uids += uid + ','
     cursor = pi_cur()
-    sql = "UPDATE Figure SET computestatus = %s WHERE uid = %s"
-
-    params = [(computestatus, item) for item in uid_list]
-    n = cursor.executemany(sql, params)
+    sql = "UPDATE Figure SET computestatus = %s WHERE uid in (%s)"%(computestatus,uids[:-1])
+    cursor.execute(sql)
+    # params = [(computestatus, item) for item in uid_list]
+    # n = cursor.executemany(sql, params)
     conn.commit()
 
 def user_add_cal():
