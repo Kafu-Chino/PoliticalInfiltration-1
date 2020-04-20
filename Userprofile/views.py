@@ -1081,7 +1081,7 @@ class User_Influence(APIView):
             dl = get_datelist_v2(ts2date(date - 149 * 86400), ts2date(date))
             # dl = get_datelist_v2(ts2date(date - 6 * 86400), ts2date(date))
             for d in dl:
-                result =  NewUserInfluence.objects.filter(uid=uid, timestamp__gte=d, timestamp__lte=d).values('influence','importance','sensitity','activity')
+                result =  NewUserInfluence.objects.filter(uid=uid, store_date__gte=d, store_date__lte=d).values('influence','importance','sensitity','activity')
                 if result.exists():
                     res_dict['influence'][d] = result[0]['influence']
                     res_dict['importance'][d] = result[0]['importance']

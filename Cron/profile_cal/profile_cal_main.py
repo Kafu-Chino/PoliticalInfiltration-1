@@ -41,7 +41,7 @@ def profile_cal_uidlist(uidlist,n):
         #                                         "%Y-%m-%d")
 
         # end_date = '2019-11-28'
-        # start_date = '2019-11-12'
+        # start_date = '2019-11-13'
         start_date = datetime.datetime.strptime(str(datetime.datetime.strptime(end_date,"%Y-%m-%d") - datetime.timedelta(days=20))[:10],
                                                 "%Y-%m-%d")
         date_list = getEveryDay(str(start_date)[:10], str(end_date)[:10])
