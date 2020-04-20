@@ -244,7 +244,7 @@ class User_Activity(APIView):
                 }
         """
         uid = request.GET.get('uid')
-        n_type = request.GET.get('n_type') if request.GET.get('n_type') else 3
+        n_type = int(request.GET.get('n_type')) if request.GET.get('n_type') else 3
         #date = request.GET.get('date')
         #t=datetime.datetime.strptime(date+ " 23:59:59", '%Y-%m-%d %H:%M:%S')
         try:
@@ -254,23 +254,37 @@ class User_Activity(APIView):
         #print(date)
         t=datetime.datetime(*map(int, date.split('-')))
         #t= time.mktime(time.strptime(date, '%Y-%m-%d'))
+        print(t,n_type)
         date_dict = {}
         res_dict = defaultdict(list)
-        cal_date = (t + datetime.timedelta(days=-30)).timestamp()
+        geo_result = defaultdict(dict)
         if n_type == 1:
-            cal_date = (t + datetime.timedelta(days=-1)).timestamp()
-        elif n_type == 2:
-            cal_date = (t + datetime.timedelta(days=-7)).timestamp()
-        elif n_type == 3:
-            cal_date = (t + datetime.timedelta(days=-30)).timestamp()
-        elif n_type == 4:
-            cal_date = (t + datetime.timedelta(days=-90)).timestamp()
-
-        day_result = UserActivity.objects.filter(uid=uid, timestamp__gte=cal_date,timestamp__lte=t.timestamp()).values("geo", "send_ip").annotate(
-            statusnum_s=Sum("statusnum"), sensitivenum_s=Sum("sensitivenum")).order_by("-statusnum_s")[:5]   #之前按敏感微博总数
+            cal_date = t + datetime.timedelta(days=-1)
+        if n_type == 2:
+            cal_date = t + datetime.timedelta(days=-7)
+        if n_type ==3:
+            cal_date = t + datetime.timedelta(days=-30)
+        if n_type ==4:
+            cal_date = t + datetime.timedelta(days=-90)
+        #cal_date = (t + datetime.timedelta(days=-30))  #.timestamp()
+        cal_date = cal_date.strftime('%Y-%m-%d')
+        print(cal_date)
+        day_result = UserActivity.objects.filter(uid=uid, store_date__gte=cal_date,store_date__lte=t).values("geo", "send_ip")  \
+               .annotate(statusnum_s=Sum("statusnum"), sensitivenum_s=Sum("sensitivenum")).order_by("-statusnum_s")[:5]   #之前按敏感微博总数
+        #print(day_result)
         pattern = re.compile(r'(\u4e2d\u56fd)')
         pattern2 = re.compile(r'(\u672a\u77e5)')
         '''
+        for res in day_result:
+            try:
+                geo_result[res['geo']]['statusnum_s'] += res['statusnum']
+                geo_result[res['geo']]['sensitivenum_s'] += res['sensitivenum']
+                geo_result[res['geo']]['send_ip'] = res['send_ip']
+            except:
+                geo_result[res['geo']]['statusnum_s'] = res['statusnum']
+                geo_result[res['geo']]['sensitivenum_s'] = res['sensitivenum']
+                geo_result[res['geo']]['send_ip'] = res['send_ip']
+        print(geo_result)
         if day_result.exists():
             for res in day_result:
                 p = pattern.match(res['geo'])
@@ -284,8 +298,11 @@ class User_Activity(APIView):
         else:
             res_dict["day_result"] = {"geo":None,"send_ip":None,"statusnum_s":None,"sensitivenum_s":None}
             '''
-        res_dict["day_result"]=list(day_result)
-        geo_map_result = UserActivity.objects.filter(uid=uid, timestamp__gte=cal_date).values("geo").annotate(
+        if day_result.exists():
+            res_dict["day_result"]=list(day_result)
+        else:
+            res_dict["day_result"] = {"geo":None,"send_ip":None,"statusnum_s":None,"sensitivenum_s":None}
+        geo_map_result = UserActivity.objects.filter(uid=uid, store_date__gte=cal_date).values("geo").annotate(
             statusnum_s=Sum("statusnum")).order_by("-statusnum_s")
         #print(geo_map_result)
         #res_dict["geo_map_result"] = list(geo_map_result)
@@ -295,11 +312,15 @@ class User_Activity(APIView):
                 if p is None:
                     continue
                 else:
-                    p2 = pattern2.match(item['geo'].split('&')[1])
-                    if p2 is None:
-                        geo = item['geo'].split('&')[1]
-                        value = item["statusnum_s"]
-                    else:
+                    try:
+                        p2 = pattern2.match(item['geo'].split('&')[1])
+                        if p2 is None:
+                            geo = item['geo'].split('&')[1]
+                            value = item["statusnum_s"]
+                        else:
+                            geo = None
+                            value = None
+                    except:
                         geo = None
                         value = None
                 res_dict["geo_map_result"].append({"name":geo,"value":value})
@@ -1056,8 +1077,8 @@ class User_Sentiment(APIView):
                 date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(weeks=(-1 * i))).timestamp()
             date_dict[0] = date
             for i in [21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4, 3, 2, 1, 0]:
-                result = UserSentiment.objects.filter(uid=uid, timestamp__gt=date_dict[i + 1],
-                                                     timestamp__lte=date_dict[i]).aggregate(
+                result = UserSentiment.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
+                                                     timestamp__lt=date_dict[i]).aggregate(
                     positive_s=Sum("positive"), nuetral_s=Sum("nuetral"), negtive_s=Sum("negtive"))
                 if result['positive_s'] != None:
                     res_dict['positive'][ts2date(date_dict[i])] = result['positive_s']
@@ -1074,8 +1095,8 @@ class User_Sentiment(APIView):
                 date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(days=(-30 * i))).timestamp()
             date_dict[0] = date
             for i in [4, 3, 2, 1, 0]:
-                result = UserSentiment.objects.filter(uid=uid, timestamp__gt=date_dict[i + 1],
-                                                     timestamp__lte=date_dict[i]).aggregate(
+                result = UserSentiment.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
+                                                     timestamp__lt=date_dict[i]).aggregate(
                     positive_s=Sum("positive"), nuetral_s=Sum("nuetral"), negtive_s=Sum("negtive"))
                 if result['positive_s'] != None:
                     res_dict['positive'][time.strftime("%Y-%m", time.localtime(date_dict[i]))] = result['positive_s']
