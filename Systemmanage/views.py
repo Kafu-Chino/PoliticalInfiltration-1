@@ -161,7 +161,7 @@ class Modify_global_parameter(APIView):
         """修改全局参数：输入参数名p_name,修改值p_value;输出状态及提示：400 状态错误，201写入成功"""
         p_name = request.GET.get("p_name")
         p_value = request.GET.get("p_value")
-        #判断敏感词是否存在
+        #判断参数是否存在
         if p_name and p_value:
             result = GlobalParameter.objects.filter(p_name=p_name)
             if result.exists():
@@ -171,7 +171,7 @@ class Modify_global_parameter(APIView):
                 return JsonResponse({"status": 400, "error": "参数不存在"}, safe=False,json_dumps_params={'ensure_ascii': False})
 
         else:
-            return JsonResponse({"status":400, "error": "请输入全局参数和修改值"},safe=False,json_dumps_params={'ensure_ascii':False})
+            return JsonResponse({"status":400, "error": "请输入修改值"},safe=False,json_dumps_params={'ensure_ascii':False})
 
 class Event_show(APIView):
     """事件列表展示"""
