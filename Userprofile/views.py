@@ -824,7 +824,7 @@ class search_figure(APIView):
                 
                 #event_count = Figure.objects.get(f_id=fid).event.all().count()
                 #info_count = Information.objects.filter(uid=fid).count()
-                res_list.append({"f_id":fid,"nick_name":nick,"fansnum":item.fansnum,'friendsnum':item.friendsnum,'create_at':create_date,'event_count':item.event_count,'info_count':item.info_count,'user_location':addr,'count':count})
+                res_list.append({"f_id":fid,"nick_name":nick,"fansnum":fans,'friendsnum':friends,'create_at':create_date,'event_count':item.event_count,'info_count':item.info_count,'user_location':addr,'count':count})
             res=sorted(res_list,key=operator.itemgetter('info_count'),reverse=True)
             return JsonResponse(res,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
