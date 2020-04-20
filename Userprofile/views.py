@@ -791,8 +791,8 @@ class search_figure(APIView):
             page_id = 1
         if limit is None:
             limit = 10
-        result = Figure.objects.filter(Q(nick_name__contains = info) | Q(uid__contains = info),computestatus=2,identitystatus=1).order_by('-monitorstatus','-info_count')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]  #.values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')
-        count = len(Figure.objects.filter(Q(nick_name__contains = info) | Q(uid__contains = info),computestatus=2,identitystatus=1))
+        result = Figure.objects.filter(Q(nick_name__contains = info) | Q(uid__startswith = info),computestatus=2,identitystatus=1).order_by('-monitorstatus','-info_count')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]  #.values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')
+        count = len(Figure.objects.filter(Q(nick_name__contains = info) | Q(uid__startswith = info),computestatus=2,identitystatus=1))
         res_list = []
         if result.exists():
             for item in result:
@@ -800,10 +800,19 @@ class search_figure(APIView):
                 #info_count = 0
                 #sdate = item.begin_date.strftime('%Y-%m-%d %H:%M:%S')
                 #edate = item.end_date.strftime('%Y-%m-%d %H:%M:%S')
+                fid = item.f_id
                 if item.nick_name is None:
                     nick = fid
                 else:
                     nick = item.nick_name
+                if item.fansnum is None:
+                    fans = "未知"
+                else:
+                    fans = item.fansnum
+                if item.friendsnum is None:
+                    friends = "未知"
+                else:
+                    friends = item.friendsnum
                 if item.create_at is None:
                     create_date = "未知"
                 else:
@@ -812,7 +821,7 @@ class search_figure(APIView):
                     addr = "未知"
                 else:
                     addr = item.user_location
-                fid = item.f_id
+                
                 #event_count = Figure.objects.get(f_id=fid).event.all().count()
                 #info_count = Information.objects.filter(uid=fid).count()
                 res_list.append({"f_id":fid,"nick_name":nick,"fansnum":item.fansnum,'friendsnum':item.friendsnum,'create_at':create_date,'event_count':item.event_count,'info_count':item.info_count,'user_location':addr,'count':count})
