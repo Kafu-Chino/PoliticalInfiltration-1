@@ -90,7 +90,8 @@ class Info_spread(APIView):
         获取mid，返回信息的传播预测
 
         """
-        mid = request.GET.get('mid')
+        i_id = request.GET.get('mid')
+        mid = Information.objects.filter(i_id=i_id).values('mid')[0]['mid']
         date = Informationspread.objects.filter(mid=mid).exclude(predict=1).order_by('-store_date')[0].store_date.strftime('%Y-%m-%d')
         date2 = Informationspread.objects.filter(mid=mid).exclude(predict=1).order_by('store_date')[0].store_date.strftime('%Y-%m-%d')
         res_dict = defaultdict(dict)
