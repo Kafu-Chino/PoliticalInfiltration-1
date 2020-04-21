@@ -300,7 +300,13 @@ class Delete_sensitivetext(APIView):
         格式：{'mid':mid,'e_id':e_id}
         """
         res_dict = {}
-        mid = request.GET.get('mid')
+        text = request.GET.get('mid')
+        try:
+            mid = Information.objects.filter(text = text).values('mid')[0]['mid']
+        except:
+            res_dict["status"] = 0
+            res_dict["result"] = "信息不存在"
+            return JsonResponse(res_dict)
         e_id = request.GET.get('e_id')
         if Information.objects.filter(mid = mid).exists():
             try:
