@@ -718,7 +718,7 @@ class Show_figure(APIView):
             page_id = 1
         if limit is None:
             limit = 10
-        results = Figure.objects.filter(computestatus=2,identitystatus=1).order_by('-monitorstatus','-info_count')  #,.annotate(Count('event'))filter=(information.uid=f_id)
+        results = Figure.objects.filter(computestatus=2,identitystatus=1).order_by('-monitorstatus','-event_count','-info_count')  #,.annotate(Count('event'))filter=(information.uid=f_id)
         #print(results)
 
         count = len(results)

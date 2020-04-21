@@ -31,7 +31,7 @@ class Show_event(APIView):
             limit = 10
         count = len(Event.objects.filter(cal_status=2))
         #print(count)
-        result = Event.objects.filter(cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date').order_by('-monitor_status','-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        result = Event.objects.filter(cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date','monitor_status').order_by('-monitor_status','-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
         index_list = {}
         jre=[]
         #t1 = time.time()
@@ -70,10 +70,10 @@ class Show_event(APIView):
                         info_rat = '-'
                     if weibo_count != 0:
                         info_rat = '%.2f%%' % float(info_count/weibo_count*100)
-                    jre.append({"eid":eid,"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
+                    jre.append({"eid":eid,"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],'monitor_status':item['monitor_status'],\
                             "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':figure_rat,'sensitive_info_ratio':info_rat,'count':count})
                 else:
-                    jre.append({"eid":item["e_id"],"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
+                    jre.append({"eid":item["e_id"],"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],'monitor_status':item['monitor_status'],\
                                 "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':'-','sensitive_info_ratio':'-','count':count})
             #re = json.dumps(jre,ensure_ascii=False)
             #re = json.loads(re)
@@ -162,9 +162,9 @@ class search_event(APIView):
             page_id = 1
         if limit is None:
             limit = 10
-        result = Event.objects.filter(event_name__contains = name,cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date').order_by('-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        result = Event.objects.filter(Q(event_name__contains = name) | Q(keywords_dict__contains=name),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date').order_by('-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
         #count = Event.objects.filter(event_name__contains = name).aggregate(count = Count('e_id'))['count']
-        count = len(Event.objects.filter(event_name__contains = name,cal_status=2))
+        count = len(Event.objects.filter(Q(event_name__contains = name) | Q(keywords_dict__contains=name),cal_status=2))
         #print(len(result))
         if result.exists():
             for item in result:
@@ -501,10 +501,13 @@ class event_geo_out(APIView):
         if result.exists():
             for re in result:
                 for k,v in re["geo_weibo_outland"].items():
-                    try:
-                        geo_dict[k] += v
-                    except:
-                        geo_dict[k] = v
+                    if k == "未知":
+                        continue
+                    else:
+                        try:
+                            geo_dict[k] += v
+                        except:
+                            geo_dict[k] = v
                 geo_dict=dict(sorted(geo_dict.items(),key=lambda x:x[1],reverse=True)[:10])
             return JsonResponse(geo_dict,safe=False,json_dumps_params={'ensure_ascii':False}) #
         else:
@@ -548,10 +551,13 @@ class info_geo_out(APIView):
             #results = json.loads(json_data)
             for re in result:
                 for k,v in re["geo_info_outland"].items():
-                    try:
-                        geo_dict[k] += v
-                    except:
-                        geo_dict[k] = v
+                    if k == "未知":
+                        continue
+                    else:
+                        try:
+                            geo_dict[k] += v
+                        except:
+                            geo_dict[k] = v
 
                 geo_dict=dict(sorted(geo_dict.items(),key=lambda x:x[1],reverse=True)[:10])
             return JsonResponse(geo_dict,safe=False,json_dumps_params={'ensure_ascii':False}) #
@@ -839,7 +845,7 @@ class first_info_trend(APIView):
         else:
             return JsonResponse({"status":400, "error": "请输入正确的事件ID"},safe=False,json_dumps_params={'ensure_ascii':False})
 
-
+import re
 class first_info_geo(APIView):
     """事件敏感信息地域分布"""
     def get(self,request):
@@ -848,17 +854,20 @@ class first_info_geo(APIView):
         geo_dict={}
         #print(type(result))
         if result.exists():
-            for re in result:
-                for k,v in re["geo_info_inland"].items():
-                    try:
-                        geo_dict[k] += v
-                    except:
-                        geo_dict[k] = v
-                for k,v in re["geo_info_outland"].items():
-                    try:
-                        geo_dict[k] += v
-                    except:
-                        geo_dict[k] = v
+            pattern=re.compile(r'(\u672a\u77e5)')
+            for res in result:
+                for k,v in res["geo_info_inland"].items():
+                    if pattern.match(k) is None:
+                        try:
+                            geo_dict[k] += v
+                        except:
+                            geo_dict[k] = v
+                for k,v in res["geo_info_outland"].items():
+                    if pattern.match(k) is None:
+                        try:
+                            geo_dict[k] += v
+                        except:
+                            geo_dict[k] = v
                 geo_dict=dict(sorted(geo_dict.items(),key=lambda x:x[1],reverse=True)[:10])
             return JsonResponse(geo_dict,safe=False,json_dumps_params={'ensure_ascii':False}) #
         else:
