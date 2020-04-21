@@ -251,26 +251,27 @@ class Add_sensitivetext(APIView):
         message_type = request.GET.get('message_type')
         source = request.GET.get('source')
         e_id = request.GET.get('e_id')
-        if text == None:
+        if text == ''or text ==None:
             res_dict["status"] = 0
             res_dict["result"] = "添加失败,请输入信息文本内容"
             return JsonResponse(res_dict)
-        if e_id == None:
+        if e_id == ''or e_id ==None:
             res_dict["status"] = 0
             res_dict["result"] = "添加失败,请输入信息所属事件"
             return JsonResponse(res_dict)
-        if mid==None:
+        if mid==''or mid==None:
             mid = str(int(time.time()))
-        if uid==None:
+        if uid==''or uid==None:
             uid = '手动添加'
-        if source==None:
-            source = '手动添加0'
-        if timestamp==None:
+        if source=='' or source==None:
+            source = '手动添加'
+        if timestamp==''or timestamp==None:
             timestamp = 0
-        if geo==None:
+        if geo=='' or geo==None:
             geo = '无'
-        if message_type==None:
+        if message_type==''or message_type==None:
             message_type = 0
+        print (source,mid)
         try:
         # Event.objects.filter(e_id=e_id).first().information_set.create(i_id=source+mid, uid=uid,  mid=mid, timestamp=timestamp,
         #                            text=text, geo=geo, message_type=message_type,source=source,add_manully = 1)
@@ -299,7 +300,13 @@ class Delete_sensitivetext(APIView):
         格式：{'mid':mid,'e_id':e_id}
         """
         res_dict = {}
-        mid = request.GET.get('mid')
+        text = request.GET.get('mid')
+        try:
+            mid = Information.objects.filter(text = text).values('mid')[0]['mid']
+        except:
+            res_dict["status"] = 0
+            res_dict["result"] = "信息不存在"
+            return JsonResponse(res_dict)
         e_id = request.GET.get('e_id')
         if Information.objects.filter(mid = mid).exists():
             try:
