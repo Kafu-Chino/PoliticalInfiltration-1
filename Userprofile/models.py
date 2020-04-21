@@ -65,7 +65,7 @@ class UserActivity(models.Model):
 
 class UserBehavior(models.Model):
     ub_id = models.CharField(max_length=50, primary_key=True)
-    uid = models.CharField(max_length=30, blank=True, null=True)
+    uid = models.CharField(max_length=30, blank=True, null=True,db_index=True)
     originalnum = models.IntegerField(blank=True, null=True)
     commentnum = models.IntegerField(blank=True, null=True)
     retweetnum = models.IntegerField(blank=True, null=True)
