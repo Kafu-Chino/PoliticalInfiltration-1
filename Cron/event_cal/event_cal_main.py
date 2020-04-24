@@ -39,15 +39,10 @@ def event_cal_main(info, n, start_date, end_date):
         SENTIMENT_POS = 0.7
         store_event_para(e_id, 'sentiment_pos')
     try:
-        POS_NUM = get_event_para(e_id, 'pos_num')
+        POS_NEG = get_event_para(e_id, 'pos_neg')
     except:
-        POS_NUM = 1000
-        store_event_para(e_id, 'pos_num')
-    try:
-        NEG_NUM = get_event_para(e_id, 'neg_num')
-    except:
-        NEG_NUM = 15000
-        store_event_para(e_id, 'neg_num')
+        POS_NEG = 15
+        store_event_para(e_id, 'pos_neg')
     try:
         WEIBO_NUM = get_event_para(e_id, 'weibo_num')
     except:
@@ -70,7 +65,7 @@ def event_cal_main(info, n, start_date, end_date):
 
     print('敏感计算')
     # 对过滤后的结果进行敏感计算
-    data_dict = sensitivity(e_id, data_dict, e_index, POS_NUM, NEG_NUM)
+    data_dict = sensitivity(e_id, data_dict, e_index, POS_NEG, 0)
     # print(data_dict)
 
     if data_dict != {}:
