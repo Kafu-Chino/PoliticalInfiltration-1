@@ -180,7 +180,7 @@ class Event_show(APIView):
         """
         展示所有事件，前端分页
         """
-        result = Event.objects.all().filter(cal_status=2).order_by("-begin_date").values("e_id", "keywords_dict", "event_name", "begin_date", "end_date")
+        result = Event.objects.all().filter(cal_status=2, hidden_status=0).order_by("-begin_date").values("e_id", "keywords_dict", "event_name", "begin_date", "end_date")
         res = [item for item in result]
         return JsonResponse(res, safe=False, json_dumps_params={'ensure_ascii':False})
 
@@ -467,6 +467,11 @@ class Recal_event(APIView):
         except:
             return JsonResponse({"status": 500, "info": "事件不存在"}, safe=False)
 
+        # 旧事件状态更新为“隐藏”
+        event_obj.hidden_status = 1
+        event_obj.save()
+
+        # 在Event表中创建新的事件任务
         event_name_pinyin = Pinyin().get_pinyin(event_obj.event_name, '')
         e_id_new = "{}_{}".format(event_name_pinyin, str(int(time.time())))
         Event.objects.create(
@@ -477,26 +482,35 @@ class Recal_event(APIView):
             end_date=event_obj.end_date,
             es_index_name=e_id_new,
             cal_status=0,
-            monitor_status=1
+            monitor_status=1,
+            hidden_status=0,
         )
 
-        # 敏感词、事件参数、人工扩线信息直接换id和内容
+        # 旧事件的敏感词取出添加至新事件中
         sensitiveword = SensitiveWord.objects.filter(e_id=e_id)
         for item in sensitiveword:
-            item.e_id = e_id_new
-            item.s_id = item.prototype + e_id_new
+            item = SensitiveWord(
+                s_id=item.prototype + e_id_new,
+                prototype=item.prototype,
+                transform=item.transform,
+                e_id=e_id_new,
+                perspective_bias=item.perspective_bias,
+            )
             item.save()
 
+        # 旧事件的事件参数取出添加至新事件中
         eventparameter = EventParameter.objects.filter(e_id=e_id)
         for item in eventparameter:
-            item.e_id = e_id_new
-            item.p_id = item.p_name + e_id_new
+            item = EventParameter(
+                p_id=item.p_name + e_id_new,
+                p_name=item.p_name,
+                p_value=item.p_value,
+                e_id=e_id_new,
+                p_instruction=item.p_instruction,
+            )
             item.save()
 
-        event_obj = Event.objects.get(e_id=e_id)
-        information = event_obj.information.filter(add_manully=1)
-        event_new_obj = Event.objects.get(e_id=e_id_new)
-        for item in information:
-            event_new_obj.information.add(item)
+        # 旧事件的正例种子库取出添加至新事件中
+        
 
         return JsonResponse({"status": 200, "info": "事件重新计算任务创建成功，请到任务列表查看。"}, safe=False)
