@@ -29,9 +29,9 @@ class Show_event(APIView):
             page_id = 1
         if limit is None:
             limit = 10
-        count = len(Event.objects.filter(cal_status=2))
+        count = len(Event.objects.filter(~Q(hidden_status=1),cal_status=2))
         #print(count)
-        result = Event.objects.filter(cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date','monitor_status').order_by('-monitor_status','-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        result = Event.objects.filter(~Q(hidden_status=1),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date','monitor_status').order_by('-monitor_status','-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
         index_list = {}
         jre=[]
         #t1 = time.time()
@@ -162,9 +162,9 @@ class search_event(APIView):
             page_id = 1
         if limit is None:
             limit = 10
-        result = Event.objects.filter(Q(event_name__contains = name) | Q(keywords_dict__contains=name),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date').order_by('-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        result = Event.objects.filter(~Q(hidden_status=1),Q(event_name__contains = name) | Q(keywords_dict__contains=name),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date').order_by('-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
         #count = Event.objects.filter(event_name__contains = name).aggregate(count = Count('e_id'))['count']
-        count = len(Event.objects.filter(Q(event_name__contains = name) | Q(keywords_dict__contains=name),cal_status=2))
+        count = len(Event.objects.filter(~Q(hidden_status=1),Q(event_name__contains = name) | Q(keywords_dict__contains=name),cal_status=2))
         #print(len(result))
         if result.exists():
             for item in result:
@@ -236,7 +236,7 @@ class show_cal_event(APIView):
             2: "计算完成"
         }
         jre = []
-        result = Event.objects.filter(cal_status__in=[0,1]).values('e_id','event_name','begin_date','end_date','cal_status')
+        result = Event.objects.filter(~Q(hidden_status=1),cal_status__in=[0,1]).values('e_id','event_name','begin_date','end_date','cal_status')
         if result.exists():
             for item in result:
                 sdate = item['begin_date'].strftime('%Y-%m-%d')
@@ -954,7 +954,7 @@ class first_info(APIView):
 class first_event(APIView):
     def get(self, request):
         res_dict = []
-        result = Event.objects.filter(cal_status=2).order_by('-end_date')[:12]
+        result = Event.objects.filter(~Q(hidden_status=1),cal_status=2).order_by('-end_date')[:12]
         if result.exists():
             for res in result:
                 '''
