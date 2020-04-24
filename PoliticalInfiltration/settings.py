@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'Usermanager',
     'Informationspread',
     'Systemmanage',
+    'Textextend',
 ]
 
 MIDDLEWARE = [
