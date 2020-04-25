@@ -374,8 +374,12 @@ class Show_topic(APIView):
                         new_topic[topic_dict[item]] = i["fields"]["topics"][item]
                     #print(new_topic)
             re = sorted(new_topic.items(),key=lambda x:x[1],reverse=True)[:5]
+            count = 0
             for item in re:
-                re2.append({"name":item[0],"value":'%.4f' % item[1]})
+                count += item[1] 
+            for item in re:
+                value = item[1]/count
+                re2.append({"name":item[0],"value":'%.2f' % value})
             #print(type(re))
             #re = json.dumps(re,ensure_ascii=False)
             #re = json.load(re,ensure_ascii=False)
