@@ -60,7 +60,7 @@ def event_cal_main(info, n, start_date, end_date):
 
     print('敏感词过滤，精确敏感信息入库')
     # 对新获取的事件相关微博进行敏感词过滤，并将包含精确敏感词的信息入库
-    data_dict = sensitive_word_filter(n, e_id)
+    data_dict = sensitive_word_filter(n, e_id, 0)
     print(len(data_dict))
 
     print('敏感计算')

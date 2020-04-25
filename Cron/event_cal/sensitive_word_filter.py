@@ -68,7 +68,7 @@ def get_sensitive_word(e_id,bias,file):
         for result in results:
             wf.write(result['prototype']+'\n')
 
-def sensitive_word_filter(n,e_id):
+def sensitive_word_filter(n,e_id,is_extend):
     get_sensitive_word(e_id,1,'not_sensitive_word.txt')
     dfa = DFA()
     weibo_utils = Weibo_utils()
@@ -120,9 +120,10 @@ def sensitive_word_filter(n,e_id):
                 new_data_dict[mid] = data_dict[mid]
         else:
             new_data_dict[mid] = data_dict[mid]
-    sensitivity_store(save_data_dict)
-    event_sensitivity(e_id,save_data_dict)
-    figure_add(save_data_dict,e_id)
+    if is_extend == 0:
+        sensitivity_store(save_data_dict)
+        event_sensitivity(e_id,save_data_dict)
+        figure_add(save_data_dict,e_id)
     return new_data_dict
 if __name__ == '__main__':
     sensitive_word_filter(0,'xianggangshijian_1581919160')
