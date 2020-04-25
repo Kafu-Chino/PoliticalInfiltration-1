@@ -9,7 +9,7 @@ from collections import defaultdict
 
 def get_edic_daily():
     cursor = pi_cur()
-    sql = 'select * from Event where monitor_status = 1 and cal_status = 2'
+    sql = 'select * from Event where monitor_status = 1 and cal_status = 2 and hidden_status = 0'
     cursor.execute(sql)
     result = cursor.fetchall()
     return result
@@ -17,7 +17,7 @@ def get_edic_daily():
 
 def get_edic_add():
     cursor = pi_cur()
-    sql = 'select * from Event where monitor_status = 1 and cal_status = 0'
+    sql = 'select * from Event where monitor_status = 1 and cal_status = 0 and hidden_status = 0'
     cursor.execute(sql)
     result = cursor.fetchall()
     return result

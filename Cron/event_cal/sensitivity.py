@@ -88,7 +88,8 @@ def bert_vec_quick(mid_texts):
     # 从es获取
     result = ees.mget(index='information_vector', body={'ids': list(mid_dict.keys())})['docs']
     for item in result:
-        mid_dict[item['_source']['mid']]['vec'] = np.array(item['_source']['vector'])
+        if item['found']:
+            mid_dict[item['_source']['mid']]['vec'] = np.array(item['_source']['vector'])
 
     # 没有的处理
     mid_no = []
@@ -97,18 +98,19 @@ def bert_vec_quick(mid_texts):
         if mid_dict[i].get('vec', None) is None:
             mid_no.append(i)
             texts.append(mid_dict[i]['text'])
-    no_vec = bert_vec(texts)
-    # 存储进es
-    t = nowts()
-    save = []
-    for i,j in zip(mid_no, no_vec):
-        mid_dict[i]['vec'] = j
-        message = {}
-        message['mid'] = i
-        message['vector'] = j.tolist()
-        message['timestamp'] = t
-        save.append(message)
-    event_es_save(save, 'information_vector')
+    if mid_no:
+        no_vec = bert_vec(texts)
+        # 存储进es
+        t = nowts()
+        save = []
+        for i,j in zip(mid_no, no_vec):
+            mid_dict[i]['vec'] = j
+            message = {}
+            message['mid'] = i
+            message['vector'] = j.tolist()
+            message['timestamp'] = t
+            save.append(message)
+        event_es_save(save, 'information_vector')
     vec = [mid_dict[i]['vec'] for i in mid_dict]
     return vec
 
@@ -227,6 +229,7 @@ def get_neg_data(e_index, NEG_NUM):
     neg_data = pd.DataFrame(columns=('mid', 'vec'))
     mid = []
     vec = []
+    mid_texts = []
     es_result = list(es_result)
     if len(es_result) > NEG_NUM * 8:
         index_list = set(np.random.choice(range(len(es_result)), size=NEG_NUM, replace=False))
@@ -235,8 +238,9 @@ def get_neg_data(e_index, NEG_NUM):
                 continue
             mid.append(item['_source']['mid'])
             vec.append(item['_source']['text'])
+            mid_texts.append((item['_source']['mid'],item['_source']['text']))
         neg_data['mid'] = mid
-        neg_data['vec'] = bert_vec(vec)
+        neg_data['vec'] = bert_vec_quick(mid_texts)
     else:
         index_list = set(np.random.choice(range(len(es_result)), size=int(len(es_result) / 8), replace=False))
         for index, item in enumerate(es_result):
@@ -244,8 +248,9 @@ def get_neg_data(e_index, NEG_NUM):
                 continue
             mid.append(item['_source']['mid'])
             vec.append(item['_source']['text'])
+            mid_texts.append((item['_source']['mid'],item['_source']['text']))
         neg_data['mid'] = mid
-        neg_data['vec'] = bert_vec(vec)
+        neg_data['vec'] = bert_vec_quick(mid_texts)
     return neg_data
 
 
