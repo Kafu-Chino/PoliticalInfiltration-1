@@ -60,15 +60,16 @@ def event_cal_main(info, n, start_date, end_date):
 
     print('敏感词过滤，精确敏感信息入库')
     # 对新获取的事件相关微博进行敏感词过滤，并将包含精确敏感词的信息入库
-    data_dict = sensitive_word_filter(n, e_id)
+    data_dict = sensitive_word_filter(n, e_id, 0)
     print(len(data_dict))
 
     print('敏感计算')
     # 对过滤后的结果进行敏感计算
-    data_dict = sensitivity(e_id, data_dict, e_index, POS_NEG, 0)
+    if data_dict:
+        data_dict = sensitivity(e_id, data_dict, e_index, POS_NEG, 0)
     # print(data_dict)
 
-    if data_dict != {}:
+    if data_dict:
         print('敏感信息入库')
         # 敏感信息入库,敏感信息和事件关联入库
         sensitivity_store(data_dict)
