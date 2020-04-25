@@ -14,7 +14,7 @@ from .敏感词扩展.sensitive_word_extent import extent
 
 from Systemmanage.models import *
 from Mainevent.models import *
-
+from Textextend.models import *
 
 
 class Test(APIView):
@@ -487,6 +487,7 @@ class Recal_event(APIView):
         )
 
         # 旧事件的敏感词取出添加至新事件中
+        querysetlist=[]
         sensitiveword = SensitiveWord.objects.filter(e_id=e_id)
         for item in sensitiveword:
             item = SensitiveWord(
@@ -496,9 +497,11 @@ class Recal_event(APIView):
                 e_id=e_id_new,
                 perspective_bias=item.perspective_bias,
             )
-            item.save()
+            querysetlist.append(item)    
+        SensitiveWord.objects.bulk_create(querysetlist)
 
         # 旧事件的事件参数取出添加至新事件中
+        querysetlist=[]
         eventparameter = EventParameter.objects.filter(e_id=e_id)
         for item in eventparameter:
             item = EventParameter(
@@ -508,9 +511,22 @@ class Recal_event(APIView):
                 e_id=e_id_new,
                 p_instruction=item.p_instruction,
             )
-            item.save()
+            querysetlist.append(item)    
+        EventParameter.objects.bulk_create(querysetlist)
 
         # 旧事件的正例种子库取出添加至新事件中
-        
+        querysetlist=[]
+        eventpositive = EventPositive.objects.filter(e_id=e_id)
+        for item in eventpositive:
+            item = EventPositive(
+                e_id=e_id_new,
+                text=item.text,
+                vector=item.vector,
+                store_timestamp=item.store_timestamp,
+                store_type=item.store_type,
+                process_status=item.process_status,
+            )
+            querysetlist.append(item)    
+        EventPositive.objects.bulk_create(querysetlist)
 
         return JsonResponse({"status": 200, "info": "事件重新计算任务创建成功，请到任务列表查看。"}, safe=False)
