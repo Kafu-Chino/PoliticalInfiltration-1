@@ -84,10 +84,10 @@ def sensitive_word_filter(n,e_id):
         end_ts = int(time.mktime(datetime.date.today().timetuple()))
         start_ts = end_ts-86400
     data_dict = {}
-    num = 0
+    # num = 0
     for data_list in querry(e_index,start_ts,end_ts):
-        num += 1
-        print(num)
+        # num += 1
+        # print(num)
         for message in data_list:
             if not dfa.exists(message['text']):
                 data_dict[message['mid']] = {}
