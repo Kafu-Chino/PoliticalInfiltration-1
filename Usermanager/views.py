@@ -195,6 +195,31 @@ class User_Modify(APIView):
         return JsonResponse(res_dict)
 
 
+class User_Status(APIView):
+    """返回用户登陆状态及权限接口"""
+
+    def get(self, request):
+        """
+        根据前端传来的username，返回该用户登录状态及权限
+        格式: 格式: {"status":1/0,"role":1/2/3, "message":"该用户不存在！"}
+        """
+        res_dict = {}
+        username = request.GET.get('username')
+        try:
+            role = User.objects.filter(username=username).first().role
+            if request.session.get("username", None) == username:
+                status = 1
+            else:
+                status = 0
+            res_dict["status"] = status
+            res_dict["role"] = role
+        except:
+            message = "该用户不存在！"
+            res_dict["message"] = message
+
+        return JsonResponse(res_dict)
+
+
 # 密码加密
 def hash_code(s, salt='mysite'):
     h = hashlib.sha256()
