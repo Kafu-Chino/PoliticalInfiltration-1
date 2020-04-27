@@ -389,6 +389,7 @@ def store_event_para(e_id, p_name):
     'neg_num':(e_id+'_neg_num','neg_num',15000,e_id,'敏感计算时负类数量'),
     'weibo_num':(e_id+'_weibo_num','weibo_num',100000,e_id,'每日LDA聚类时采样的微博总数'),
     'stop_percent':(e_id+'_stop_percent','stop_percent',0.05,e_id,'停止监测的信息数量阈值（峰值的百分比）'),
-    'pos_neg':(e_id+'_pos_neg','pos_neg',15,e_id,'敏感计算时负类比正类比例')}
+    'pos_neg':(e_id+'_pos_neg','pos_neg',15,e_id,'敏感计算时负类比正类比例'),
+    'extend_scale':(e_id+'_extend_scale','extend_scale',10,e_id,'扩线比例阈值')}
     cursor.executemany(sql, [parameters[p_name]])
     conn.commit()
