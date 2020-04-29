@@ -47,6 +47,7 @@ class Show_sensitive_word(APIView):
         else:
             data = json.dumps(list(result))
             results = json.loads(data)
+            results.reverse()
             return JsonResponse(results, safe=False)
 
 
@@ -60,6 +61,7 @@ class Show_sensitive_word_transform(APIView):
         else:
             data = json.dumps(list(result))
             results = json.loads(data)
+            results.reverse()
             return JsonResponse(results, safe=False)
 
 
