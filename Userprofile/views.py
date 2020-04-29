@@ -680,15 +680,15 @@ class Figure_create(APIView):
             return JsonResponse({"status":400, "error": "人物已存在"},safe=False,json_dumps_params={'ensure_ascii':False})
         if f_id and nick :
             if not birth:
-                birthday = "0000-00-00"
+                birthday = '未知'
             if not create_at:
-                create_at = "0000-00-00"
+                create_at = '未知'
             if not fans:
-                fans = -1
+                fans = '未知'
             if not friends:
-                friends = -1
+                friends = '未知'
             Figure.objects.create(f_id=f_id, uid=uid, nick_name=nick,user_location=location,fansnum=fans,user_birth = birth,create_at=create_at,
-                                friendsnum=friends,political = political,domain=domain)
+                                friendsnum=friends,political = political,domain=domain,computestatus=0)
             return JsonResponse({"status":201, "msg": "人物添加成功"},safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "请输入人物的相关信息"},safe=False,json_dumps_params={'ensure_ascii':False})
