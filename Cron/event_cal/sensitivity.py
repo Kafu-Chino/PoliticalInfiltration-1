@@ -86,7 +86,7 @@ def bert_vec_quick(mid_texts):
     for i in mid_texts:
         mid_dict[i[0]] = {'text': i[1]}
     # 从es获取
-    result = ees.mget(index='information_vector', body={'ids': list(mid_dict.keys())})['docs']
+    result = ees.mget(index='info_vector', body={'ids': list(mid_dict.keys())})['docs']
     for item in result:
         if item['found']:
             mid_dict[item['_source']['mid']]['vec'] = np.array(item['_source']['vector'])
@@ -107,10 +107,10 @@ def bert_vec_quick(mid_texts):
             mid_dict[i]['vec'] = j
             message = {}
             message['mid'] = i
-            message['vector'] = j.tolist()
+            message['vector'] = [round(v, 4) for v in j.tolist()]
             message['timestamp'] = t
             save.append(message)
-        event_es_save(save, 'information_vector')
+        event_es_save(save, 'info_vector')
     vec = [mid_dict[i]['vec'] for i in mid_dict]
     return vec
 
