@@ -26,6 +26,6 @@ urlpatterns = [
     path('Usermanager/', include('Usermanager.urls')),
     path('Informationspread/', include('Informationspread.urls')),
     path('Systemmanage/', include('Systemmanage.urls')),
-    path('Textextent/', include('Textextent.urls')),
+    path('Textextend/', include('Textextend.urls')),
     path(r'docs/', get_swagger_view(title='ApiDocs')),
 ]
