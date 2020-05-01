@@ -118,9 +118,9 @@ class Submit_extent(APIView):
         """
         e_id = request.GET.get('e_id')
         if ExtendTask.objects.filter(e_id=e_id).exists():
-            ExtendTask.objects.filter(e_id=e_id).update(cal_status=1)
+            ExtendTask.objects.filter(e_id=e_id).update(cal_status=0)
         else:
-            ExtendTask.objects.create(e_id=e_id,cal_status=1)
+            ExtendTask.objects.create(e_id=e_id,cal_status=0)
         return JsonResponse({"status": 1, "result": "提交成功 "}, safe=False)
 
 class Show_seedtext(APIView):
@@ -208,7 +208,7 @@ class Add_audittext(APIView):
             ExtendReview.objects.filter(text=text).update(process_status=1)
             vector = bert_vec([text])[0].tostring()
             timestamp = int(time.time())
-            EventPositive.objects.create(store_timestamp=timestamp,text=text, e_id=e_id,store_type=1,process_status=0,vector=vector)
+            EventPositive.objects.create(store_timestamp=timestamp,text=text, e_id=e_id,store_type=2,process_status=1,vector=vector)
             result = ExtendReview.objects.filter(text=text).values()[0]
             # print (result)
             Information.objects.create(i_id=result['source']+result['mid'],uid=result['uid'],root_uid=result['root_uid'],mid = result['mid'],
@@ -247,11 +247,11 @@ class Process(APIView):
             return JsonResponse({"status":400, "error": "请先提交扩线任务"},safe=False)
         else:
             if result[0]['cal_status'] == 3:
-                return JsonResponse({"status": 400, "info": "请先提交扩线任务"}, safe=False)
+                return JsonResponse({"status": 400, "error": "请先提交扩线任务"}, safe=False)
             else:
                 EventPositive.objects.filter(e_id=e_id, store_type=1).update(process_status=1)
                 ExtendReview.objects.filter(e_id=e_id, process_status=0).update(process_status=1)
-                return JsonResponse({"status": 400, "info": "不允许操作"}, safe=False)
+                return JsonResponse({"status": 200, "info": "当前扩线任务已处理完毕"}, safe=False)
 
 
 
