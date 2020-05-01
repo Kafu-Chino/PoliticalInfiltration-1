@@ -30,3 +30,7 @@ def extend():
         update_cal_status([e_item], 2)
 
         print("事件 %s 扩线完成。" % e_id)
+
+
+if __name__ == '__main__':
+    extend()
