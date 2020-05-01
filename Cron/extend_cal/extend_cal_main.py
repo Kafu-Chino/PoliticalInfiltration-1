@@ -49,7 +49,7 @@ def extend_cal_main(e_id):
         # 获取事件已有敏感信息mid
         mid_remove = get_mid_info(e_id)
         # 获取事件已在扩线新增信息库中的mid
-        mid_remove.extend(get_mid_extend())
+        mid_remove.extend(get_mid_extend(e_id))
         mid_remove = set(mid_remove)
         # 去掉重复
         mid = mid - mid_remove
