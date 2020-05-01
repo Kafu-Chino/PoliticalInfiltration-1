@@ -73,6 +73,7 @@ def event_cal_main(info, n, start_date, end_date):
     if data_dict:
         data_dict = sensitivity(e_id, data_dict, e_index, POS_NEG, 0)
     # print(data_dict)
+    print(len(data_dict))
 
     if data_dict:
         print('敏感信息入库')

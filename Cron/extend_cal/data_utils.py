@@ -79,3 +79,20 @@ def store_extend_info(e_id, mid, data_dict):
     n = cursor.executemany(sql, val)
     print("入扩线新增库成功 %d 条" % n)
     conn.commit()
+
+
+def get_edic_extend():
+    cursor = pi_cur()
+    sql = 'select e_id from ExtendTask where cal_status = 0'
+    cursor.execute(sql)
+    result = cursor.fetchall()
+    return result
+
+
+def update_cal_status(eid_dict, cal_status):
+    cursor = pi_cur()
+    sql = "UPDATE ExtendTask SET cal_status = %s WHERE e_id = %s"
+
+    params = [(cal_status, item['e_id']) for item in eid_dict]
+    cursor.executemany(sql, params)
+    conn.commit()
