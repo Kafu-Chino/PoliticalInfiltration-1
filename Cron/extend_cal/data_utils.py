@@ -23,7 +23,7 @@ def get_mid_info(e_id):
     :param e_id: 该事件e_id
     :return: mid
     """
-    sql = "select information_id from Event_information where e_id = '{}'".format(e_id)
+    sql = "select information_id from Event_information where event_id = '{}'".format(e_id)
     cursor = pi_cur()
     cursor.execute(sql)
     results = cursor.fetchall()
@@ -71,10 +71,12 @@ def store_extend_info(e_id, mid, data_dict):
           'text=%s,timestamp=%s,send_ip=%s,geo=%s,message_type=%s,root_mid=%s,' \
           'source=%s,process_status=0'
     val = []
-    for i, j in data_dict.items():
-        val.append((e_id+i,e_id,j.get('uid',None),j.get('root_uid',None),i,j.get('text',None),
-                    j.get('timestamp',None),j.get('send_ip',None),j.get('geo',None),
-                    j.get('message_type',None),j.get('root_mid',None),j.get('source',None)))
+    for i in mid:
+        val.append((e_id+i,e_id,data_dict[i].get('uid',None),data_dict[i].get('root_uid',None),
+                    i,data_dict[i].get('text',None),data_dict[i].get('timestamp',None),
+                    data_dict[i].get('send_ip',None),data_dict[i].get('geo',None),
+                    data_dict[i].get('message_type',None),data_dict[i].get('root_mid',None),
+                    data_dict[i].get('source',None)))
     # 执行sql语句
     n = cursor.executemany(sql, val)
     print("入扩线新增库成功 %d 条" % n)
