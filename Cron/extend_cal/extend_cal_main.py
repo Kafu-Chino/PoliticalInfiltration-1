@@ -37,12 +37,14 @@ def extend_cal_main(e_id):
     # 获取事件信息
     e_name, e_index = get_event_p(e_id)
     # 敏感词过滤
+    print('敏感词过滤')
     data_dict = sensitive_word_filter(0, e_id, 1)
     print(len(data_dict))
     # 扩线计算
+    print('扩线计算')
     if data_dict:
         data_dict = sensitivity(e_id, data_dict, e_index, POS_NEG, 1)
-
+    print(len(data_dict))
     # 去重
     if data_dict:
         mid = set(data_dict.keys())
@@ -52,17 +54,18 @@ def extend_cal_main(e_id):
         mid_remove.extend(get_mid_extend(e_id))
         mid_remove = set(mid_remove)
         # 去掉重复
-        mid = mid - mid_remove
+        mid = list(mid - mid_remove)
         l = len(mid)
         print(l)
         # 根据添加数选取适量信息
         if l:
-            add_num = add_num * EXTEND_SCALE
+            add_num = add_num * int(EXTEND_SCALE)
             if l > add_num:
                 mid = random.choices(mid, k=add_num)
             # for i in data_dict:
             #     if i not in mid:
             #         del data_dict[i]
             # 入扩线新增信息库
-            store_extend_info(e_id, mid, data_dict)
+            if len(mid):
+                store_extend_info(e_id, mid, data_dict)
 

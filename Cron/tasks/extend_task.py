@@ -4,6 +4,7 @@
 # Author : Hu
 # File : extend_task.py
 
+from bert_serving.client import BertClient
 import sys
 sys.path.append('../../')
 from Cron.extend_cal.data_utils import get_edic_extend, update_cal_status
