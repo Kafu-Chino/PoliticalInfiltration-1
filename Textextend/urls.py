@@ -24,4 +24,8 @@ urlpatterns = [
     path('auditdelete/',views.Delete_audittext.as_view()),
     path('check/',views.Check.as_view()),
     path('process/', views.Process.as_view()),
+    path('stmdelete/', views.Deletemulti_sensitivetext.as_view()),
+    path('seedmdelete/', views.Deletemulti_seedtext.as_view()),
+    path('auditmsubmit/', views.Addmulti_audittext.as_view()),
+
 ]
