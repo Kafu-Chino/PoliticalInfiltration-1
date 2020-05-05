@@ -61,7 +61,7 @@ class Add_sensitivetext(APIView):
             if EventPositive.objects.filter(text=text,e_id=e_id).exists():
                 res_dict["status"] = 0
                 res_dict["result"] = "添加失败,该条扩线信息已存在"
-                return JsonResponse(res_dict)
+                yield JsonResponse(res_dict)
             # print (texts)
             vector = bert_vec(texts)[0].tostring()
             # print(vector)
@@ -107,6 +107,23 @@ class Delete_sensitivetext(APIView):
             EventPositive.objects.filter(e_id=e_id,text=text).delete()
         else:
             return JsonResponse({"status": 1, "result": "文本不存在 "}, safe=False)
+        return JsonResponse({"status": 1, "result": "删除成功 "}, safe=False)
+
+class Deletemulti_sensitivetext(APIView):
+
+    def get(self, request):
+        """
+        批量删除
+        格式：{'e_id':e_id,'text':text}
+        """
+        e_id = request.GET.get('e_id')
+        texts = request.GET.get('text').split('$')
+        for text in texts:
+            if EventPositive.objects.filter(e_id=e_id,text=text).exists():
+                EventPositive.objects.filter(e_id=e_id,text=text).delete()
+            else:
+                # return JsonResponse({"status": 1, "result": "文本不存在 "}, safe=False)
+                continue
         return JsonResponse({"status": 1, "result": "删除成功 "}, safe=False)
 
 class Submit_extent(APIView):
@@ -188,6 +205,23 @@ class Delete_seedtext(APIView):
             return JsonResponse({"status": 0, "result": "文本不存在 "}, safe=False)
         return JsonResponse({"status": 1, "result": "删除成功 "}, safe=False)
 
+class Deletemulti_seedtext(APIView):
+
+    def get(self, request):
+        """
+        批量删除
+        格式：{'e_id':e_id,'text':text}
+        """
+        e_id = request.GET.get('e_id')
+        texts = request.GET.get('text').split('$')
+        for text in texts:
+            if EventPositive.objects.filter(e_id=e_id,text=text).exists():
+                EventPositive.objects.filter(e_id=e_id,text=text).delete()
+            else:
+                # return JsonResponse({"status": 1, "result": "文本不存在 "}, safe=False)
+                continue
+        return JsonResponse({"status": 1, "result": "删除成功 "}, safe=False)
+
 class Add_audittext(APIView):
     count = 0
 
@@ -220,6 +254,42 @@ class Add_audittext(APIView):
         except:
             res_dict["status"] = 0
             res_dict["result"] = "添加失败"
+        return JsonResponse(res_dict)
+
+class Addmulti_audittext(APIView):
+    count = 0
+
+    def get(self, request):
+        """
+        增加事件敏感文本
+        格式：{'e_id':e_id,'text':text }
+        """
+        res_dict = {}
+        texts = request.GET.get('text').split('$')
+        e_id = request.GET.get('e_id')
+        for text in texts:
+            try:
+                if not ExtendReview.objects.filter(text=text).exists():
+                    # res_dict["status"] = 0
+                    # res_dict["result"] = "添加失败,该条扩线信息不存在"
+                    # return JsonResponse(res_dict)
+                    continue
+                ExtendReview.objects.filter(text=text).update(process_status=1)
+                vector = bert_vec([text])[0].tostring()
+                timestamp = int(time.time())
+                EventPositive.objects.create(store_timestamp=timestamp,text=text, e_id=e_id,store_type=2,process_status=1,vector=vector)
+                result = ExtendReview.objects.filter(text=text).values()[0]
+                # print (result)
+                Information.objects.create(i_id=result['source']+result['mid'],uid=result['uid'],root_uid=result['root_uid'],mid = result['mid'],
+                                           root_mid = result['root_mid'],text=text,timestamp=result['timestamp'],
+                                           send_ip=result['send_ip'],geo=result['geo'],message_type=result['message_type']
+                                           ,source=result['source'],cal_status=0,add_manully=1)
+            except:
+                continue
+        # res_dict["status"] = 0
+        # res_dict["result"] = "添加失败"
+        res_dict["status"] = 1
+        res_dict["result"] = "提交成功"
         return JsonResponse(res_dict)
 
 
