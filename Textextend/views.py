@@ -61,7 +61,7 @@ class Add_sensitivetext(APIView):
             if EventPositive.objects.filter(text=text,e_id=e_id).exists():
                 res_dict["status"] = 0
                 res_dict["result"] = "添加失败,该条扩线信息已存在"
-                yield JsonResponse(res_dict)
+                return JsonResponse(res_dict)
             # print (texts)
             vector = bert_vec(texts)[0].tostring()
             # print(vector)
@@ -242,7 +242,7 @@ class Add_audittext(APIView):
             ExtendReview.objects.filter(text=text).update(process_status=1)
             vector = bert_vec([text])[0].tostring()
             timestamp = int(time.time())
-            EventPositive.objects.create(store_timestamp=timestamp,text=text, e_id=e_id,store_type=2,process_status=0,vector=vector)
+            EventPositive.objects.create(store_timestamp=timestamp,text=text, e_id=e_id,store_type=2,process_status=1,vector=vector)
             result = ExtendReview.objects.filter(text=text).values()[0]
             # print (result)
             Information.objects.create(i_id=result['source']+result['mid'],uid=result['uid'],root_uid=result['root_uid'],mid = result['mid'],
