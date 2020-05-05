@@ -34,6 +34,7 @@ def extend_cal_main(e_id):
 
     # 获取人工添加信息数
     add_num = get_add_num(e_id)
+    update_process_status(e_id, 1)    # 把上次审核入库的正类信息标记为已处理
     # 获取事件信息
     e_name, e_index = get_event_p(e_id)
     # 敏感词过滤
