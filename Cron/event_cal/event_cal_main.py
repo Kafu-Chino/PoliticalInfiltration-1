@@ -41,7 +41,7 @@ def event_cal_main(info, n, start_date, end_date):
     try:
         POS_NEG = get_event_para(e_id, 'pos_neg')
     except:
-        POS_NEG = 15
+        POS_NEG = 50
         store_event_para(e_id, 'pos_neg')
     try:
         WEIBO_NUM = get_event_para(e_id, 'weibo_num')

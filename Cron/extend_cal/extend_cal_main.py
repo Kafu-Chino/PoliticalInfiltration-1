@@ -23,7 +23,7 @@ def extend_cal_main(e_id):
     try:
         POS_NEG = get_event_para(e_id, 'pos_neg')
     except:
-        POS_NEG = 15
+        POS_NEG = 50
         store_event_para(e_id, 'pos_neg')
 
     try:
