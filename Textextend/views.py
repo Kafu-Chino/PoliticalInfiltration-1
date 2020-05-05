@@ -277,7 +277,7 @@ class Addmulti_audittext(APIView):
                 ExtendReview.objects.filter(text=text).update(process_status=1)
                 vector = bert_vec([text])[0].tostring()
                 timestamp = int(time.time())
-                EventPositive.objects.create(store_timestamp=timestamp,text=text, e_id=e_id,store_type=2,process_status=1,vector=vector)
+                EventPositive.objects.create(store_timestamp=timestamp,text=text, e_id=e_id,store_type=2,process_status=0,vector=vector)
                 result = ExtendReview.objects.filter(text=text).values()[0]
                 # print (result)
                 Information.objects.create(i_id=result['source']+result['mid'],uid=result['uid'],root_uid=result['root_uid'],mid = result['mid'],
