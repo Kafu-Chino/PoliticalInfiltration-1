@@ -51,7 +51,7 @@ def get_add_num(e_id):
     :param e_id: 该事件e_id
     :return: add_num
     """
-    sql = "select id from EventPositive where e_id = '{}' and store_type = 1 and process_status = 0".format(e_id)
+    sql = "select id from EventPositive where e_id = '{}' and process_status = 0".format(e_id)
     cursor = pi_cur()
     cursor.execute(sql)
     add_num = len(cursor.fetchall())
@@ -96,5 +96,14 @@ def update_cal_status(eid_dict, cal_status):
     sql = "UPDATE ExtendTask SET cal_status = %s WHERE e_id = %s"
 
     params = [(cal_status, item['e_id']) for item in eid_dict]
+    cursor.executemany(sql, params)
+    conn.commit()
+
+
+def update_process_status(eid, cal_status):
+    cursor = pi_cur()
+    sql = "UPDATE EventPositive SET process_status = %s WHERE e_id = %s and store_type = 2"
+
+    params = [(cal_status, eid)]
     cursor.executemany(sql, params)
     conn.commit()
