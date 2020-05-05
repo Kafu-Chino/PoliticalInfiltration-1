@@ -266,7 +266,7 @@ def sensitivity(e_id, data, e_index, POS_NEG, is_extend):
     """
     # data = dict_slice(data, 0, 25)   # 测试代码，采样一小部分数据
     data, mid_texts = data_process(data)
-    POS_NUM = 1000
+    POS_NUM = 500
     pos_data, pos_num = get_pos_data(e_id, POS_NUM)
     NEG_NUM = pos_num * POS_NEG
     neg_data = get_neg_data(e_index, NEG_NUM)
