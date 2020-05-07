@@ -20,8 +20,10 @@ def update_cal_status(mid_dic, cal_status):
 # 对新添加的信息进行计算，在bash里定义5分钟一运行
 def information_add(date):
     # 定时间范围为当前计算日期前一天日期至前二十天内（当天数据当天晚上统一更新计算）
-    end_date = ts2date(int(date2ts(date)) - 86400)
-    start_date = ts2date(int(date2ts(date)) - 20 * 86400)
+    # end_date = ts2date(int(date2ts(date)) - 86400)
+    # start_date = ts2date(int(date2ts(date)) - 20 * 86400)
+    end_date = "2019-11-28"
+    start_date = '2019-06-01'
     print(start_date, end_date)
 
     # 获取未计算的信息
