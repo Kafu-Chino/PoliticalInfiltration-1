@@ -2,6 +2,7 @@ from django.shortcuts import render
 
 
 import json
+import re
 from xpinyin import Pinyin
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import redirect
@@ -263,37 +264,37 @@ class Add_audittext(APIView):
         res_dict = {}
         text = request.GET.get('text')
         e_id = request.GET.get('e_id')
-        try:
-            if not ExtendReview.objects.filter(text=text,process_status=0,e_id=e_id).exists():
-                res_dict["status"] = 0
-                res_dict["result"] = "添加失败,该条扩线信息不存在"
-                return JsonResponse(res_dict)
-            text1=text
-            if jinghua(text).strip() != '':
-                text1 = jinghua(text).strip()
-            vector = bert_vec([text1])[0].tostring()
-            timestamp = int(time.time())
-            EventPositive.objects.create(store_timestamp=timestamp,text=text, e_id=e_id,store_type=2,process_status=0,vector=vector)
-            result = ExtendReview.objects.filter(text=text,process_status=0,e_id=e_id).values()[0]
-            # print (result)
-            if not Information.objects.filter(i_id=result['source']+result['mid']).exists():
-                Information.objects.create(i_id=result['source']+result['mid'],uid=result['uid'],root_uid=result['root_uid'],mid = result['mid'],
-                                           root_mid = result['root_mid'],text=text,timestamp=result['timestamp'],
-                                           send_ip=result['send_ip'],geo=result['geo'],message_type=result['message_type']
-                                           ,source=result['source'],cal_status=0,add_manully=1)
-
-            info = Information.objects.get(i_id=result['source']+result['mid'])
-            event = Event.objects.get(e_id=e_id)
-            event.information.add(info)
-
-            id = ExtendReview.objects.filter(text=text, process_status=0,e_id=e_id).values('mid')[0]['mid']
-            # print (id)
-            ExtendReview.objects.filter(mid=id,e_id=e_id).update(process_status=1)
-            res_dict["status"] = 1
-            res_dict["result"] = "提交成功"
-        except:
+        # try:
+        if not ExtendReview.objects.filter(text=text,process_status=0,e_id=e_id).exists():
             res_dict["status"] = 0
-            res_dict["result"] = "添加失败"
+            res_dict["result"] = "添加失败,该条扩线信息不存在"
+            return JsonResponse(res_dict)
+        text1=text
+        if jinghua(text).strip() != '':
+            text1 = jinghua(text).strip()
+        vector = bert_vec([text1])[0].tostring()
+        timestamp = int(time.time())
+        EventPositive.objects.create(store_timestamp=timestamp,text=text, e_id=e_id,store_type=2,process_status=0,vector=vector)
+        result = ExtendReview.objects.filter(text=text,process_status=0,e_id=e_id).values()[0]
+        # print (result)
+        if not Information.objects.filter(i_id=result['source']+result['mid']).exists():
+            Information.objects.create(i_id=result['source']+result['mid'],uid=result['uid'],root_uid=result['root_uid'],mid = result['mid'],
+                                       root_mid = result['root_mid'],text=text,timestamp=result['timestamp'],
+                                       send_ip=result['send_ip'],geo=result['geo'],message_type=result['message_type']
+                                       ,source=result['source'],cal_status=0,add_manully=1)
+
+        info = Information.objects.get(i_id=result['source']+result['mid'])
+        event = Event.objects.get(e_id=e_id)
+        event.information.add(info)
+
+        id = ExtendReview.objects.filter(text=text, process_status=0,e_id=e_id).values('mid')[0]['mid']
+        # print (id)
+        ExtendReview.objects.filter(mid=id,e_id=e_id).update(process_status=1)
+        res_dict["status"] = 1
+        res_dict["result"] = "提交成功"
+        # except:
+        #     res_dict["status"] = 0
+        #     res_dict["result"] = "添加失败"
         return JsonResponse(res_dict)
 
 class Addmulti_audittext(APIView):
