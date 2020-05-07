@@ -87,12 +87,12 @@ class Show_sensitivetext(APIView):
         new_result = []
         for i in result:
             new_result.append({'text':i['text'],'time':time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(i['store_timestamp']))})
-        if not result.exists():
-            return JsonResponse({"status": 400, "error": "该事件不存在，请检查事件是否正确"}, safe=False)
-        else:
-            data = json.dumps(list(new_result))
-            results = json.loads(data)
-            return JsonResponse(results, safe=False)
+        # if not result.exists():
+        #     return JsonResponse({"status": 400, "error": "该事件不存在，请检查事件是否正确"}, safe=False)
+        # else:
+        data = json.dumps(list(new_result))
+        results = json.loads(data)
+        return JsonResponse(results, safe=False)
 
 class Delete_sensitivetext(APIView):
 
@@ -106,7 +106,7 @@ class Delete_sensitivetext(APIView):
         if EventPositive.objects.filter(e_id=e_id,text=text).exists():
             EventPositive.objects.filter(e_id=e_id,text=text).delete()
         else:
-            return JsonResponse({"status": 1, "result": "文本不存在 "}, safe=False)
+            return JsonResponse({"status": 400, "result": "文本不存在 "}, safe=False)
         return JsonResponse({"status": 1, "result": "删除成功 "}, safe=False)
 
 class Deletemulti_sensitivetext(APIView):
@@ -249,6 +249,10 @@ class Add_audittext(APIView):
                                        root_mid = result['root_mid'],text=text,timestamp=result['timestamp'],
                                        send_ip=result['send_ip'],geo=result['geo'],message_type=result['message_type']
                                        ,source=result['source'],cal_status=0,add_manully=1)
+            # Event_information.objects.create(information_id=result['source'] + result['mid'], event_id=e_id)
+            info = Information.objects.get(i_id=result['source']+result['mid'])
+            event = Event.objects.get(e_id=e_id)
+            event.information.add(info)
             res_dict["status"] = 1
             res_dict["result"] = "提交成功"
         except:
@@ -284,6 +288,10 @@ class Addmulti_audittext(APIView):
                                            root_mid = result['root_mid'],text=text,timestamp=result['timestamp'],
                                            send_ip=result['send_ip'],geo=result['geo'],message_type=result['message_type']
                                            ,source=result['source'],cal_status=0,add_manully=1)
+                # Event_information.objects.create(information_id=result['source']+result['mid'],event_id=e_id)
+                info = Information.objects.get(i_id=result['source'] + result['mid'])
+                event = Event.objects.get(e_id=e_id)
+                event.information.add(info)
             except:
                 continue
         # res_dict["status"] = 0
@@ -322,10 +330,3 @@ class Process(APIView):
                 EventPositive.objects.filter(e_id=e_id, store_type=1).update(process_status=1)
                 ExtendReview.objects.filter(e_id=e_id, process_status=0).update(process_status=1)
                 return JsonResponse({"status": 200, "info": "当前扩线任务已处理完毕"}, safe=False)
-
-
-
-
-
-
-
