@@ -44,6 +44,36 @@ def bert_vec(texts):
         vec = list(vec)
     return vec
 
+def jinghua(text1):
+    text = re.search('(.*?)//@', text1)
+    if text is not None:
+        text1 = text.group(1)
+    re_rp = re.compile('回覆@.+?:')
+    text1 = re_rp.sub('', text1)
+    re_rp2 = re.compile('回复@.+?:')
+    text1 = re_rp2.sub('', text1)
+    re_at = re.compile('@.+?:')
+    text1 = re_at.sub('', text1)
+    re_at2 = re.compile('@.+?：')
+    text1 = re_at2.sub('', text1)
+    re_at3 = re.compile('@.+? ')
+    text1 = re_at3.sub('', text1)
+    re_link = re.compile('http://[a-zA-Z0-9.?/&=:]*')
+    re_links = re.compile('https://[a-zA-Z0-9.?/&=:]*')
+    text1 = re_link.sub("", text1)
+    text1 = re_links.sub("", text1)
+    if text1 in {'转发微博', '轉發微博', 'Repost', 'repost'}:
+        text1 = ''
+    if text1.startswith('@'):
+        text1 = ''
+    re_link = re.compile('t.cn/[a-zA-Z0-9.?/&=:]*')
+    text1 = re_link.sub("", text1)
+    re_jh = re.compile('[\u4E00-\u9FA5]|[\\w]|[,.，。！：!、?？: ]')
+    text1 = re_jh.findall(text1)
+    text1 = ''.join(text1)
+    text1 = re.sub(' +', ' ', text1)  # 多个空格转为单个空格
+    return text1
+
 
 class Add_sensitivetext(APIView):
     count = 0
@@ -234,29 +264,31 @@ class Add_audittext(APIView):
         text = request.GET.get('text')
         e_id = request.GET.get('e_id')
         try:
-            if not ExtendReview.objects.filter(text=text).exists():
+            if not ExtendReview.objects.filter(text=text,process_status=0,e_id=e_id).exists():
                 res_dict["status"] = 0
                 res_dict["result"] = "添加失败,该条扩线信息不存在"
                 return JsonResponse(res_dict)
-
-
-            vector = bert_vec([text])[0].tostring()
+            text1=text
+            if jinghua(text).strip() != '':
+                text1 = jinghua(text).strip()
+            vector = bert_vec([text1])[0].tostring()
             timestamp = int(time.time())
             EventPositive.objects.create(store_timestamp=timestamp,text=text, e_id=e_id,store_type=2,process_status=0,vector=vector)
-            result = ExtendReview.objects.filter(text=text,process_status=0).values()[0]
+            result = ExtendReview.objects.filter(text=text,process_status=0,e_id=e_id).values()[0]
             # print (result)
-            Information.objects.create(i_id=result['source']+result['mid'],uid=result['uid'],root_uid=result['root_uid'],mid = result['mid'],
-                                       root_mid = result['root_mid'],text=text,timestamp=result['timestamp'],
-                                       send_ip=result['send_ip'],geo=result['geo'],message_type=result['message_type']
-                                       ,source=result['source'],cal_status=0,add_manully=1)
+            if not Information.objects.filter(i_id=result['source']+result['mid']).exists():
+                Information.objects.create(i_id=result['source']+result['mid'],uid=result['uid'],root_uid=result['root_uid'],mid = result['mid'],
+                                           root_mid = result['root_mid'],text=text,timestamp=result['timestamp'],
+                                           send_ip=result['send_ip'],geo=result['geo'],message_type=result['message_type']
+                                           ,source=result['source'],cal_status=0,add_manully=1)
 
             info = Information.objects.get(i_id=result['source']+result['mid'])
             event = Event.objects.get(e_id=e_id)
             event.information.add(info)
 
-            id = ExtendReview.objects.filter(text=text, process_status=0).values('mid')[0]['mid']
+            id = ExtendReview.objects.filter(text=text, process_status=0,e_id=e_id).values('mid')[0]['mid']
             # print (id)
-            ExtendReview.objects.filter(mid=id).update(process_status=1)
+            ExtendReview.objects.filter(mid=id,e_id=e_id).update(process_status=1)
             res_dict["status"] = 1
             res_dict["result"] = "提交成功"
         except:
@@ -277,27 +309,30 @@ class Addmulti_audittext(APIView):
         e_id = request.GET.get('e_id')
         for text in texts:
             try:
-                if not ExtendReview.objects.filter(text=text).exists():
+                if not ExtendReview.objects.filter(text=text,e_id=e_id).exists():
                     # res_dict["status"] = 0
                     # res_dict["result"] = "添加失败,该条扩线信息不存在"
                     # return JsonResponse(res_dict)
                     continue
-
-                vector = bert_vec([text])[0].tostring()
+                text1=text
+                if jinghua(text).strip()!='':
+                    text1=jinghua(text).strip()
+                vector = bert_vec([text1])[0].tostring()
                 timestamp = int(time.time())
                 EventPositive.objects.create(store_timestamp=timestamp,text=text, e_id=e_id,store_type=2,process_status=0,vector=vector)
-                result = ExtendReview.objects.filter(text=text,process_status=0).values()[0]
+                result = ExtendReview.objects.filter(text=text,process_status=0,e_id=e_id).values()[0]
                 # print (result)
-                Information.objects.create(i_id=result['source']+result['mid'],uid=result['uid'],root_uid=result['root_uid'],mid = result['mid'],
-                                           root_mid = result['root_mid'],text=text,timestamp=result['timestamp'],
-                                           send_ip=result['send_ip'],geo=result['geo'],message_type=result['message_type']
-                                           ,source=result['source'],cal_status=0,add_manully=1)
+                if not Information.objects.filter(i_id=result['source'] + result['mid']).exists():
+                    Information.objects.create(i_id=result['source']+result['mid'],uid=result['uid'],root_uid=result['root_uid'],mid = result['mid'],
+                                               root_mid = result['root_mid'],text=text,timestamp=result['timestamp'],
+                                               send_ip=result['send_ip'],geo=result['geo'],message_type=result['message_type']
+                                               ,source=result['source'],cal_status=0,add_manully=1)
                 # Event_information.objects.create(information_id=result['source']+result['mid'],event_id=e_id)
                 info = Information.objects.get(i_id=result['source'] + result['mid'])
                 event = Event.objects.get(e_id=e_id)
                 event.information.add(info)
-                id = ExtendReview.objects.filter(text=text, process_status=0).values('mid')[0]['mid']
-                ExtendReview.objects.filter(mid=id).update(process_status=1)
+                id = ExtendReview.objects.filter(text=text, process_status=0,e_id=e_id).values('mid')[0]['mid']
+                ExtendReview.objects.filter(mid=id,e_id=e_id).update(process_status=1)
             except:
                 continue
         # res_dict["status"] = 0
