@@ -678,7 +678,7 @@ class Figure_create(APIView):
         result = Figure.objects.filter(f_id=uid)
         if result.exists():
             return JsonResponse({"status":400, "error": "人物已存在"},safe=False,json_dumps_params={'ensure_ascii':False})
-        if f_id and nick :
+        if f_id :
             if not birth:
                 birthday = '未知'
             if not create_at:
@@ -711,6 +711,78 @@ class Figure_delete(APIView):
 
 
 class Show_figure(APIView):
+    """展示人物列表"""
+    def get(self, request):
+        """展示人物,该文档返回Figure表中存在的需要展示的数据，返回字段f_id为用户账号，nick_name为昵称
+          fansnum粉丝数,friendsnum关注数,event_count为参与事件数，info_count为敏感信息数,user_location地点"""
+        #result = Figure.objects.all()  #values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')
+        limit = request.GET.get("limit")
+        page_id = request.GET.get('page_id')
+        if page_id is None:
+            page_id = 1
+        if limit is None:
+            limit = 10
+        results = Figure.objects.filter(computestatus=2,identitystatus=1).order_by('-monitorstatus','-info_count','-event_count')  #,.annotate(Count('event'))filter=(information.uid=f_id)
+        #print(results)
+
+        count = len(results)
+        result = results[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        res_list = []
+        if results.exists():
+            for item in result:
+                fid = item.f_id
+                #event_count = 0
+                #info_count = 0
+                #sdate = item.begin_date.strftime('%Y-%m-%d %H:%M:%S')
+                #edate = item.end_date.strftime('%Y-%m-%d %H:%M:%S')
+                if item.nick_name is None:
+                    nick = fid
+                else:
+                    nick = item.nick_name
+                if item.fansnum is None:
+                    fans = "未知"
+                else:
+                    fans = item.fansnum
+                if item.friendsnum is None:
+                    friends = "未知"
+                else:
+                    friends = item.friendsnum
+                if item.create_at is None:
+                    create_date = "未知"
+                else:
+                    create_date = item.create_at
+                if item.user_location is None:
+                    addr = "未知"
+                else:
+                    addr = item.user_location
+                
+                #event_count = Figure.objects.get(f_id=fid).event.all().count()
+                #info_count = Information.objects.filter(uid=fid).count()
+                res_list.append({"f_id":fid,"nick_name":nick,"fansnum":fans,'friendsnum':friends,'create_at':create_date,'event_count':item.event_count,'info_count':item.info_count,'user_location':addr,'count':count})
+            
+            '''
+            page = Paginator(res_list, limit)
+            if page_id:
+                try:
+                    results = page.page(page_id)
+                except PageNotAnInteger:
+                    results = page.page(1)
+                except EmptyPage:
+                    results = page.page(1)
+            else:
+                results = page.page(1)
+            '''
+            #re = json.dumps(list(results),ensure_ascii=False)
+            #reres_list= = json.loads(re)
+            #res=sorted(res_list,key=operator.itemgetter('info_count'),reverse=True)
+            return JsonResponse(res_list,safe=False,json_dumps_params={'ensure_ascii':False})
+        else:
+            return JsonResponse({"status":400, "error": "无人物"},safe=False)
+
+
+
+
+class Show_figure_event(APIView):
     """展示人物列表"""
     def get(self, request):
         """展示人物,该文档返回Figure表中存在的需要展示的数据，返回字段f_id为用户账号，nick_name为昵称
@@ -778,7 +850,6 @@ class Show_figure(APIView):
             return JsonResponse(res_list,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "无人物"},safe=False)
-
 
 
 
