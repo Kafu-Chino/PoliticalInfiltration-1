@@ -277,6 +277,7 @@ class Add_audittext(APIView):
             EventPositive.objects.create(store_timestamp=timestamp,text=text, e_id=e_id,store_type=2,process_status=0,vector=vector)
             result = ExtendReview.objects.filter(text=text,process_status=0,e_id=e_id).values()[0]
             # print (result)
+
             if not Information.objects.filter(i_id=result['source']+result['mid']).exists():
                 Information.objects.create(i_id=result['source']+result['mid'],uid=result['uid'],root_uid=result['root_uid'],mid = result['mid'],
                                            root_mid = result['root_mid'],text=text,timestamp=result['timestamp'],
@@ -290,6 +291,7 @@ class Add_audittext(APIView):
             id = ExtendReview.objects.filter(text=text, process_status=0,e_id=e_id).values('mid')[0]['mid']
             # print (id)
             ExtendReview.objects.filter(mid=id,e_id=e_id).update(process_status=1)
+
             res_dict["status"] = 1
             res_dict["result"] = "提交成功"
         except:
@@ -323,17 +325,21 @@ class Addmulti_audittext(APIView):
                 EventPositive.objects.create(store_timestamp=timestamp,text=text, e_id=e_id,store_type=2,process_status=0,vector=vector)
                 result = ExtendReview.objects.filter(text=text,process_status=0,e_id=e_id).values()[0]
                 # print (result)
+
                 if not Information.objects.filter(i_id=result['source'] + result['mid']).exists():
                     Information.objects.create(i_id=result['source']+result['mid'],uid=result['uid'],root_uid=result['root_uid'],mid = result['mid'],
                                                root_mid = result['root_mid'],text=text,timestamp=result['timestamp'],
                                                send_ip=result['send_ip'],geo=result['geo'],message_type=result['message_type']
                                                ,source=result['source'],cal_status=0,add_manully=1)
+
                 # Event_information.objects.create(information_id=result['source']+result['mid'],event_id=e_id)
                 info = Information.objects.get(i_id=result['source'] + result['mid'])
                 event = Event.objects.get(e_id=e_id)
                 event.information.add(info)
+
                 id = ExtendReview.objects.filter(text=text, process_status=0,e_id=e_id).values('mid')[0]['mid']
                 ExtendReview.objects.filter(mid=id,e_id=e_id).update(process_status=1)
+
             except:
                 continue
         # res_dict["status"] = 0
@@ -372,10 +378,3 @@ class Process(APIView):
                 EventPositive.objects.filter(e_id=e_id, store_type=1).update(process_status=1)
                 ExtendReview.objects.filter(e_id=e_id, process_status=0).update(process_status=1)
                 return JsonResponse({"status": 200, "info": "当前扩线任务已处理完毕"}, safe=False)
-
-
-
-
-
-
-

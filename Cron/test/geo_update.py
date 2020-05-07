@@ -125,8 +125,32 @@ def update_mysql_geo():
         print(index)
     conn.commit()
 
+def update_mysql_hazard_index():
+    cur = conn.cursor()
+    sql = "SELECT * FROM Information, Event_information WHERE Event_information.event_id = 'event_ostudent' and Event_information.information_id = Information.i_id"
+    cur.execute(sql)
+    data = cur.fetchall()
+
+    cursor = pi_cur()
+    for index, item in enumerate(data):
+        mid = item["mid"]
+        i_id = item["i_id"]
+        sql = "SELECT * FROM Informationspread WHERE mid = '{}' and predict = 0 order by store_date desc".format(mid)
+        cursor.execute(sql)
+        try:
+            hazard_index = cursor.fetchone()["hazard_index"]
+            update_sql = "UPDATE Information SET hazard_index={} WHERE i_id='{}'".format(hazard_index, i_id)
+            print(index)
+        except:
+            update_sql = "UPDATE Information SET cal_status=0 WHERE i_id='{}'".format(i_id)
+            print(index, "没找到。。")
+
+        cursor.execute(update_sql)
+    conn.commit()
+
 if __name__ == "__main__":
     # geo = "河北省邯郸市电信(河北省邯郸市电信)"
     # print(geo_transfer(geo))
     # update_weibo_all_geo()
-    update_mysql_geo()
+    # update_mysql_geo()
+    update_mysql_hazard_index()
