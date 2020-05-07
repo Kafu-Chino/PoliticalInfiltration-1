@@ -1141,7 +1141,7 @@ class User_Influence(APIView):
         uid = request.GET.get('uid')
         n_type = request.GET.get('n_type')
         try:
-            date = NewUserInfluence.objects.filter(uid=uid).order_by('-store_date')[0].store_date.strftime('%Y-%m-%d')
+            date = NewUserInfluence.objects.filter(uid=uid).exclude(influence=0).order_by('-store_date')[0].store_date.strftime('%Y-%m-%d')
         except:
             date = today()
         res_dict = defaultdict(dict)
