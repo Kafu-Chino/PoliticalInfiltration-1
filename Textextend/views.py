@@ -2,6 +2,7 @@ from django.shortcuts import render
 
 
 import json
+import re
 from xpinyin import Pinyin
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import redirect
