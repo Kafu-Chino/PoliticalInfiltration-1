@@ -656,6 +656,8 @@ class Show_contact(APIView):
 
         return JsonResponse(social_contact, safe=False)
 
+
+
 class Figure_create(APIView):
     """添加人物入库"""
     def get(self,request):
@@ -759,30 +761,13 @@ class Show_figure(APIView):
                 #event_count = Figure.objects.get(f_id=fid).event.all().count()
                 #info_count = Information.objects.filter(uid=fid).count()
                 res_list.append({"f_id":fid,"nick_name":nick,"fansnum":fans,'friendsnum':friends,'create_at':create_date,'event_count':item.event_count,'info_count':item.info_count,'user_location':addr,'count':count})
-            
-            '''
-            page = Paginator(res_list, limit)
-            if page_id:
-                try:
-                    results = page.page(page_id)
-                except PageNotAnInteger:
-                    results = page.page(1)
-                except EmptyPage:
-                    results = page.page(1)
-            else:
-                results = page.page(1)
-            '''
-            #re = json.dumps(list(results),ensure_ascii=False)
-            #reres_list= = json.loads(re)
-            #res=sorted(res_list,key=operator.itemgetter('info_count'),reverse=True)
             return JsonResponse(res_list,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "无人物"},safe=False)
 
 
 
-
-class Show_figure_event(APIView):
+class Show_figure_sort(APIView):
     """展示人物列表"""
     def get(self, request):
         """展示人物,该文档返回Figure表中存在的需要展示的数据，返回字段f_id为用户账号，nick_name为昵称
@@ -790,11 +775,22 @@ class Show_figure_event(APIView):
         #result = Figure.objects.all()  #values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')
         limit = request.GET.get("limit")
         page_id = request.GET.get('page_id')
+        name = request.GET.get('label')
+        order = request.GET.get('order')
         if page_id is None:
             page_id = 1
         if limit is None:
             limit = 10
-        results = Figure.objects.filter(computestatus=2,identitystatus=1).order_by('-monitorstatus','-event_count','-info_count')  #,.annotate(Count('event'))filter=(information.uid=f_id)
+        if name == "info_count":
+            if order == "descending":
+                results = Figure.objects.filter(computestatus=2,identitystatus=1).order_by('-monitorstatus','-info_count','-event_count')
+            else:
+                results = Figure.objects.filter(computestatus=2,identitystatus=1).order_by('-monitorstatus','info_count','event_count')
+        if name == "event_count":
+            if order == "descending":
+                results = Figure.objects.filter(computestatus=2,identitystatus=1).order_by('-monitorstatus','-event_count','-info_count')
+            else:
+                results = Figure.objects.filter(computestatus=2,identitystatus=1).order_by('-monitorstatus','event_count','info_count')  #,.annotate(Count('event'))filter=(information.uid=f_id)
         #print(results)
 
         count = len(results)
@@ -831,25 +827,12 @@ class Show_figure_event(APIView):
                 #event_count = Figure.objects.get(f_id=fid).event.all().count()
                 #info_count = Information.objects.filter(uid=fid).count()
                 res_list.append({"f_id":fid,"nick_name":nick,"fansnum":fans,'friendsnum':friends,'create_at':create_date,'event_count':item.event_count,'info_count':item.info_count,'user_location':addr,'count':count})
-            
-            '''
-            page = Paginator(res_list, limit)
-            if page_id:
-                try:
-                    results = page.page(page_id)
-                except PageNotAnInteger:
-                    results = page.page(1)
-                except EmptyPage:
-                    results = page.page(1)
-            else:
-                results = page.page(1)
-            '''
-            #re = json.dumps(list(results),ensure_ascii=False)
-            #reres_list= = json.loads(re)
-            #res=sorted(res_list,key=operator.itemgetter('info_count'),reverse=True)
             return JsonResponse(res_list,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "无人物"},safe=False)
+
+
+
 
 
 
@@ -867,6 +850,73 @@ class search_figure(APIView):
         if limit is None:
             limit = 10
         result = Figure.objects.filter(Q(nick_name__contains = info) | Q(uid__startswith = info),computestatus=2,identitystatus=1).order_by('-monitorstatus','-info_count')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]  #.values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')
+        count = len(Figure.objects.filter(Q(nick_name__contains = info) | Q(uid__startswith = info),computestatus=2,identitystatus=1))
+        res_list = []
+        if result.exists():
+            for item in result:
+                #event_count = 0
+                #info_count = 0
+                #sdate = item.begin_date.strftime('%Y-%m-%d %H:%M:%S')
+                #edate = item.end_date.strftime('%Y-%m-%d %H:%M:%S')
+                fid = item.f_id
+                if item.nick_name is None:
+                    nick = fid
+                else:
+                    nick = item.nick_name
+                if item.fansnum is None:
+                    fans = "未知"
+                else:
+                    fans = item.fansnum
+                if item.friendsnum is None:
+                    friends = "未知"
+                else:
+                    friends = item.friendsnum
+                if item.create_at is None:
+                    create_date = "未知"
+                else:
+                    create_date = item.create_at
+                if item.user_location is None:
+                    addr = "未知"
+                else:
+                    addr = item.user_location
+                
+                #event_count = Figure.objects.get(f_id=fid).event.all().count()
+                #info_count = Information.objects.filter(uid=fid).count()
+                res_list.append({"f_id":fid,"nick_name":nick,"fansnum":fans,'friendsnum':friends,'create_at':create_date,'event_count':item.event_count,'info_count':item.info_count,'user_location':addr,'count':count})
+            res=sorted(res_list,key=operator.itemgetter('info_count'),reverse=True)
+            return JsonResponse(res,safe=False,json_dumps_params={'ensure_ascii':False})
+        else:
+            return JsonResponse({"status":400, "error": "该人物不存在"},safe=False,json_dumps_params={'ensure_ascii':False})
+
+
+
+
+class search_figure_sort(APIView):
+    """展示所搜寻人物信息"""
+    def get(self, request):
+        """展示人物,该文档返回Figure表中存在的需要展示的数据，返回字段f_id为用户账号，nick_name为昵称
+          fansnum粉丝数,friendsnum关注数,political政治倾向,domain领域,user_location地点"""
+        info = request.GET.get("info")
+        res_list = []
+        limit = request.GET.get("limit")
+        page_id = request.GET.get('page_id')
+        name = request.GET.get('label')
+        order = request.GET.get('order')
+        if page_id is None:
+            page_id = 1
+        if limit is None:
+            limit = 10
+        if name == "info_count":
+            if order == "descending":
+                result = Figure.objects.filter(Q(nick_name__contains = info) | Q(uid__startswith = info),computestatus=2,identitystatus=1).order_by('-monitorstatus','-info_count','-event_count')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]  #.values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')
+            else:
+                result = Figure.objects.filter(Q(nick_name__contains = info) | Q(uid__startswith = info),computestatus=2,identitystatus=1).order_by('-monitorstatus','info_count','event_count')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        if name == "event_count":
+            if order == "descending":
+                result = Figure.objects.filter(Q(nick_name__contains = info) | Q(uid__startswith = info),computestatus=2,identitystatus=1).order_by('-monitorstatus','-event_count','-info_count')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]  #.values("f_id","nick_name","fansnum",'friendsnum','political','domain','user_location')
+            else:
+                result = Figure.objects.filter(Q(nick_name__contains = info) | Q(uid__startswith = info),computestatus=2,identitystatus=1).order_by('-monitorstatus','event_count','info_count')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+
         count = len(Figure.objects.filter(Q(nick_name__contains = info) | Q(uid__startswith = info),computestatus=2,identitystatus=1))
         res_list = []
         if result.exists():
