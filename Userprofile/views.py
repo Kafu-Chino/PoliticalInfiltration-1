@@ -1011,6 +1011,7 @@ class Figure_create(APIView):
         domain = request.GET.get("domain")
         birth = request.GET.get("birthday")
         create_at = request.GET.get("create_at")
+        into_date = datetime.date.today()
         #h_id = request.GET.get("wb_id")  # 若该条人工输入事件从微博而来 则需输入来源微博的id
         #result = Task.objects.filter(~Q(mid=''), mid=h_id) #判断从微博得来的事件是否已存在，若微博ID未给出返回一个空值
         result = Figure.objects.filter(f_id=uid)
@@ -1028,7 +1029,7 @@ class Figure_create(APIView):
                 friends = '未知'
             '''
             Figure.objects.create(f_id=f_id, uid=uid, nick_name=nick,user_location=location,fansnum=fans,user_birth = birth,create_at=create_at,
-                                friendsnum=friends,political = political,domain=domain,computestatus=0,identitystatus=1)
+                                friendsnum=friends,political = political,domain=domain,computestatus=0,identitystatus=1,into_date=into_date)
             return JsonResponse({"status":201, "msg": "人物添加成功"},safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "请输入人物的相关信息"},safe=False,json_dumps_params={'ensure_ascii':False})
