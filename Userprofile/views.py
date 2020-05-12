@@ -713,11 +713,11 @@ class Show_figure(APIView):
                     friends = "未知"
                 else:
                     friends = item.friendsnum
-                if item.create_at is None or item.create_at == '':
+                if item.create_at is None:
                     create_date = "未知"
                 else:
                     create_date = item.create_at
-                if item.user_location is None or item.create_at == '':
+                if item.user_location is None:
                     addr = "未知"
                 else:
                     addr = item.user_location
@@ -1017,6 +1017,7 @@ class Figure_create(APIView):
         if result.exists():
             return JsonResponse({"status":400, "error": "人物已存在"},safe=False,json_dumps_params={'ensure_ascii':False})
         if f_id :
+            '''
             if not birth:
                 birthday = '未知'
             if not create_at:
@@ -1025,6 +1026,7 @@ class Figure_create(APIView):
                 fans = '未知'
             if not friends:
                 friends = '未知'
+            '''
             Figure.objects.create(f_id=f_id, uid=uid, nick_name=nick,user_location=location,fansnum=fans,user_birth = birth,create_at=create_at,
                                 friendsnum=friends,political = political,domain=domain,computestatus=0,identitystatus=1)
             return JsonResponse({"status":201, "msg": "人物添加成功"},safe=False,json_dumps_params={'ensure_ascii':False})
@@ -1092,8 +1094,8 @@ class related_info(APIView):
             page_id = 1
         if limit is None:
             limit = 10
-        res = Information.objects.filter(uid=fid,cal_status=2).order_by('-hazard_index','-timestamp')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
-        count = Information.objects.filter(uid=fid,cal_status=2).count()
+        res = Information.objects.filter(uid=fid,cal_status=2).order_by('-timestamp')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        count = len(Information.objects.filter(uid=fid,cal_status=2))
         res_dict['count'] = count
         #print(len(res))
         if res.exists():
@@ -1101,8 +1103,8 @@ class related_info(APIView):
                 lt = time.localtime(i.timestamp)
                 itime = time.strftime('%Y-%m-%d %H:%M:%S',lt)
                 #print(itime)
-                res_dict['table'].append(['text','time','geo','id','hazard_index'])
-                res_dict['data'].append([i.text,itime,i.geo,i.i_id,int(i.hazard_index)])
+                res_dict['table'].append(['text','time','geo','id'])
+                res_dict['data'].append([i.text,itime,i.geo,i.i_id])
             '''
             page = Paginator(res_dict, limit)
             #page_id = request.GET.get('page_id')
@@ -1332,15 +1334,15 @@ class User_Influence(APIView):
                     influence=Avg("influence"), importance=Avg("importance"),
                     sensitity=Avg("sensitity"), activity=Avg("activity"))
                 if result['influence'] != None:
-                    res_dict['influence'][ts2date(date_dict[i])[:7]] = result['influence']
-                    res_dict['importance'][ts2date(date_dict[i])[:7]] = result['importance']
-                    res_dict['sensitity'][ts2date(date_dict[i])[:7]] = result['sensitity']
-                    res_dict['activity'][ts2date(date_dict[i])[:7]] = result['activity']
+                    res_dict['influence'][ts2date(date_dict[i])] = result['influence']
+                    res_dict['importance'][ts2date(date_dict[i])] = result['importance']
+                    res_dict['sensitity'][ts2date(date_dict[i])] = result['sensitity']
+                    res_dict['activity'][ts2date(date_dict[i])] = result['activity']
                 else:
-                    res_dict['influence'][ts2date(date_dict[i])[:7]] = 0
-                    res_dict['importance'][ts2date(date_dict[i])[:7]] = 0
-                    res_dict['sensitity'][ts2date(date_dict[i])[:7]] = 0
-                    res_dict['activity'][ts2date(date_dict[i])[:7]] = 0
+                    res_dict['influence'][ts2date(date_dict[i])] = 0
+                    res_dict['importance'][ts2date(date_dict[i])] = 0
+                    res_dict['sensitity'][ts2date(date_dict[i])] = 0
+                    res_dict['activity'][ts2date(date_dict[i])] = 0
         n_res = defaultdict(dict)
         n_res['date'] = list(res_dict['influence'].keys())
         n_res['influence_num'] = list(res_dict['influence'].values())
