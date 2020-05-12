@@ -1324,15 +1324,15 @@ class User_Influence(APIView):
                     influence=Avg("influence"), importance=Avg("importance"),
                     sensitity=Avg("sensitity"), activity=Avg("activity"))
                 if result['influence'] != None:
-                    res_dict['influence'][ts2date(date_dict[i])] = result['influence']
-                    res_dict['importance'][ts2date(date_dict[i])] = result['importance']
-                    res_dict['sensitity'][ts2date(date_dict[i])] = result['sensitity']
-                    res_dict['activity'][ts2date(date_dict[i])] = result['activity']
+                    res_dict['influence'][ts2date(date_dict[i])[:7]] = result['influence']
+                    res_dict['importance'][ts2date(date_dict[i])[:7]] = result['importance']
+                    res_dict['sensitity'][ts2date(date_dict[i])[:7]] = result['sensitity']
+                    res_dict['activity'][ts2date(date_dict[i])[:7]] = result['activity']
                 else:
-                    res_dict['influence'][ts2date(date_dict[i])] = 0
-                    res_dict['importance'][ts2date(date_dict[i])] = 0
-                    res_dict['sensitity'][ts2date(date_dict[i])] = 0
-                    res_dict['activity'][ts2date(date_dict[i])] = 0
+                    res_dict['influence'][ts2date(date_dict[i])[:7]] = 0
+                    res_dict['importance'][ts2date(date_dict[i])[:7]] = 0
+                    res_dict['sensitity'][ts2date(date_dict[i])[:7]] = 0
+                    res_dict['activity'][ts2date(date_dict[i])[:7]] = 0
         n_res = defaultdict(dict)
         n_res['date'] = list(res_dict['influence'].keys())
         n_res['influence_num'] = list(res_dict['influence'].values())
