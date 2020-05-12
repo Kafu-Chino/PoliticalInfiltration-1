@@ -713,11 +713,11 @@ class Show_figure(APIView):
                     friends = "未知"
                 else:
                     friends = item.friendsnum
-                if item.create_at is None:
+                if item.create_at is None or item.create_at == '':
                     create_date = "未知"
                 else:
                     create_date = item.create_at
-                if item.user_location is None:
+                if item.user_location is None or item.user_location == '':
                     addr = "未知"
                 else:
                     addr = item.user_location
@@ -779,11 +779,11 @@ class Show_figure_sort(APIView):
                     friends = "未知"
                 else:
                     friends = item.friendsnum
-                if item.create_at is None:
+                if item.create_at is None or item.create_at == '':
                     create_date = "未知"
                 else:
                     create_date = item.create_at
-                if item.user_location is None:
+                if item.user_location is None or item.user_location == '':
                     addr = "未知"
                 else:
                     addr = item.user_location
