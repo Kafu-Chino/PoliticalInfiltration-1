@@ -749,11 +749,11 @@ class Show_figure(APIView):
                     friends = "未知"
                 else:
                     friends = item.friendsnum
-                if item.create_at is None:
+                if item.create_at is None or item.create_at == '':
                     create_date = "未知"
                 else:
                     create_date = item.create_at
-                if item.user_location is None:
+                if item.user_location is None or item.create_at == '':
                     addr = "未知"
                 else:
                     addr = item.user_location
@@ -1084,8 +1084,8 @@ class related_info(APIView):
             page_id = 1
         if limit is None:
             limit = 10
-        res = Information.objects.filter(uid=fid,cal_status=2).order_by('-timestamp')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
-        count = len(Information.objects.filter(uid=fid,cal_status=2))
+        res = Information.objects.filter(uid=fid,cal_status=2).order_by('-hazard_index','-timestamp')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        count = Information.objects.filter(uid=fid,cal_status=2).count()
         res_dict['count'] = count
         #print(len(res))
         if res.exists():
@@ -1093,8 +1093,8 @@ class related_info(APIView):
                 lt = time.localtime(i.timestamp)
                 itime = time.strftime('%Y-%m-%d %H:%M:%S',lt)
                 #print(itime)
-                res_dict['table'].append(['text','time','geo','id'])
-                res_dict['data'].append([i.text,itime,i.geo,i.i_id])
+                res_dict['table'].append(['text','time','geo','id','hazard_index'])
+                res_dict['data'].append([i.text,itime,i.geo,i.i_id,int(i.hazard_index)])
             '''
             page = Paginator(res_dict, limit)
             #page_id = request.GET.get('page_id')
