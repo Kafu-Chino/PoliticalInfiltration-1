@@ -136,7 +136,7 @@ def event_analyze(e_id,data,date=thedate):
                             "into_date":date,
                             "timestamp":end_time}
     sql_insert_many("Event_Analyze", "e_id", analyze_dict)
-
+    cursor.execute('insert into Event(sensitive_figure_ratio,sensitive_info_ratio) values(%s,%s)  where e_id = %s ',(figure_count/user_count,info_count/weibo_count,e_id))
 
 
 
