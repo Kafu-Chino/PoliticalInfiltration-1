@@ -402,7 +402,12 @@ class Process(APIView):
         else:
             if result[0]['cal_status'] == 3:
                 return JsonResponse({"status": 400, "error": "请先提交扩线任务"}, safe=False)
+            elif result[0]['cal_status'] == 0:
+                return JsonResponse({"status": 400, "error": "扩线任务尚未计算完毕"}, safe=False)
+            elif result[0]['cal_status'] == 1:
+                return JsonResponse({"status": 400, "error": "扩线任务尚未计算完毕"}, safe=False)
             else:
                 EventPositive.objects.filter(e_id=e_id, store_type=1).update(process_status=1)
                 ExtendReview.objects.filter(e_id=e_id, process_status=0).update(process_status=1)
+                ExtendTask.objects.filter(e_id=e_id).update(cal_status=3)
                 return JsonResponse({"status": 200, "info": "当前扩线任务已处理完毕"}, safe=False)
