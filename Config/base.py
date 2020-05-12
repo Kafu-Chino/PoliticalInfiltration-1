@@ -80,3 +80,8 @@ MSG_TYPE_DIC = {
     2: "评论",
     3: "转发"
 }
+
+MONITOR_STATUS_DIC = {
+    0: "未在监测",
+    1: "监测中"
+}

@@ -8,6 +8,7 @@ from django.core import serializers
 from django.db.models import Q
 import operator
 from Config.time_utils import *
+from Config.base import MONITOR_STATUS_DIC
 from Mainevent.models import *  #Event_Analyze, Event, Figure, Information, Event_Hashtag_Senwords
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from Systemmanage.models import SensitiveWord
@@ -70,10 +71,10 @@ class Show_event(APIView):
                         info_rat = '-'
                     if weibo_count != 0:
                         info_rat = '%.2f%%' % float(info_count/weibo_count*100)
-                    jre.append({"eid":eid,"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],'monitor_status':item['monitor_status'],\
+                    jre.append({"eid":eid,"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],'monitor_status':MONITOR_STATUS_DIC[item['monitor_status']],\
                             "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':figure_rat,'sensitive_info_ratio':info_rat,'count':count})
                 else:
-                    jre.append({"eid":item["e_id"],"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],'monitor_status':item['monitor_status'],\
+                    jre.append({"eid":item["e_id"],"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],'monitor_status':MONITOR_STATUS_DIC[item['monitor_status']],\
                                 "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':'-','sensitive_info_ratio':'-','count':count})
             #re = json.dumps(jre,ensure_ascii=False)
             #re = json.loads(re)
@@ -404,17 +405,17 @@ class related_figure(APIView):
         res_event = Event.objects.filter(e_id=eid)  #.first().event_set.all()
         if res_event.exists():
             #print(e)
-            res = res_event[0].figure.all().order_by('-fansnum')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
-            count = len(res_event[0].figure.all())
+            res = res_event[0].figure.filter(computestatus=2).order_by('-info_count','-event_count')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+            count = res_event[0].figure.filter(computestatus=2).count()
             res_dict['count'] = count
             for f in res:
-                res_dict['table'].append(["f_id","nick_name","fansnum","friendsnum"])
+                res_dict['table'].append(["f_id","nick_name","info_count","event_count"])
                 
                 f_id = f.f_id if f.f_id else "未知"
                 nick_name = f.nick_name if f.nick_name else "未知"
-                fansnum = f.fansnum if f.fansnum else "未知"
-                friendsnum = f.friendsnum if f.friendsnum else "未知"
-                res_dict['data'].append([f_id, nick_name,fansnum,friendsnum])
+                info_count = f.info_count if f.info_count else "未知"
+                event_count = f.event_count if f.event_count else "未知"
+                res_dict['data'].append([f_id, nick_name,info_count,event_count])
             return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "无相关人物"},safe=False)
@@ -458,15 +459,15 @@ class related_info(APIView):
         res_event = Event.objects.filter(e_id=eid)  #.first().event_set.all()
         if res_event.exists():
             #print(e)
-            res1 = res_event[0].information.all().filter(cal_status=2).order_by('-timestamp')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
-            count = len(res_event[0].information.all().filter(cal_status=2))
+            res1 = res_event[0].information.filter(cal_status=2).order_by('-hazard_index', '-timestamp')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+            count = res_event[0].information.filter(cal_status=2).count()
             res_dict['count'] = count
             #print(count)
             for i in res1:
                 lt = time.localtime(i.timestamp)
                 itime = time.strftime('%Y-%m-%d %H:%M:%S',lt)
-                res_dict['table'].append(['text','time','geo','id'])
-                res_dict['data'].append([i.text,itime,i.geo,i.i_id])
+                res_dict['table'].append(['text','time','geo','id','hazard_index'])
+                res_dict['data'].append([i.text,itime,i.geo,i.i_id,int(i.hazard_index)])
                 #print(res_dict["info"])
             return JsonResponse(res_dict,safe=False,json_dumps_params={'ensure_ascii':False}) #
         else:

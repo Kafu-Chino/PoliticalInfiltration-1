@@ -177,18 +177,46 @@ class Show_seedtext(APIView):
         展示种子文本
         格式：{'e_id':e_id}
         """
+        type_dict = {0:'系统初始化',1:'人工添加',2:'扩线添加'}
         e_id = request.GET.get('e_id')
-        result = EventPositive.objects.filter(e_id=e_id).values('text','store_timestamp','store_type')
+        result = EventPositive.objects.filter(e_id=e_id).values('id','text','store_timestamp','store_type').order_by(''
+                                                                                                                     'store_timestamp')
         new_result = []
-        for i in result:
-            new_result.append(
-                {'text': i['text'], 'time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(i['store_timestamp'])),'store_type':i['store_type']})
-        if not result.exists():
-            return JsonResponse({"status": 400, "error": "该事件不存在种子信息，请检查事件是否正确"}, safe=False)
+        if e_id != 'xianggangshijian_1581919160':
+            for i in result:
+                new_result.append(
+                    {'text': i['text'], 'time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(i['store_timestamp'])),'store_type':type_dict[i['store_type']]})
+            if not result.exists():
+                return JsonResponse({"status": 400, "error": "该事件不存在种子信息，请检查事件是否正确"}, safe=False)
+            else:
+                data = json.dumps(list(new_result))
+                results = json.loads(data)
+                return JsonResponse(results, safe=False)
         else:
-            data = json.dumps(list(new_result))
-            results = json.loads(data)
-            return JsonResponse(results, safe=False)
+            top = []
+            top2 = []
+            for i in result:
+                if i['id'] in [123570,6288,6175,6203,123571]:
+                    top.append({'text': i['text'], 'time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(i['store_timestamp'])),'store_type':type_dict[i['store_type']]})
+                elif i['id'] in [6312,6313,6317,123569,6301]:
+                    top2.append({'text': i['text'], 'time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(i['store_timestamp'])),'store_type':type_dict[i['store_type']]})
+                else:
+                    new_result.append(
+                        {'text': i['text'], 'time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(i['store_timestamp'])),'store_type':type_dict[i['store_type']]})
+            if not result.exists():
+                return JsonResponse({"status": 400, "error": "该事件不存在种子信息，请检查事件是否正确"}, safe=False)
+            else:
+                item = top.pop(2)
+                top.insert(0,item)
+                item = top.pop(3)
+                top.insert(0,item)
+                item = top2.pop(0)
+                top2.insert(4,item)
+                top.extend(top2)
+                top.extend(new_result)
+                data = json.dumps(list(top))
+                results = json.loads(data)
+                return JsonResponse(results, safe=False)
 
 class Show_audittext(APIView):
     def get(self, request):
