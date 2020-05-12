@@ -254,7 +254,7 @@ class User_Activity(APIView):
         #print(date)
         t=datetime.datetime(*map(int, date.split('-')))
         #t= time.mktime(time.strptime(date, '%Y-%m-%d'))
-        print(t,n_type)
+        #print(t,n_type)
         date_dict = {}
         res_dict = defaultdict(list)
         geo_result = defaultdict(dict)
@@ -268,7 +268,7 @@ class User_Activity(APIView):
             cal_date = t + datetime.timedelta(days=-90)
         #cal_date = (t + datetime.timedelta(days=-30))  #.timestamp()
         cal_date = cal_date.strftime('%Y-%m-%d')
-        print(cal_date)
+        #print(cal_date)
         day_result = UserActivity.objects.filter(uid=uid, store_date__gte=cal_date,store_date__lte=t).values("geo", "send_ip")  \
                .annotate(statusnum_s=Sum("statusnum"), sensitivenum_s=Sum("sensitivenum")).order_by("-statusnum_s")[:5]   #之前按敏感微博总数
         #print(day_result)
@@ -658,42 +658,6 @@ class Show_contact(APIView):
 
 
 
-class Figure_create(APIView):
-    """添加人物入库"""
-    def get(self,request):
-        """添加人物：获取添加信息，输入uid,nick,location,fans,friends,political,domain
-           调取人物id、昵称、注册地、粉丝数、关注数、政治倾向和领域，若没有填写微博ID则wb_id="";输出状态及提示：400 状态错误，201写入成功"""
-        times = int(time.time())
-        dates = datetime.datetime.now().strftime('%Y-%m-%d')  # 获取当前时间戳和日期
-        f_id = request.GET.get("uid") #f_id与uid均为输入的用户id
-        uid = request.GET.get("uid")  
-        nick = request.GET.get("nick")
-        location = request.GET.get("location")
-        fans = request.GET.get("fans")
-        friends = request.GET.get("friends")
-        political = request.GET.get("political")
-        domain = request.GET.get("domain")
-        birth = request.GET.get("birthday")
-        create_at = request.GET.get("create_at")
-        #h_id = request.GET.get("wb_id")  # 若该条人工输入事件从微博而来 则需输入来源微博的id
-        #result = Task.objects.filter(~Q(mid=''), mid=h_id) #判断从微博得来的事件是否已存在，若微博ID未给出返回一个空值
-        result = Figure.objects.filter(f_id=uid)
-        if result.exists():
-            return JsonResponse({"status":400, "error": "人物已存在"},safe=False,json_dumps_params={'ensure_ascii':False})
-        if f_id :
-            if not birth:
-                birthday = '未知'
-            if not create_at:
-                create_at = '未知'
-            if not fans:
-                fans = '未知'
-            if not friends:
-                friends = '未知'
-            Figure.objects.create(f_id=f_id, uid=uid, nick_name=nick,user_location=location,fansnum=fans,user_birth = birth,create_at=create_at,
-                                friendsnum=friends,political = political,domain=domain,computestatus=0)
-            return JsonResponse({"status":201, "msg": "人物添加成功"},safe=False,json_dumps_params={'ensure_ascii':False})
-        else:
-            return JsonResponse({"status":400, "error": "请输入人物的相关信息"},safe=False,json_dumps_params={'ensure_ascii':False})
 
 
 class Figure_delete(APIView):
@@ -998,10 +962,10 @@ class show_figure_info(APIView):
                     addr = "未知"
                 else:
                     addr = re['user_location']
-                if re['sex'] is None:
-                    sex = '未知'
-                else:
+                if re['sex'] == "男" or re['sex'] =="女":
                     sex = re['sex']
+                else:
+                    sex = '未知'
                 if re['user_birth'] is None:
                     age = "未知"
                 else:
@@ -1030,6 +994,44 @@ class show_figure_info(APIView):
             return JsonResponse({"status":400, "error": "无人物"},safe=False)
 
 
+class Figure_create(APIView):
+    """添加人物入库"""
+    def get(self,request):
+        """添加人物：获取添加信息，输入uid,nick,location,fans,friends,political,domain
+           调取人物id、昵称、注册地、粉丝数、关注数、政治倾向和领域，若没有填写微博ID则wb_id="";输出状态及提示：400 状态错误，201写入成功"""
+        times = int(time.time())
+        dates = datetime.datetime.now().strftime('%Y-%m-%d')  # 获取当前时间戳和日期
+        f_id = request.GET.get("uid") #f_id与uid均为输入的用户id
+        uid = request.GET.get("uid")  
+        nick = request.GET.get("nick")
+        location = request.GET.get("location")
+        fans = request.GET.get("fans")
+        friends = request.GET.get("friends")
+        political = request.GET.get("political")
+        domain = request.GET.get("domain")
+        birth = request.GET.get("birthday")
+        create_at = request.GET.get("create_at")
+        #h_id = request.GET.get("wb_id")  # 若该条人工输入事件从微博而来 则需输入来源微博的id
+        #result = Task.objects.filter(~Q(mid=''), mid=h_id) #判断从微博得来的事件是否已存在，若微博ID未给出返回一个空值
+        result = Figure.objects.filter(f_id=uid)
+        if result.exists():
+            return JsonResponse({"status":400, "error": "人物已存在"},safe=False,json_dumps_params={'ensure_ascii':False})
+        if f_id :
+            if not birth:
+                birthday = '未知'
+            if not create_at:
+                create_at = '未知'
+            if not fans:
+                fans = '未知'
+            if not friends:
+                friends = '未知'
+            Figure.objects.create(f_id=f_id, uid=uid, nick_name=nick,user_location=location,fansnum=fans,user_birth = birth,create_at=create_at,
+                                friendsnum=friends,political = political,domain=domain,computestatus=0,identitystatus=1)
+            return JsonResponse({"status":201, "msg": "人物添加成功"},safe=False,json_dumps_params={'ensure_ascii':False})
+        else:
+            return JsonResponse({"status":400, "error": "请输入人物的相关信息"},safe=False,json_dumps_params={'ensure_ascii':False})
+
+
 class show_cal_figure(APIView):
     """展示人物计算任务"""
     def get(self, request):
@@ -1046,7 +1048,13 @@ class show_cal_figure(APIView):
                     nick = item['f_id']
                 else:
                     nick = item['nick_name']
-                jre.append({"fid":item["f_id"],"nick_name":nick,"cal_status":item['computestatus'],\
+                if item['computestatus'] == 0:
+                    cal_status="未计算"
+                if item['computestatus'] == 1:
+                    cal_status="计算中"
+                if item['computestatus'] == 2:
+                    cal_status="计算完成"
+                jre.append({"fid":item["f_id"],"nick_name":nick,"cal_status":cal_status,\
                                 "into_date":sdate})
             return JsonResponse(jre,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
