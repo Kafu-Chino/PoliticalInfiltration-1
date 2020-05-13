@@ -179,8 +179,7 @@ class Show_seedtext(APIView):
         """
         type_dict = {0:'系统初始化',1:'人工添加',2:'扩线添加'}
         e_id = request.GET.get('e_id')
-        result = EventPositive.objects.filter(e_id=e_id).values('id','text','store_timestamp','store_type').order_by(''
-                                                                                                                     'store_timestamp')
+        result = EventPositive.objects.filter(e_id=e_id).values('id','text','store_timestamp','store_type').order_by('-store_timestamp')
         new_result = []
         if e_id != 'xianggangshijian_1581919160':
             for i in result:
