@@ -8,6 +8,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'PoliticalInfiltration.settings'
 django.setup()
 import time
 import datetime
+import pandas as pd
 from pandas import DataFrame
 from Mainevent.models import *
 from collections import defaultdict
@@ -28,6 +29,7 @@ def get_user_activity_aggs(data_dict,date):
         mid_dict_list = data_dict[uid]
         #print(mid_dict_list)
         df = DataFrame(mid_dict_list)
+        df = df.astype(object).where(pd.notnull(df), None)
         geo_dict = df.groupby([df["geo"]]).size().to_dict()
         #print(geo_dict)
         #print(uid)
@@ -64,10 +66,10 @@ def get_user_activity_aggs(data_dict,date):
     sql_insert_many(cursor, "UserActivity", "ua_id", user_activity_dict)
     
     #return user_activity_dict
-
 '''
 if __name__ == '__main__':
-    data = {'1744':[{"data":"test","geo":'beijing',"ip":'1135'},{"data":"test","geo":'beijing',"ip":'1135'}]}
-    date = '2020-05-05'
+    data = {'1744':[{"data":"test","geo":'beijing',"ip":'1135'},{"data":"test","geo":'beijing'}]}
+    date = '2020-05-07'
     get_user_activity_aggs(data,date)
 '''
+
