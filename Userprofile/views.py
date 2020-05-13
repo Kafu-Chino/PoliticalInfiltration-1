@@ -106,7 +106,7 @@ class User_Behavior(APIView):
                 date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(weeks=(-1 * i))).timestamp()
             date_dict[0] = date
             #date_dict[0] = (t + datetime.timedelta(weeks=-22)).timestamp()
-            for i in range(22):
+            for i in [21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4, 3, 2, 1, 0]:
                 #date_dict[i + 1] = (t + datetime.timedelta(weeks=(-22 + 1 * (i + 1)))).timestamp()
             #date_dict[0] = t.timestamp()
             #for i in range(22):
@@ -116,7 +116,7 @@ class User_Behavior(APIView):
                     sensitivenum_s=Sum("sensitivenum"))
                 #if list(result.values())[0]:
                 #print(result)
-                td = time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))
+                td = time.strftime("%Y-%m-%d", time.localtime((date_dict[i+1])))
                 if len(result):  #.exists():
                     #res_dict['date'].append(time.strftime("%Y-%m-%d", time.localtime((date_dict[i]))))
                     if result['originalnum_s']:
@@ -147,7 +147,7 @@ class User_Behavior(APIView):
                 date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(days=(-30 * i))).timestamp()
             date_dict[0] = date
             #date_dict[0] = (t + datetime.timedelta(days=-150)).timestamp()
-            for i in range(5):
+            for i in [4, 3, 2, 1, 0]:
                 #date_dict[i + 1] = (t + datetime.timedelta(days=(-150 + 30 * (i + 1)))).timestamp()
             #date_dict[0] = t.timestamp()
             #for i in range(5):
@@ -155,7 +155,7 @@ class User_Behavior(APIView):
                                                      timestamp__lte=date_dict[i]).aggregate(
                     originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"), retweetnum_s=Sum("retweetnum"),
                     sensitivenum_s=Sum("sensitivenum"))
-                td = time.strftime("%Y-%m", time.localtime((date_dict[i])))
+                td = time.strftime("%Y-%m", time.localtime((date_dict[i+1])))
                 print(result)
                 if len(result):
                     if result['originalnum_s']:
