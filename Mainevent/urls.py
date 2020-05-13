@@ -7,6 +7,8 @@ urlpatterns = [
     path('representative/',views.representative_info.as_view()),
     path('person/',views.Person_show.as_view()),
     path('eventshow/',views.Show_event.as_view()),
+    path('event_show_sort/', views.Show_event_sort.as_view()),
+    path('event_search_sort/', views.search_event_sort.as_view()),
     path('eventadd/',views.Add_event.as_view()),
     path('delete_event/',views.delete_event.as_view()),
     path('einfoshow/',views.Show_event_info.as_view()),
