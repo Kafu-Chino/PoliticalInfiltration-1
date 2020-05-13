@@ -69,6 +69,228 @@ class User_Behavior(APIView):
         #t=datetime.datetime.strptime(date+ " 23:59:59", '%Y-%m-%d %H:%M:%S')
         #t = time.mktime(time.strptime(date, '%Y-%m-%d'))
         # 每日活动特征，从当前日期往前推7天展示 原创微博数、评论数、转发数、敏感微博数
+        if uid == '6085416996':
+            if n_type == "日":
+            #time1 = time.time()
+            
+                dl = get_datelist_v2(ts2date(date - 73 * 86400),ts2date(date))
+            #new_date = (t + datetime.timedelta(days=-150)).timestamp()
+            #date_dict[0] = new_date
+            #for i in range(150):
+                #date_dict[i + 1] = (t + datetime.timedelta(-150+1 * (i + 1))).timestamp()
+                #item = UserBehavior.objects.filter(uid=uid, timestamp__gte=date_dict[i],timestamp__lt=date_dict[i+1]).values(
+                    #"store_date",'originalnum','commentnum','retweetnum','sensitivenum')   #.order_by("timestamp")
+                #d = time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))
+                #print(item)
+                for d in dl:
+                    item = UserBehavior.objects.filter(uid=uid, store_date__gte=d,store_date__lte=d).values(
+                    "store_date",'originalnum','commentnum','retweetnum','sensitivenum')
+                    if item.exists():
+                    #res_dict['date'].append(item["store_date"])
+                    #res_dict[time.strftime("%Y-%m-%d", time.localtime(t))] = item
+                    #res_dict[str(td)] = item
+                        res_dict['originalnum'][d] = item[0]['originalnum']
+                        res_dict['commentnum'][d] = item[0]['commentnum']
+                        res_dict['retweetnum'][d] = item[0]['retweetnum']
+                        res_dict['sensitivenum'][d] = item[0]['sensitivenum']
+                    else:
+                    #td = ts2date(date_dict[i])
+                    #res_dict['date'].append(ts2date(date_dict[i+1]))
+                        res_dict['originalnum'][d] = 0
+                        res_dict['commentnum'][d] = 0
+                        res_dict['retweetnum'][d] = 0
+                        res_dict['sensitivenum'][d] = 0
+        # 每周活动特征，从当前日期往前推5周展示 原创微博数、评论数、转发数、敏感微博数
+            if n_type == "周":
+                date_dict = {}
+                for i in range(1,12):
+                    date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(weeks=(-1 * i))).timestamp()
+                date_dict[0] = date
+            #date_dict[0] = (t + datetime.timedelta(weeks=-22)).timestamp()
+                for i in [10,9,8,7,6,5,4, 3, 2, 1, 0]:
+                #date_dict[i + 1] = (t + datetime.timedelta(weeks=(-22 + 1 * (i + 1)))).timestamp()
+            #date_dict[0] = t.timestamp()
+            #for i in range(22):
+                    result = UserBehavior.objects.filter(uid=uid, timestamp__gt=date_dict[i+1],
+                                                     timestamp__lte=date_dict[i]).aggregate(
+                    originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"), retweetnum_s=Sum("retweetnum"),
+                    sensitivenum_s=Sum("sensitivenum"))
+                #if list(result.values())[0]:
+                #print(result)
+                    td = time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))
+                    if len(result):  #.exists():
+                    #res_dict['date'].append(time.strftime("%Y-%m-%d", time.localtime((date_dict[i]))))
+                        if result['originalnum_s']:
+                            res_dict['originalnum'][td] = result['originalnum_s']
+                        else:
+                            res_dict['originalnum'][td] = 0
+                        if result['commentnum_s']:
+                            res_dict['commentnum'][td] = result['commentnum_s']
+                        else:
+                            res_dict['commentnum'][td] = 0
+                        if result['retweetnum_s']:
+                            res_dict['retweetnum'][td] = result['retweetnum_s']
+                        else:
+                            res_dict['retweetnum'][td] = 0
+                        if result['sensitivenum_s']:
+                            res_dict['sensitivenum'][td] = result['sensitivenum_s']
+                        else:
+                            res_dict['sensitivenum'][td] = 0
+                    else:
+                        res_dict['originalnum'][td] = 0
+                        res_dict['commentnum'][td] = 0
+                        res_dict['retweetnum'][td] = 0
+                        res_dict['sensitivenum'][td] = 0
+        # 每月活动特征，从当前日期往前推5月展示 原创微博数、评论数、转发数、敏感微博数
+            if n_type == "月":
+                date_dict = {}
+                for i in range(1,4):
+                    date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(days=(-30 * i))).timestamp()
+                date_dict[0] = date
+            #date_dict[0] = (t + datetime.timedelta(days=-150)).timestamp()
+                for i in [2, 1, 0]:
+                #date_dict[i + 1] = (t + datetime.timedelta(days=(-150 + 30 * (i + 1)))).timestamp()
+            #date_dict[0] = t.timestamp()
+            #for i in range(5):
+                    result = UserBehavior.objects.filter(uid=uid, timestamp__gt=date_dict[i+1],
+                                                     timestamp__lte=date_dict[i]).aggregate(
+                    originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"), retweetnum_s=Sum("retweetnum"),
+                    sensitivenum_s=Sum("sensitivenum"))
+                    td = time.strftime("%Y-%m", time.localtime((date_dict[i])))
+                    print(result)
+                    if len(result):
+                        if result['originalnum_s']:
+                            res_dict['originalnum'][td] = result['originalnum_s']
+                        else:
+                            res_dict['originalnum'][td] = 0
+                        if result['commentnum_s']:
+                            res_dict['commentnum'][td] = result['commentnum_s']
+                        else:
+                            res_dict['commentnum'][td] = 0
+                        if result['retweetnum_s']:
+                            res_dict['retweetnum'][td] = result['retweetnum_s']
+                        else:
+                            res_dict['retweetnum'][td] = 0
+                        if result['sensitivenum_s']:
+                            res_dict['sensitivenum'][td] = result['sensitivenum_s']
+                        else:
+                            res_dict['sensitivenum'][td] = 0
+        else:
+            if n_type == "日":
+            #time1 = time.time()
+            
+                dl = get_datelist_v2(ts2date(date - 149 * 86400),ts2date(date))
+            #new_date = (t + datetime.timedelta(days=-150)).timestamp()
+            #date_dict[0] = new_date
+            #for i in range(150):
+                #date_dict[i + 1] = (t + datetime.timedelta(-150+1 * (i + 1))).timestamp()
+                #item = UserBehavior.objects.filter(uid=uid, timestamp__gte=date_dict[i],timestamp__lt=date_dict[i+1]).values(
+                    #"store_date",'originalnum','commentnum','retweetnum','sensitivenum')   #.order_by("timestamp")
+                #d = time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))
+                #print(item)
+                for d in dl:
+                    item = UserBehavior.objects.filter(uid=uid, store_date__gte=d,store_date__lte=d).values(
+                    "store_date",'originalnum','commentnum','retweetnum','sensitivenum')
+                    if item.exists():
+                    #res_dict['date'].append(item["store_date"])
+                    #res_dict[time.strftime("%Y-%m-%d", time.localtime(t))] = item
+                    #res_dict[str(td)] = item
+                        res_dict['originalnum'][d] = item[0]['originalnum']
+                        res_dict['commentnum'][d] = item[0]['commentnum']
+                        res_dict['retweetnum'][d] = item[0]['retweetnum']
+                        res_dict['sensitivenum'][d] = item[0]['sensitivenum']
+                    else:
+                    #td = ts2date(date_dict[i])
+                    #res_dict['date'].append(ts2date(date_dict[i+1]))
+                        res_dict['originalnum'][d] = 0
+                        res_dict['commentnum'][d] = 0
+                        res_dict['retweetnum'][d] = 0
+                        res_dict['sensitivenum'][d] = 0
+        # 每周活动特征，从当前日期往前推5周展示 原创微博数、评论数、转发数、敏感微博数
+            if n_type == "周":
+                date_dict = {}
+                for i in range(1,23):
+                    date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(weeks=(-1 * i))).timestamp()
+                date_dict[0] = date
+            #date_dict[0] = (t + datetime.timedelta(weeks=-22)).timestamp()
+                for i in [21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4, 3, 2, 1, 0]:
+                #date_dict[i + 1] = (t + datetime.timedelta(weeks=(-22 + 1 * (i + 1)))).timestamp()
+            #date_dict[0] = t.timestamp()
+            #for i in range(22):
+                    result = UserBehavior.objects.filter(uid=uid, timestamp__gt=date_dict[i+1],
+                                                     timestamp__lte=date_dict[i]).aggregate(
+                    originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"), retweetnum_s=Sum("retweetnum"),
+                    sensitivenum_s=Sum("sensitivenum"))
+                #if list(result.values())[0]:
+                #print(result)
+                    td = time.strftime("%Y-%m-%d", time.localtime((date_dict[i])))
+                    if len(result):  #.exists():
+                    #res_dict['date'].append(time.strftime("%Y-%m-%d", time.localtime((date_dict[i]))))
+                        if result['originalnum_s']:
+                            res_dict['originalnum'][td] = result['originalnum_s']
+                        else:
+                            res_dict['originalnum'][td] = 0
+                        if result['commentnum_s']:
+                            res_dict['commentnum'][td] = result['commentnum_s']
+                        else:
+                            res_dict['commentnum'][td] = 0
+                        if result['retweetnum_s']:
+                            res_dict['retweetnum'][td] = result['retweetnum_s']
+                        else:
+                            res_dict['retweetnum'][td] = 0
+                        if result['sensitivenum_s']:
+                            res_dict['sensitivenum'][td] = result['sensitivenum_s']
+                        else:
+                            res_dict['sensitivenum'][td] = 0
+                    else:
+                        res_dict['originalnum'][td] = 0
+                        res_dict['commentnum'][td] = 0
+                        res_dict['retweetnum'][td] = 0
+                        res_dict['sensitivenum'][td] = 0
+        # 每月活动特征，从当前日期往前推5月展示 原创微博数、评论数、转发数、敏感微博数
+            if n_type == "月":
+                date_dict = {}
+                for i in range(1,6):
+                    date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(days=(-30 * i))).timestamp()
+                date_dict[0] = date
+            #date_dict[0] = (t + datetime.timedelta(days=-150)).timestamp()
+                for i in [4, 3, 2, 1, 0]:
+                #date_dict[i + 1] = (t + datetime.timedelta(days=(-150 + 30 * (i + 1)))).timestamp()
+            #date_dict[0] = t.timestamp()
+            #for i in range(5):
+                    result = UserBehavior.objects.filter(uid=uid, timestamp__gt=date_dict[i+1],
+                                                     timestamp__lte=date_dict[i]).aggregate(
+                    originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"), retweetnum_s=Sum("retweetnum"),
+                    sensitivenum_s=Sum("sensitivenum"))
+                    td = time.strftime("%Y-%m", time.localtime((date_dict[i])))
+                    print(result)
+                    if len(result):
+                        if result['originalnum_s']:
+                            res_dict['originalnum'][td] = result['originalnum_s']
+                        else:
+                            res_dict['originalnum'][td] = 0
+                        if result['commentnum_s']:
+                            res_dict['commentnum'][td] = result['commentnum_s']
+                        else:
+                            res_dict['commentnum'][td] = 0
+                        if result['retweetnum_s']:
+                            res_dict['retweetnum'][td] = result['retweetnum_s']
+                        else:
+                            res_dict['retweetnum'][td] = 0
+                        if result['sensitivenum_s']:
+                            res_dict['sensitivenum'][td] = result['sensitivenum_s']
+                        else:
+                            res_dict['sensitivenum'][td] = 0
+        n_res = defaultdict(dict)
+        n_res['date'] = list(res_dict['originalnum'].keys())
+        n_res['originalnum'] = list(res_dict['originalnum'].values())
+        n_res['commentnum'] = list(res_dict['commentnum'].values())
+        n_res['retweetnum'] = list(res_dict['retweetnum'].values())
+        n_res['sensitivenum'] = list(res_dict['sensitivenum'].values())
+        #time2 = time.time()
+        #print(time2-time1)
+        return JsonResponse(n_res,safe=False,json_dumps_params={'ensure_ascii':False})
+        '''
         if n_type == "日":
             #time1 = time.time()
             
@@ -106,7 +328,7 @@ class User_Behavior(APIView):
                 date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(weeks=(-1 * i))).timestamp()
             date_dict[0] = date
             #date_dict[0] = (t + datetime.timedelta(weeks=-22)).timestamp()
-            for i in range(22):
+            for i in [21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4, 3, 2, 1, 0]:
                 #date_dict[i + 1] = (t + datetime.timedelta(weeks=(-22 + 1 * (i + 1)))).timestamp()
             #date_dict[0] = t.timestamp()
             #for i in range(22):
@@ -147,7 +369,7 @@ class User_Behavior(APIView):
                 date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(days=(-30 * i))).timestamp()
             date_dict[0] = date
             #date_dict[0] = (t + datetime.timedelta(days=-150)).timestamp()
-            for i in range(5):
+            for i in [4, 3, 2, 1, 0]:
                 #date_dict[i + 1] = (t + datetime.timedelta(days=(-150 + 30 * (i + 1)))).timestamp()
             #date_dict[0] = t.timestamp()
             #for i in range(5):
@@ -183,7 +405,7 @@ class User_Behavior(APIView):
         #time2 = time.time()
         #print(time2-time1)
         return JsonResponse(n_res,safe=False,json_dumps_params={'ensure_ascii':False})
-
+'''
 
 
 import re
@@ -1155,6 +1377,123 @@ class User_Sentiment(APIView):
         res_dict = defaultdict(dict)
         date = date2ts(date)
         # 每日情绪特征，从当前日期往前推7天展示 积极微博数，中性微博数，消极微博数
+        if uid == '6085416996':
+            if n_type == "日":
+                dl = get_datelist_v2(ts2date(date - 73 * 86400),ts2date(date))
+            # result = UserSentiment.objects.filter(uid=uid, timestamp__gte=date2ts(dl[0]), timestamp__lte=date).values("store_date").annotate(positive_s=Sum("positive"), nuetral_s=Sum("nuetral"), negtive_s=Sum("negtive"))
+            # for d in dl:
+            #     r = {}
+            #     for i in result:
+            #         if d == str(i['store_date']):
+            #             r = i
+                for d in dl:
+                    result = UserSentiment.objects.filter(uid=uid, store_date__gte=d, store_date__lte=d).values('positive','nuetral','negtive')
+                    if result.exists():
+                        res_dict['positive'][d] = result[0]['positive']
+                        res_dict['nuetral'][d] = result[0]['nuetral']
+                        res_dict['negtive'][d] = result[0]['negtive']
+                    else:
+                        res_dict['positive'][d] = 0
+                        res_dict['nuetral'][d] = 0
+                        res_dict['negtive'][d] = 0
+        # 每周情绪特征，从当前日期往前推5周展示 积极微博数，中性微博数，消极微博数
+            if n_type == "周":
+                date_dict = {}
+                for i in range(1,12):
+                    date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(weeks=(-1 * i))).timestamp()
+                date_dict[0] = date
+                for i in [10,9,8,7,6,5,4, 3, 2, 1, 0]:
+                    result = UserSentiment.objects.filter(uid=uid, timestamp__gt=date_dict[i + 1],
+                                                     timestamp__lte=date_dict[i]).aggregate(
+                    positive_s=Sum("positive"), nuetral_s=Sum("nuetral"), negtive_s=Sum("negtive"))
+                    if result['positive_s'] != None:
+                        res_dict['positive'][ts2date(date_dict[i])] = result['positive_s']
+                        res_dict['nuetral'][ts2date(date_dict[i])] = result['nuetral_s']
+                        res_dict['negtive'][ts2date(date_dict[i])] = result['negtive_s']
+                    else:
+                        res_dict['positive'][ts2date(date_dict[i])] = 0
+                        res_dict['nuetral'][ts2date(date_dict[i])] = 0
+                        res_dict['negtive'][ts2date(date_dict[i])] = 0
+        # 每月情绪特征，从当前日期往前推5月展示 积极微博数，中性微博数，消极微博数
+            if n_type == "月":
+                date_dict = {}
+                for i in range(1,4):
+                    date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(days=(-30 * i))).timestamp()
+                date_dict[0] = date
+                for i in [ 2, 1, 0]:
+                    result = UserSentiment.objects.filter(uid=uid, timestamp__gt=date_dict[i + 1],
+                                                     timestamp__lte=date_dict[i]).aggregate(
+                    positive_s=Sum("positive"), nuetral_s=Sum("nuetral"), negtive_s=Sum("negtive"))
+                    if result['positive_s'] != None:
+                        res_dict['positive'][time.strftime("%Y-%m", time.localtime(date_dict[i]))] = result['positive_s']
+                        res_dict['nuetral'][time.strftime("%Y-%m", time.localtime(date_dict[i]))] = result['nuetral_s']
+                        res_dict['negtive'][time.strftime("%Y-%m", time.localtime(date_dict[i]))] = result['negtive_s']
+                    else:
+                        res_dict['positive'][time.strftime("%Y-%m", time.localtime(date_dict[i]))] = 0
+                        res_dict['nuetral'][time.strftime("%Y-%m", time.localtime(date_dict[i]))] = 0
+                        res_dict['negtive'][time.strftime("%Y-%m", time.localtime(date_dict[i]))] = 0
+        else:
+            if n_type == "日":
+                dl = get_datelist_v2(ts2date(date - 149 * 86400),ts2date(date))
+            # result = UserSentiment.objects.filter(uid=uid, timestamp__gte=date2ts(dl[0]), timestamp__lte=date).values("store_date").annotate(positive_s=Sum("positive"), nuetral_s=Sum("nuetral"), negtive_s=Sum("negtive"))
+            # for d in dl:
+            #     r = {}
+            #     for i in result:
+            #         if d == str(i['store_date']):
+            #             r = i
+                for d in dl:
+                    result = UserSentiment.objects.filter(uid=uid, store_date__gte=d, store_date__lte=d).values('positive','nuetral','negtive')
+                    if result.exists():
+                        res_dict['positive'][d] = result[0]['positive']
+                        res_dict['nuetral'][d] = result[0]['nuetral']
+                        res_dict['negtive'][d] = result[0]['negtive']
+                    else:
+                        res_dict['positive'][d] = 0
+                        res_dict['nuetral'][d] = 0
+                        res_dict['negtive'][d] = 0
+        # 每周情绪特征，从当前日期往前推5周展示 积极微博数，中性微博数，消极微博数
+            if n_type == "周":
+                date_dict = {}
+                for i in range(1,23):
+                    date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(weeks=(-1 * i))).timestamp()
+                date_dict[0] = date
+                for i in [21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4, 3, 2, 1, 0]:
+                    result = UserSentiment.objects.filter(uid=uid, timestamp__gt=date_dict[i + 1],
+                                                     timestamp__lte=date_dict[i]).aggregate(
+                    positive_s=Sum("positive"), nuetral_s=Sum("nuetral"), negtive_s=Sum("negtive"))
+                    if result['positive_s'] != None:
+                        res_dict['positive'][ts2date(date_dict[i])] = result['positive_s']
+                        res_dict['nuetral'][ts2date(date_dict[i])] = result['nuetral_s']
+                        res_dict['negtive'][ts2date(date_dict[i])] = result['negtive_s']
+                    else:
+                        res_dict['positive'][ts2date(date_dict[i])] = 0
+                        res_dict['nuetral'][ts2date(date_dict[i])] = 0
+                        res_dict['negtive'][ts2date(date_dict[i])] = 0
+        # 每月情绪特征，从当前日期往前推5月展示 积极微博数，中性微博数，消极微博数
+            if n_type == "月":
+                date_dict = {}
+                for i in range(1,6):
+                    date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(days=(-30 * i))).timestamp()
+                date_dict[0] = date
+                for i in [4, 3, 2, 1, 0]:
+                    result = UserSentiment.objects.filter(uid=uid, timestamp__gt=date_dict[i + 1],
+                                                     timestamp__lte=date_dict[i]).aggregate(
+                    positive_s=Sum("positive"), nuetral_s=Sum("nuetral"), negtive_s=Sum("negtive"))
+                    if result['positive_s'] != None:
+                        res_dict['positive'][time.strftime("%Y-%m", time.localtime(date_dict[i]))] = result['positive_s']
+                        res_dict['nuetral'][time.strftime("%Y-%m", time.localtime(date_dict[i]))] = result['nuetral_s']
+                        res_dict['negtive'][time.strftime("%Y-%m", time.localtime(date_dict[i]))] = result['negtive_s']
+                    else:
+                        res_dict['positive'][time.strftime("%Y-%m", time.localtime(date_dict[i]))] = 0
+                        res_dict['nuetral'][time.strftime("%Y-%m", time.localtime(date_dict[i]))] = 0
+                        res_dict['negtive'][time.strftime("%Y-%m", time.localtime(date_dict[i]))] = 0
+        n_res = defaultdict(dict)
+        n_res['date'] = list(res_dict['positive'].keys())
+        n_res['positive_num'] = list(res_dict['positive'].values())
+        n_res['nuetral_num'] = list(res_dict['nuetral'].values())
+        n_res['negtive_num'] = list(res_dict['negtive'].values())
+        return JsonResponse(n_res)
+        '''
         if n_type == "日":
             dl = get_datelist_v2(ts2date(date - 149 * 86400),ts2date(date))
             # result = UserSentiment.objects.filter(uid=uid, timestamp__gte=date2ts(dl[0]), timestamp__lte=date).values("store_date").annotate(positive_s=Sum("positive"), nuetral_s=Sum("nuetral"), negtive_s=Sum("negtive"))
@@ -1215,7 +1554,7 @@ class User_Sentiment(APIView):
         n_res['nuetral_num'] = list(res_dict['nuetral'].values())
         n_res['negtive_num'] = list(res_dict['negtive'].values())
         return JsonResponse(n_res)
-
+'''
 
 
 class User_Influence(APIView):
@@ -1237,6 +1576,146 @@ class User_Influence(APIView):
         res_dict = defaultdict(dict)
         date = date2ts(date)
         # 每日影响力特征，从当前日期往前推7天展示 影响力 活跃度 重要度 敏感度
+        if uid == '6085416996':
+            if n_type == "日":
+                dl = get_datelist_v2(ts2date(date - 73 * 86400), ts2date(date))
+            # dl = get_datelist_v2(ts2date(date - 6 * 86400), ts2date(date))
+                for d in dl:
+                    result =  NewUserInfluence.objects.filter(uid=uid, store_date__gte=d, store_date__lte=d).values('influence','importance','sensitity','activity')
+                    if result.exists():
+                        res_dict['influence'][d] = result[0]['influence']
+                        res_dict['importance'][d] = result[0]['importance']
+                        res_dict['sensitity'][d] = result[0]['sensitity']
+                        res_dict['activity'][d] = result[0]['activity']
+                    else:
+                        res_dict['influence'][d] = 0
+                        res_dict['importance'][d] = 0
+                        res_dict['sensitity'][d] = 0
+                        res_dict['activity'][d] = 0
+        # 每周影响力特征，从当前日期往前推5周展示
+            if n_type == "周":
+                date_dict = {}
+                for i in range(1,12):
+                    date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(weeks=(-1 * i))).timestamp()
+            # for i in range(1, 6):
+            #     date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(
+            #         weeks=(-1 * i))).timestamp()
+                date_dict[0] = date
+                for i in [10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]:
+            # for i in [4, 3, 2, 1, 0]:
+                    result = NewUserInfluence.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
+                                                       timestamp__lt=date_dict[i]).aggregate(
+                    influence=Avg("influence"), importance=Avg("importance"),
+                    sensitity=Avg("sensitity"), activity=Avg("activity"))
+                    if result['influence'] != None:
+                        res_dict['influence'][ts2date(date_dict[i])] = result['influence']
+                        res_dict['importance'][ts2date(date_dict[i])] = result['importance']
+                        res_dict['sensitity'][ts2date(date_dict[i])] = result['sensitity']
+                        res_dict['activity'][ts2date(date_dict[i])] = result['activity']
+                    else:
+                        res_dict['influence'][ts2date(date_dict[i])] = 0
+                        res_dict['importance'][ts2date(date_dict[i])] = 0
+                        res_dict['sensitity'][ts2date(date_dict[i])] = 0
+                        res_dict['activity'][ts2date(date_dict[i])] = 0
+        # 每月情绪特征，从当前日期往前推5月展示
+            if n_type == "月":
+                date_dict = {}
+            # for i in range(1, 6):
+            #     date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(
+            #         days=(-30 * i))).timestamp()
+            # date_dict[0] = date
+                for i in range(1,4):
+                    date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(days=(-30 * i))).timestamp()
+                date_dict[0] = date
+                for i in [2, 1, 0]:
+                    result = NewUserInfluence.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
+                                                         timestamp__lt=date_dict[i]).aggregate(
+                    influence=Avg("influence"), importance=Avg("importance"),
+                    sensitity=Avg("sensitity"), activity=Avg("activity"))
+                    if result['influence'] != None:
+                        res_dict['influence'][ts2date(date_dict[i])] = result['influence']
+                        res_dict['importance'][ts2date(date_dict[i])] = result['importance']
+                        res_dict['sensitity'][ts2date(date_dict[i])] = result['sensitity']
+                        res_dict['activity'][ts2date(date_dict[i])] = result['activity']
+                    else:
+                        res_dict['influence'][ts2date(date_dict[i])] = 0
+                        res_dict['importance'][ts2date(date_dict[i])] = 0
+                        res_dict['sensitity'][ts2date(date_dict[i])] = 0
+                        res_dict['activity'][ts2date(date_dict[i])] = 0
+        else:
+            if n_type == "日":
+                dl = get_datelist_v2(ts2date(date - 149 * 86400), ts2date(date))
+            # dl = get_datelist_v2(ts2date(date - 6 * 86400), ts2date(date))
+                for d in dl:
+                    result =  NewUserInfluence.objects.filter(uid=uid, store_date__gte=d, store_date__lte=d).values('influence','importance','sensitity','activity')
+                    if result.exists():
+                        res_dict['influence'][d] = result[0]['influence']
+                        res_dict['importance'][d] = result[0]['importance']
+                        res_dict['sensitity'][d] = result[0]['sensitity']
+                        res_dict['activity'][d] = result[0]['activity']
+                    else:
+                        res_dict['influence'][d] = 0
+                        res_dict['importance'][d] = 0
+                        res_dict['sensitity'][d] = 0
+                        res_dict['activity'][d] = 0
+        # 每周影响力特征，从当前日期往前推5周展示
+            if n_type == "周":
+                date_dict = {}
+                for i in range(1,23):
+                    date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(weeks=(-1 * i))).timestamp()
+            # for i in range(1, 6):
+            #     date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(
+            #         weeks=(-1 * i))).timestamp()
+                date_dict[0] = date
+                for i in [21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]:
+            # for i in [4, 3, 2, 1, 0]:
+                    result = NewUserInfluence.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
+                                                       timestamp__lt=date_dict[i]).aggregate(
+                    influence=Avg("influence"), importance=Avg("importance"),
+                    sensitity=Avg("sensitity"), activity=Avg("activity"))
+                    if result['influence'] != None:
+                        res_dict['influence'][ts2date(date_dict[i])] = result['influence']
+                        res_dict['importance'][ts2date(date_dict[i])] = result['importance']
+                        res_dict['sensitity'][ts2date(date_dict[i])] = result['sensitity']
+                        res_dict['activity'][ts2date(date_dict[i])] = result['activity']
+                    else:
+                        res_dict['influence'][ts2date(date_dict[i])] = 0
+                        res_dict['importance'][ts2date(date_dict[i])] = 0
+                        res_dict['sensitity'][ts2date(date_dict[i])] = 0
+                        res_dict['activity'][ts2date(date_dict[i])] = 0
+        # 每月情绪特征，从当前日期往前推5月展示
+            if n_type == "月":
+                date_dict = {}
+            # for i in range(1, 6):
+            #     date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(
+            #         days=(-30 * i))).timestamp()
+            # date_dict[0] = date
+                for i in range(1,6):
+                    date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(days=(-30 * i))).timestamp()
+                date_dict[0] = date
+                for i in [4, 3, 2, 1, 0]:
+                    result = NewUserInfluence.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
+                                                         timestamp__lt=date_dict[i]).aggregate(
+                    influence=Avg("influence"), importance=Avg("importance"),
+                    sensitity=Avg("sensitity"), activity=Avg("activity"))
+                    if result['influence'] != None:
+                        res_dict['influence'][ts2date(date_dict[i])] = result['influence']
+                        res_dict['importance'][ts2date(date_dict[i])] = result['importance']
+                        res_dict['sensitity'][ts2date(date_dict[i])] = result['sensitity']
+                        res_dict['activity'][ts2date(date_dict[i])] = result['activity']
+                    else:
+                        res_dict['influence'][ts2date(date_dict[i])] = 0
+                        res_dict['importance'][ts2date(date_dict[i])] = 0
+                        res_dict['sensitity'][ts2date(date_dict[i])] = 0
+                        res_dict['activity'][ts2date(date_dict[i])] = 0
+        n_res = defaultdict(dict)
+        n_res['date'] = list(res_dict['influence'].keys())
+        n_res['influence_num'] = list(res_dict['influence'].values())
+        n_res['importance_num'] = list(res_dict['importance'].values())
+        n_res['sensitity_num'] = list(res_dict['sensitity'].values())
+        n_res['activity_num'] = list(res_dict['activity'].values())
+        return JsonResponse(n_res)
+        '''
         if n_type == "日":
             dl = get_datelist_v2(ts2date(date - 149 * 86400), ts2date(date))
             # dl = get_datelist_v2(ts2date(date - 6 * 86400), ts2date(date))
@@ -1309,3 +1788,4 @@ class User_Influence(APIView):
         n_res['sensitity_num'] = list(res_dict['sensitity'].values())
         n_res['activity_num'] = list(res_dict['activity'].values())
         return JsonResponse(n_res)
+    '''
