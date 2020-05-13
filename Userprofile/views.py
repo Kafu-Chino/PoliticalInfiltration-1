@@ -106,12 +106,12 @@ class User_Behavior(APIView):
                 date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(weeks=(-1 * i))).timestamp()
             date_dict[0] = date
             #date_dict[0] = (t + datetime.timedelta(weeks=-22)).timestamp()
-            for i in range(23):
+            for i in range(22):
                 #date_dict[i + 1] = (t + datetime.timedelta(weeks=(-22 + 1 * (i + 1)))).timestamp()
             #date_dict[0] = t.timestamp()
             #for i in range(22):
-                result = UserBehavior.objects.filter(uid=uid, timestamp__gte=date_dict[i+1],
-                                                     timestamp__lt=date_dict[i]).aggregate(
+                result = UserBehavior.objects.filter(uid=uid, timestamp__gt=date_dict[i+1],
+                                                     timestamp__lte=date_dict[i]).aggregate(
                     originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"), retweetnum_s=Sum("retweetnum"),
                     sensitivenum_s=Sum("sensitivenum"))
                 #if list(result.values())[0]:
@@ -151,8 +151,8 @@ class User_Behavior(APIView):
                 #date_dict[i + 1] = (t + datetime.timedelta(days=(-150 + 30 * (i + 1)))).timestamp()
             #date_dict[0] = t.timestamp()
             #for i in range(5):
-                result = UserBehavior.objects.filter(uid=uid, timestamp__gte=date_dict[i+1],
-                                                     timestamp__lt=date_dict[i]).aggregate(
+                result = UserBehavior.objects.filter(uid=uid, timestamp__gt=date_dict[i+1],
+                                                     timestamp__lte=date_dict[i]).aggregate(
                     originalnum_s=Sum("originalnum"), commentnum_s=Sum("commentnum"), retweetnum_s=Sum("retweetnum"),
                     sensitivenum_s=Sum("sensitivenum"))
                 td = time.strftime("%Y-%m", time.localtime((date_dict[i])))
