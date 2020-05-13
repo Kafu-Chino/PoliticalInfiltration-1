@@ -218,7 +218,7 @@ class search_event_sort(APIView):
     """搜索事件 输入事件标题title 输出'event_name','keywords_dict','content','begin_date','end_date'"""
     def get(self, request):
         jre = []
-        name = request.GET.get("title")
+        info = request.GET.get("title")
         limit = request.GET.get("limit")
         page_id = request.GET.get('page_id')
         if page_id is None:
@@ -227,18 +227,18 @@ class search_event_sort(APIView):
             limit = 10
         name = request.GET.get('label')
         order = request.GET.get('order')
-        count = len(Event.objects.filter(~Q(hidden_status=1),Q(event_name__contains = name) | Q(keywords_dict__contains=name),cal_status=2))
+        count = len(Event.objects.filter(~Q(hidden_status=1),Q(event_name__contains = info) | Q(keywords_dict__contains=info),cal_status=2))
         #print(len(result))
         if name == "sensitive_figure_ratio":
             if order == "descending":
-                result = Event.objects.filter(~Q(hidden_status=1),Q(event_name__contains = name) | Q(keywords_dict__contains=name),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date','monitor_status','sensitive_figure_ratio','sensitive_info_ratio').order_by('-sensitive_figure_ratio','-monitor_status','-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+                result = Event.objects.filter(~Q(hidden_status=1),Q(event_name__contains = info) | Q(keywords_dict__contains=info),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date','monitor_status','sensitive_figure_ratio','sensitive_info_ratio').order_by('-sensitive_figure_ratio','-monitor_status','-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
             else:
-                result = Event.objects.filter(~Q(hidden_status=1),Q(event_name__contains = name) | Q(keywords_dict__contains=name),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date','monitor_status','sensitive_figure_ratio','sensitive_info_ratio').order_by('sensitive_figure_ratio','-monitor_status','-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+                result = Event.objects.filter(~Q(hidden_status=1),Q(event_name__contains = info) | Q(keywords_dict__contains=info),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date','monitor_status','sensitive_figure_ratio','sensitive_info_ratio').order_by('sensitive_figure_ratio','-monitor_status','-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
         else:
             if order == "descending":
-                result = Event.objects.filter(~Q(hidden_status=1),Q(event_name__contains = name) | Q(keywords_dict__contains=name),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date','monitor_status','sensitive_figure_ratio','sensitive_info_ratio').order_by('-sensitive_info_ratio','-monitor_status','-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+                result = Event.objects.filter(~Q(hidden_status=1),Q(event_name__contains = info) | Q(keywords_dict__contains=info),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date','monitor_status','sensitive_figure_ratio','sensitive_info_ratio').order_by('-sensitive_info_ratio','-monitor_status','-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
             else:
-                result = Event.objects.filter(~Q(hidden_status=1),Q(event_name__contains = name) | Q(keywords_dict__contains=name),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date','monitor_status','sensitive_figure_ratio','sensitive_info_ratio').order_by('sensitive_info_ratio','-monitor_status','-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+                result = Event.objects.filter(~Q(hidden_status=1),Q(event_name__contains = info) | Q(keywords_dict__contains=info),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date','monitor_status','sensitive_figure_ratio','sensitive_info_ratio').order_by('sensitive_info_ratio','-monitor_status','-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
         #result = Event.objects.filter(~Q(hidden_status=1),Q(event_name__contains = name) | Q(keywords_dict__contains=name),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date').order_by('-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
         #count = Event.objects.filter(event_name__contains = name).aggregate(count = Count('e_id'))['count']
         if result.exists():
