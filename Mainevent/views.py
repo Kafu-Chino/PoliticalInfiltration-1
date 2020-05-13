@@ -187,7 +187,7 @@ class search_event(APIView):
             page_id = 1
         if limit is None:
             limit = 10
-        result = Event.objects.filter(~Q(hidden_status=1),Q(event_name__contains = name) | Q(keywords_dict__contains=name),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date').order_by('-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        result = Event.objects.filter(~Q(hidden_status=1),Q(event_name__contains = name) | Q(keywords_dict__contains=name),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date','monitor_status','sensitive_figure_ratio','sensitive_info_ratio').order_by('-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
         #count = Event.objects.filter(event_name__contains = name).aggregate(count = Count('e_id'))['count']
         count = len(Event.objects.filter(~Q(hidden_status=1),Q(event_name__contains = name) | Q(keywords_dict__contains=name),cal_status=2))
         #print(len(result))
@@ -206,7 +206,7 @@ class search_event(APIView):
                     info_rat = '-'
                 else:
                     info_rat = '%.2f%%' % float(item['sensitive_info_ratio']*100)
-                jre.append({"eid":item['e_id'],"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
+                jre.append({"eid":item['e_id'],"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],'monitor_status':MONITOR_STATUS_DIC[item['monitor_status']],\
                             "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':figure_rat,'sensitive_info_ratio':info_rat,'count':count})
             return JsonResponse(jre,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
@@ -256,7 +256,7 @@ class search_event_sort(APIView):
                     info_rat = '-'
                 else:
                     info_rat = '%.2f%%' % float(item['sensitive_info_ratio']*100)
-                jre.append({"eid":item['e_id'],"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
+                jre.append({"eid":item['e_id'],"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],'monitor_status':MONITOR_STATUS_DIC[item['monitor_status']],\
                             "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':figure_rat,'sensitive_info_ratio':info_rat,'count':count})
             return JsonResponse(jre,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
