@@ -447,10 +447,10 @@ class User_Activity(APIView):
         if n_type ==4:
             cal_date = t + datetime.timedelta(days=-90)
         #cal_date = (t + datetime.timedelta(days=-30))  #.timestamp()
-        cal_date = cal_date.strftime('%Y-%m-%d')
+        cal_date1 = cal_date.strftime('%Y-%m-%d')
         #print(cal_date)
-        day_result = UserActivity.objects.filter(uid=uid, store_date__gte=cal_date,store_date__lte=t).values("geo", "send_ip")  \
-               .annotate(statusnum_s=Sum("statusnum"), sensitivenum_s=Sum("sensitivenum")).order_by("-statusnum_s")[:5]   #之前按敏感微博总数
+        day_result = UserActivity.objects.filter(uid=uid, store_date__gte=cal_date1,store_date__lte=t).values("geo", "send_ip")  \
+               .annotate(statusnum_s=Sum("statusnum")).order_by("-statusnum_s")[:5]  #, sensitivenum_s=Sum("sensitivenum")   #之前按敏感微博总数
         #print(day_result)
         pattern = re.compile(r'(\u4e2d\u56fd)')
         pattern2 = re.compile(r'(\u672a\u77e5)')
@@ -479,10 +479,15 @@ class User_Activity(APIView):
             res_dict["day_result"] = {"geo":None,"send_ip":None,"statusnum_s":None,"sensitivenum_s":None}
             '''
         if day_result.exists():
-            res_dict["day_result"]=list(day_result)
+            for res in day_result:
+                sensitivenum = Information.objects.filter(uid=uid, timestamp__gte=date2ts(cal_date1),
+                                                      timestamp__lt=date2ts(date), geo=res['geo']).count()
+                res_dict["day_result"].append({"geo":res['geo'],"send_ip":'0.0.0.0',"statusnum_s":res['statusnum_s'],"sensitivenum_s":sensitivenum})
+
+            #res_dict["day_result"]=list(day_result)
         else:
             res_dict["day_result"] = {"geo":None,"send_ip":None,"statusnum_s":None,"sensitivenum_s":None}
-        geo_map_result = UserActivity.objects.filter(uid=uid, store_date__gte=cal_date).values("geo").annotate(
+        geo_map_result = UserActivity.objects.filter(uid=uid, store_date__gte=cal_date1,store_date__lte=t).values("geo").annotate(
             statusnum_s=Sum("statusnum")).order_by("-statusnum_s")
         #print(geo_map_result)
         #res_dict["geo_map_result"] = list(geo_map_result)
