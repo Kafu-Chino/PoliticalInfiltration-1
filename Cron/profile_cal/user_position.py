@@ -2,10 +2,13 @@
 
 ### 标记好这个统计函数的输入与输出，以便于代码查看
 import sys
+import os,django
 sys.path.append("../../")
-
+os.environ['DJANGO_SETTINGS_MODULE'] = 'PoliticalInfiltration.settings'
+django.setup()
 import time
 import datetime
+import pandas as pd
 from pandas import DataFrame
 from Mainevent.models import *
 from collections import defaultdict
@@ -20,33 +23,53 @@ def get_user_activity_aggs(data_dict,date):
     end_time=datetime.datetime.strptime(date+ " 23:59:59", '%Y-%m-%d %H:%M:%S').timestamp()
     start_time = end_time - 24 * 60 * 60
     user_activity_dict = {}
+    ip_dict={}
     for uid in data_dict:
-        geo_ip_dict = defaultdict(set)
+        #geo_ip_dict = defaultdict(set)
         mid_dict_list = data_dict[uid]
         #print(mid_dict_list)
         df = DataFrame(mid_dict_list)
+        df = df.astype(object).where(pd.notnull(df), None)
         geo_dict = df.groupby([df["geo"]]).size().to_dict()
         #print(geo_dict)
         #print(uid)
         '''无ip信息，后期补上
         activity_dict = df.groupby([df["geo"], df["send_ip"]]).size().to_dict()
-
         for k, v in activity_dict.items():
             geo_ip_dict[k[0]].add(k[1][:(k[1].rindex(".") + 1)] + "*")
-        '''
+            '''
+        for index,row in df.iterrows():
+            ip_dict[row["geo"]] = row["ip"]
+            #print(row['geo'])
+            #try:
+                #ip_dict[row["geo"]] = row["ip"]
+            #except:
+                #continue
+        #print(ip_dict)
         for k in geo_dict:
             #print(k)
-            #ips = ",".join(list(geo_ip_dict[k])) 无ip信息 后期补上
+            #ips = ",".join(list(geo_ip_dict[k])) #无ip信息 后期补上
+            ip = ip_dict[k]
+            if ip is None:
+                ip="未知"
+            #ip = geo_ip_dict[k]
             statusnum = geo_dict[k]
             #print(geo_dict[k])
             sensitivenum = Information.objects.filter(uid=uid, timestamp__gte=start_time,
                                                       timestamp__lt=end_time, geo=k).count()
             user_activity_dict["%s_%s_%s" % (str(end_time), uid, k)] = {"uid": uid,
                                                                         "timestamp": end_time,
-                                                                        "geo": k, "send_ip": None,
+                                                                        "geo": k, "send_ip": ip,
                                                                         "statusnum": statusnum,
                                                                         "sensitivenum": sensitivenum,
                                                                         "store_date": date}
     sql_insert_many(cursor, "UserActivity", "ua_id", user_activity_dict)
     
     #return user_activity_dict
+'''
+if __name__ == '__main__':
+    data = {'1744':[{"data":"test","geo":'beijing',"ip":'1135'},{"data":"test","geo":'beijing'}]}
+    date = '2020-05-07'
+    get_user_activity_aggs(data,date)
+'''
+

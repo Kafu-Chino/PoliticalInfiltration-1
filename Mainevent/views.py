@@ -32,52 +32,76 @@ class Show_event(APIView):
             limit = 10
         count = len(Event.objects.filter(~Q(hidden_status=1),cal_status=2))
         #print(count)
-        result = Event.objects.filter(~Q(hidden_status=1),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date','monitor_status').order_by('-monitor_status','-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        result = Event.objects.filter(~Q(hidden_status=1),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date','monitor_status','sensitive_figure_ratio','sensitive_info_ratio').order_by('-monitor_status','-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
         index_list = {}
         jre=[]
         #t1 = time.time()
         if result.exists():
             for item in result:
-                weibo_count = 0
-                user_count = 0
-                #figure_count = 0
-                info_count = 0 
                 sdate = item['begin_date'].strftime('%Y-%m-%d')
                 if item['end_date'] is None:
                     edate = "至今"
                 else:
                     edate = item['end_date'].strftime('%Y-%m-%d')
-                eid = item['e_id']
-                #e_re = Event.objects.filter(e_id =eid).first()
-                #figure_count = len(e_re.figure.all())
-                #print(figure_count)
-                #info_count = len(e_re.information.all())
-                #print(info_count)
-                all_re = Event_Analyze.objects.filter(event_name =eid).values('weibo_count','user_count','info_count','figure_count')
-                if all_re.exists():
-                    #weibo_count = all_re[0]['weibo_count']
-                    #user_count = all_re[0]['user_count']
-                    for re in all_re:
-                        weibo_count += int(re['weibo_count'])
-                        user_count += int(re['user_count'])
-                        info_count += int(re['info_count'])
-                    figure_rat = '0%'
-                    info_rat = '0%'
-                    if user_count is None:
-                        figure_rat = '-'
-                    if user_count != 0:
-                        figure_rat = '%.2f%%' % float(all_re[0]['figure_count']/user_count * 100)
-                    if weibo_count is None:
-                        info_rat = '-'
-                    if weibo_count != 0:
-                        info_rat = '%.2f%%' % float(info_count/weibo_count*100)
-                    jre.append({"eid":eid,"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],'monitor_status':MONITOR_STATUS_DIC[item['monitor_status']],\
-                            "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':figure_rat,'sensitive_info_ratio':info_rat,'count':count})
+                if item['sensitive_figure_ratio'] is None:
+                    figure_rat = '-'
                 else:
-                    jre.append({"eid":item["e_id"],"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],'monitor_status':MONITOR_STATUS_DIC[item['monitor_status']],\
-                                "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':'-','sensitive_info_ratio':'-','count':count})
-            #re = json.dumps(jre,ensure_ascii=False)
-            #re = json.loads(re)
+                    figure_rat = '%.2f%%' % float(item['sensitive_figure_ratio']*100)
+                if item['sensitive_info_ratio'] is None:
+                    info_rat = '-'
+                else:
+                    info_rat = '%.2f%%' % float(item['sensitive_info_ratio']*100)
+                jre.append({"eid":item['e_id'],"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],'monitor_status':MONITOR_STATUS_DIC[item['monitor_status']],\
+                            "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':figure_rat,'sensitive_info_ratio':info_rat,'count':count})
+            return JsonResponse(jre,safe=False,json_dumps_params={'ensure_ascii':False})
+        else:
+            return JsonResponse({"status":400, "error": "无事件"},safe=False)
+
+
+class Show_event_sort(APIView):
+    """展示事件列表
+       输出{‘event_name(事件名称)’: ,’keywords_dict(事件关键词)’: ,’content(事件内容)’: , ‘begin_date(开始日期)’:  ,‘end_date(结束日期)’: },{},{}"""
+    def get(self, request):
+        #result = Event.objects.values('e_id','event_name','keywords_dict','begin_date','end_date')
+        limit = request.GET.get("limit")
+        page_id = request.GET.get('page_id')
+        if page_id is None:
+            page_id = 1
+        if limit is None:
+            limit = 10
+        count = len(Event.objects.filter(~Q(hidden_status=1),cal_status=2))
+        name = request.GET.get('label')
+        order = request.GET.get('order')
+        if name == "sensitive_figure_ratio":
+            if order == "descending":
+                result = Event.objects.filter(~Q(hidden_status=1),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date','monitor_status','sensitive_figure_ratio','sensitive_info_ratio').order_by('-sensitive_figure_ratio','-monitor_status','-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+            else:
+                result = Event.objects.filter(~Q(hidden_status=1),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date','monitor_status','sensitive_figure_ratio','sensitive_info_ratio').order_by('sensitive_figure_ratio','-monitor_status','-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        else:
+            if order == "descending":
+                result = Event.objects.filter(~Q(hidden_status=1),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date','monitor_status','sensitive_figure_ratio','sensitive_info_ratio').order_by('-sensitive_info_ratio','-monitor_status','-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+            else:
+                result = Event.objects.filter(~Q(hidden_status=1),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date','monitor_status','sensitive_figure_ratio','sensitive_info_ratio').order_by('sensitive_info_ratio','-monitor_status','-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        index_list = {}
+        jre=[]
+        #t1 = time.time()
+        if result.exists():
+            for item in result:
+                sdate = item['begin_date'].strftime('%Y-%m-%d')
+                if item['end_date'] is None:
+                    edate = "至今"
+                else:
+                    edate = item['end_date'].strftime('%Y-%m-%d')
+                if item['sensitive_figure_ratio'] is None:
+                    figure_rat = '-'
+                else:
+                    figure_rat = '%.2f%%' % float(item['sensitive_figure_ratio']*100)
+                if item['sensitive_info_ratio'] is None:
+                    info_rat = '-'
+                else:
+                    info_rat = '%.2f%%' % float(item['sensitive_info_ratio']*100)
+                jre.append({"eid":item['e_id'],"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],'monitor_status':MONITOR_STATUS_DIC[item['monitor_status']],\
+                            "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':figure_rat,'sensitive_info_ratio':info_rat,'count':count})
             return JsonResponse(jre,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "无事件"},safe=False)
@@ -163,53 +187,81 @@ class search_event(APIView):
             page_id = 1
         if limit is None:
             limit = 10
-        result = Event.objects.filter(~Q(hidden_status=1),Q(event_name__contains = name) | Q(keywords_dict__contains=name),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date').order_by('-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        result = Event.objects.filter(~Q(hidden_status=1),Q(event_name__contains = name) | Q(keywords_dict__contains=name),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date','monitor_status','sensitive_figure_ratio','sensitive_info_ratio').order_by('-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
         #count = Event.objects.filter(event_name__contains = name).aggregate(count = Count('e_id'))['count']
         count = len(Event.objects.filter(~Q(hidden_status=1),Q(event_name__contains = name) | Q(keywords_dict__contains=name),cal_status=2))
         #print(len(result))
         if result.exists():
             for item in result:
-                weibo_count = 0
-                user_count = 0
-                #figure_count = 0
-                info_count = 0 
                 sdate = item['begin_date'].strftime('%Y-%m-%d')
                 if item['end_date'] is None:
                     edate = "至今"
                 else:
                     edate = item['end_date'].strftime('%Y-%m-%d')
-                eid = item['e_id']
-                #e_re = Event.objects.filter(e_id =eid).first()
-                #figure_count = len(e_re.figure.all())
-                #print(figure_count)
-                #info_count = len(e_re.information.all())
-                #print(info_count)
-                all_re = Event_Analyze.objects.filter(event_name =eid).values('weibo_count','user_count','info_count','figure_count')
-                if all_re.exists():
-                    #weibo_count = all_re[0]['weibo_count']
-                    #user_count = all_re[0]['user_count']
-                    for re in all_re:
-                        weibo_count += int(re['weibo_count'])
-                        user_count += int(re['user_count'])
-                        info_count += int(re['info_count'])
-                    figure_rat = '0%'
-                    info_rat = '0%'
-                    if user_count is None:
-                        figure_rat = '-'
-                    if user_count != 0:
-                        figure_rat = '%.2f%%' % float(all_re[0]['figure_count']/user_count * 100)
-                    if weibo_count is None:
-                        info_rat = '-'
-                    if weibo_count != 0:
-                        info_rat = '%.2f%%' % float(info_count/weibo_count*100)
-                    jre.append({"eid":eid,"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
-                            "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':figure_rat,'sensitive_info_ratio':info_rat,'count':count})
+                if item['sensitive_figure_ratio'] is None:
+                    figure_rat = '-'
                 else:
-                    jre.append({"eid":item["e_id"],"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],\
-                                "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':'-','sensitive_info_ratio':'-','count':count})
+                    figure_rat = '%.2f%%' % float(item['sensitive_figure_ratio']*100)
+                if item['sensitive_info_ratio'] is None:
+                    info_rat = '-'
+                else:
+                    info_rat = '%.2f%%' % float(item['sensitive_info_ratio']*100)
+                jre.append({"eid":item['e_id'],"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],'monitor_status':MONITOR_STATUS_DIC[item['monitor_status']],\
+                            "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':figure_rat,'sensitive_info_ratio':info_rat,'count':count})
             return JsonResponse(jre,safe=False,json_dumps_params={'ensure_ascii':False})
         else:
             return JsonResponse({"status":400, "error": "无事件"},safe=False)
+
+
+
+class search_event_sort(APIView):
+    """搜索事件 输入事件标题title 输出'event_name','keywords_dict','content','begin_date','end_date'"""
+    def get(self, request):
+        jre = []
+        info = request.GET.get("title")
+        limit = request.GET.get("limit")
+        page_id = request.GET.get('page_id')
+        if page_id is None:
+            page_id = 1
+        if limit is None:
+            limit = 10
+        name = request.GET.get('label')
+        order = request.GET.get('order')
+        count = len(Event.objects.filter(~Q(hidden_status=1),Q(event_name__contains = info) | Q(keywords_dict__contains=info),cal_status=2))
+        #print(len(result))
+        if name == "sensitive_figure_ratio":
+            if order == "descending":
+                result = Event.objects.filter(~Q(hidden_status=1),Q(event_name__contains = info) | Q(keywords_dict__contains=info),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date','monitor_status','sensitive_figure_ratio','sensitive_info_ratio').order_by('-sensitive_figure_ratio','-monitor_status','-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+            else:
+                result = Event.objects.filter(~Q(hidden_status=1),Q(event_name__contains = info) | Q(keywords_dict__contains=info),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date','monitor_status','sensitive_figure_ratio','sensitive_info_ratio').order_by('sensitive_figure_ratio','-monitor_status','-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        else:
+            if order == "descending":
+                result = Event.objects.filter(~Q(hidden_status=1),Q(event_name__contains = info) | Q(keywords_dict__contains=info),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date','monitor_status','sensitive_figure_ratio','sensitive_info_ratio').order_by('-sensitive_info_ratio','-monitor_status','-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+            else:
+                result = Event.objects.filter(~Q(hidden_status=1),Q(event_name__contains = info) | Q(keywords_dict__contains=info),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date','monitor_status','sensitive_figure_ratio','sensitive_info_ratio').order_by('sensitive_info_ratio','-monitor_status','-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        #result = Event.objects.filter(~Q(hidden_status=1),Q(event_name__contains = name) | Q(keywords_dict__contains=name),cal_status=2).values('e_id','event_name','keywords_dict','begin_date','end_date').order_by('-begin_date')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        #count = Event.objects.filter(event_name__contains = name).aggregate(count = Count('e_id'))['count']
+        if result.exists():
+            for item in result:
+                sdate = item['begin_date'].strftime('%Y-%m-%d')
+                if item['end_date'] is None:
+                    edate = "至今"
+                else:
+                    edate = item['end_date'].strftime('%Y-%m-%d')
+                if item['sensitive_figure_ratio'] is None:
+                    figure_rat = '-'
+                else:
+                    figure_rat = '%.2f%%' % float(item['sensitive_figure_ratio']*100)
+                if item['sensitive_info_ratio'] is None:
+                    info_rat = '-'
+                else:
+                    info_rat = '%.2f%%' % float(item['sensitive_info_ratio']*100)
+                jre.append({"eid":item['e_id'],"event_name":item['event_name'],"keywords_dict":item['keywords_dict'],'monitor_status':MONITOR_STATUS_DIC[item['monitor_status']],\
+                            "begin_date":sdate,"end_date":edate,'sensitive_figure_ratio':figure_rat,'sensitive_info_ratio':info_rat,'count':count})
+            return JsonResponse(jre,safe=False,json_dumps_params={'ensure_ascii':False})
+        else:
+            return JsonResponse({"status":400, "error": "无事件"},safe=False)
+
 
 
 
@@ -405,8 +457,8 @@ class related_figure(APIView):
         res_event = Event.objects.filter(e_id=eid)  #.first().event_set.all()
         if res_event.exists():
             #print(e)
-            res = res_event[0].figure.filter(computestatus=2).order_by('-info_count','-event_count')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
-            count = res_event[0].figure.filter(computestatus=2).count()
+            res = res_event[0].figure.filter(computestatus=2,identitystatus=1).order_by('-info_count','-event_count')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+            count = res_event[0].figure.filter(computestatus=2,identitystatus=1).count()
             res_dict['count'] = count
             for f in res:
                 res_dict['table'].append(["f_id","nick_name","info_count","event_count"])
@@ -459,8 +511,8 @@ class related_info(APIView):
         res_event = Event.objects.filter(e_id=eid)  #.first().event_set.all()
         if res_event.exists():
             #print(e)
-            res1 = res_event[0].information.filter(cal_status=2).order_by('-hazard_index', '-timestamp')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
-            count = res_event[0].information.filter(cal_status=2).count()
+            res1 = res_event[0].information.filter(cal_status=2,add_manully=0).order_by('-hazard_index', '-timestamp')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+            count = res_event[0].information.filter(cal_status=2,add_manully=0).count()
             res_dict['count'] = count
             #print(count)
             for i in res1:

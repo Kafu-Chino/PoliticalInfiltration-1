@@ -10,6 +10,7 @@ es = Elasticsearch(hosts=[{'host': ES_HOST, 'port': ES_PORT}], timeout=1000)
 import sys
 sys.path.append("../../")
 from Config.db_utils import pi_cur, conn
+from Config.time_utils import *
 
 with open("国家") as f:
     country_list = f.readlines()
@@ -148,9 +149,56 @@ def update_mysql_hazard_index():
         cursor.execute(update_sql)
     conn.commit()
 
+def update_flow_text_geo():
+    query_body = {
+        "query": {
+            "bool": {
+                "must_not": [
+                    {
+                        "wildcard": {
+                            "geo": "*&*"
+                        }
+                    }
+                ]
+            }
+        }
+    }
+
+    for date in get_datelist_v2('2019-06-01', '2019-11-28'):
+        es_index = "flow_text_{}".format(date)
+        result = scan(es, index=es_index, query=query_body)
+        bulk_list = []
+        for index, item in enumerate(result):
+            id = item["_id"]
+            _type = item["_type"]
+            item = item["_source"]
+            if "geo" not in item:
+                item["geo"] = "字段缺失"
+            geo_new = geo_transfer(item["geo"])
+
+            data = {}
+            data['_index'] = es_index
+            data['_op_type'] ='update'
+            data['_id'] = id
+            data['_type'] = _type
+            data['doc'] = {
+                "geo_old": item["geo"],
+                "geo": geo_new,
+            }
+            bulk_list.append(data)
+
+            if index % 1000 == 0:
+                print(es_index, index)
+                bulk(es, bulk_list)
+                bulk_list = []
+
+        bulk(es, bulk_list)
+    
+
 if __name__ == "__main__":
     # geo = "河北省邯郸市电信(河北省邯郸市电信)"
     # print(geo_transfer(geo))
     # update_weibo_all_geo()
     # update_mysql_geo()
-    update_mysql_hazard_index()
+    # update_mysql_hazard_index()
+    update_flow_text_geo()

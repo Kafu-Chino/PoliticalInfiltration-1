@@ -114,7 +114,7 @@ class Show_sensitivetext(APIView):
         格式：{'e_id':e_id}
         """
         e_id = request.GET.get('e_id')
-        result = EventPositive.objects.filter(e_id=e_id,store_type=1,process_status=0).values('text','store_timestamp')
+        result = EventPositive.objects.filter(e_id=e_id,store_type=1,process_status=0).values('text','store_timestamp').order_by("-store_timestamp")
         new_result = []
         for i in result:
             new_result.append({'text':i['text'],'time':time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(i['store_timestamp']))})
@@ -179,8 +179,7 @@ class Show_seedtext(APIView):
         """
         type_dict = {0:'系统初始化',1:'人工添加',2:'扩线添加'}
         e_id = request.GET.get('e_id')
-        result = EventPositive.objects.filter(e_id=e_id).values('id','text','store_timestamp','store_type').order_by(''
-                                                                                                                     'store_timestamp')
+        result = EventPositive.objects.filter(e_id=e_id).values('id','text','store_timestamp','store_type').order_by('-store_timestamp')
         new_result = []
         if e_id != 'xianggangshijian_1581919160':
             for i in result:
@@ -402,7 +401,12 @@ class Process(APIView):
         else:
             if result[0]['cal_status'] == 3:
                 return JsonResponse({"status": 400, "error": "请先提交扩线任务"}, safe=False)
+            elif result[0]['cal_status'] == 0:
+                return JsonResponse({"status": 400, "error": "扩线任务尚未计算完毕"}, safe=False)
+            elif result[0]['cal_status'] == 1:
+                return JsonResponse({"status": 400, "error": "扩线任务尚未计算完毕"}, safe=False)
             else:
                 EventPositive.objects.filter(e_id=e_id, store_type=1).update(process_status=1)
                 ExtendReview.objects.filter(e_id=e_id, process_status=0).update(process_status=1)
+                ExtendTask.objects.filter(e_id=e_id).update(cal_status=3)
                 return JsonResponse({"status": 200, "info": "当前扩线任务已处理完毕"}, safe=False)

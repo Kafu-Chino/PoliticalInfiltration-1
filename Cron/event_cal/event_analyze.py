@@ -136,7 +136,22 @@ def event_analyze(e_id,data,date=thedate):
                             "into_date":date,
                             "timestamp":end_time}
     sql_insert_many("Event_Analyze", "e_id", analyze_dict)
-
+    #cursor.execute('insert into Event(sensitive_figure_ratio,sensitive_info_ratio) values(%s,%s)  where e_id = %s ',(figure_count/user_count,info_count/weibo_count,e_id))
+    cursor.execute('select sum(user_count) as uc,sum(weibo_count) as wc,sum(info_count) as ic from Event_Analyze where event_name = %s',(e_id))
+    res = cursor.fetchone()
+    if res['uc']==0:
+        res['uc'] = None
+    if res['wc'] ==0:
+        res['wc'] = None
+    if len(res) and res['uc'] and res['ic'] and res['wc']:
+        cursor.execute('update Event set sensitive_figure_ratio=%s,sensitive_info_ratio=%s where e_id = %s ',(figure_count/res['uc'],res['ic']/res['wc'],e_id))
+        conn.commit()
+        if cursor:
+            print("insert into Event successfully")
+        else:
+            print("failed into Event")
+    else:
+        print("数据错误")
 
 
 
@@ -153,3 +168,13 @@ if __name__ == '__main__':
     event_analyze("weibo_all",eid,)
     '''
     #eid = 'xianggang_1582357500'
+    e_id = 'xianggangshijian_1581919160'
+    cursor.execute('select sum(user_count) as uc,sum(weibo_count) as wc,sum(info_count) as ic,max(figure_count) as fc from Event_Analyze where event_name = %s',(e_id))
+    res = cursor.fetchone()
+    print(res)
+    #cursor.execute('update Event set sensitive_figure_ratio=%s,sensitive_info_ratio=%s where e_id = %s ',(res['fc']/res['uc'],res['ic']/res['wc'],e_id))
+    cursor.execute('update Event set sensitive_figure_ratio=%s,sensitive_info_ratio=%s where e_id = %s ',(res['fc']/res['uc'],res['ic']/res['wc'],e_id))
+    conn.commit()
+    if cursor:
+        print("insert into Event successfully")
+    #print(cursor.fetchone())

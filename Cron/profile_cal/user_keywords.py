@@ -51,7 +51,7 @@ def get_p(train_dict,test_dict):
 def get_user_keywords(text_list,word_dict,date, keywords_num=5):
     keywords = []
     hastag_dict=defaultdict(list)
-    hastag = {}
+    
     user_kw={}
     keywords_dict=defaultdict(dict)
     text_all=""
@@ -62,6 +62,7 @@ def get_user_keywords(text_list,word_dict,date, keywords_num=5):
     ta = time.strptime(td, "%Y-%m-%d %H:%M:%S")
     ts = int(time.mktime(ta))
     for k,v in text_list.items():
+        hastag = {}
         for text in v:
             if isinstance(text, str):
                 RE = re.compile(r'#([a-zA-Z-_⺀-⺙⺛-⻳⼀-⿕々〇〡-〩〸-〺〻㐀-䶵一-鿃豈-鶴侮-頻並-龎]+)#', re.UNICODE)

@@ -58,6 +58,8 @@ class Event(models.Model):
     monitor_status = models.IntegerField(default=1)
     hidden_status = models.IntegerField(default=0)
     count_max = models.IntegerField(default=100000)
+    sensitive_figure_ratio = models.FloatField(blank=True, null=True)
+    sensitive_info_ratio = models.FloatField(blank=True, null=True)
     information = models.ManyToManyField(Information, related_name="event")
     figure = models.ManyToManyField(Figure, related_name="event")
 
