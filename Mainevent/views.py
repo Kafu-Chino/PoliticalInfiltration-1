@@ -457,8 +457,8 @@ class related_figure(APIView):
         res_event = Event.objects.filter(e_id=eid)  #.first().event_set.all()
         if res_event.exists():
             #print(e)
-            res = res_event[0].figure.filter(computestatus=2).order_by('-info_count','-event_count')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
-            count = res_event[0].figure.filter(computestatus=2).count()
+            res = res_event[0].figure.filter(computestatus=2,identitystatus=1).order_by('-info_count','-event_count')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+            count = res_event[0].figure.filter(computestatus=2,identitystatus=1).count()
             res_dict['count'] = count
             for f in res:
                 res_dict['table'].append(["f_id","nick_name","info_count","event_count"])
@@ -511,8 +511,8 @@ class related_info(APIView):
         res_event = Event.objects.filter(e_id=eid)  #.first().event_set.all()
         if res_event.exists():
             #print(e)
-            res1 = res_event[0].information.filter(cal_status=2).order_by('-hazard_index', '-timestamp')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
-            count = res_event[0].information.filter(cal_status=2).count()
+            res1 = res_event[0].information.filter(cal_status=2,add_manully=0).order_by('-hazard_index', '-timestamp')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+            count = res_event[0].information.filter(cal_status=2,add_manully=0).count()
             res_dict['count'] = count
             #print(count)
             for i in res1:

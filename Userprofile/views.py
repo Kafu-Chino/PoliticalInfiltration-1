@@ -1280,8 +1280,8 @@ class related_info(APIView):
             page_id = 1
         if limit is None:
             limit = 10
-        res = Information.objects.filter(uid=fid,cal_status=2).order_by('-hazard_index','-timestamp')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
-        count = Information.objects.filter(uid=fid,cal_status=2).count()
+        res = Information.objects.filter(uid=fid,cal_status=2,add_manully=0).order_by('-hazard_index','-timestamp')[int(limit)*(int(page_id)-1):int(limit)*int(page_id)]
+        count = Information.objects.filter(uid=fid,cal_status=2,add_manully=0).count()
         res_dict['count'] = count
         #print(len(res))
         if res.exists():
