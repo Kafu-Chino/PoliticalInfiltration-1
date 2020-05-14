@@ -1294,10 +1294,12 @@ class User_Influence(APIView):
             date_dict[0] = date
             for i in [21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]:
             # for i in [4, 3, 2, 1, 0]:
-                result = NewUserInfluence.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
-                                                       timestamp__lt=date_dict[i]).aggregate(
+            #     print (date_dict[i + 1],date_dict[i],)
+                result = NewUserInfluence.objects.filter(uid=uid, timestamp__gt=int(date_dict[i + 1]+86400),
+                                                       timestamp__lte=int(date_dict[i]+86400)).aggregate(
                     influence=Avg("influence"), importance=Avg("importance"),
                     sensitity=Avg("sensitity"), activity=Avg("activity"))
+                # print(result)
                 if result['influence'] != None:
                     res_dict['influence'][ts2date(date_dict[i])] = result['influence']
                     res_dict['importance'][ts2date(date_dict[i])] = result['importance']
@@ -1319,8 +1321,8 @@ class User_Influence(APIView):
                 date_dict[i] = (datetime.datetime.strptime(ts2date(date), '%Y-%m-%d') + datetime.timedelta(days=(-30 * i))).timestamp()
             date_dict[0] = date
             for i in [4, 3, 2, 1, 0]:
-                result = NewUserInfluence.objects.filter(uid=uid, timestamp__gte=date_dict[i + 1],
-                                                         timestamp__lt=date_dict[i]).aggregate(
+                result = NewUserInfluence.objects.filter(uid=uid, timestamp__gt=date_dict[i + 1]+86400,
+                                                         timestamp__lte=date_dict[i]+86400).aggregate(
                     influence=Avg("influence"), importance=Avg("importance"),
                     sensitity=Avg("sensitity"), activity=Avg("activity"))
                 if result['influence'] != None:
