@@ -23,4 +23,5 @@ urlpatterns = [
     path('related_event/', views.related_event.as_view()),
     path('user_sentiment/', views.User_Sentiment.as_view()),
     path('user_influence/', views.User_Influence.as_view()),
+    path('user_to_excel/', views.User_to_excel.as_view()),
 ]

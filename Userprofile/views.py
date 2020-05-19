@@ -15,6 +15,10 @@ from rest_framework.views import APIView
 from rest_framework.schemas import ManualSchema
 import json
 import operator
+from io import BytesIO
+import requests
+import openpyxl
+from django.utils.http import urlquote
 
 
 class Test(APIView):
@@ -1796,3 +1800,228 @@ class User_Influence(APIView):
         n_res['activity_num'] = list(res_dict['activity'].values())
         return JsonResponse(n_res)
     '''
+
+class Person:
+    def __init__(self, id):
+        self.uid = id
+        self.workbook = openpyxl.Workbook()
+        self.count = 0
+        self.ip = "http://219.224.135.12:9728"
+
+    # 基本信息
+    def get_information(self):
+        result = []
+        title = ["用户ID", "用户昵称", "用户粉丝数", "用户关注数", "用户注册日期", "用户地址", "用户性别", "用户年龄", "用户政治倾向", "用户所涉及主要领域", "用户参与事件数",
+                 "用户发布敏感信息数"]
+        result.append(title)
+        request_url = self.ip +"/Userprofile/figure_info/?uid={}".format(self.uid)
+        r = requests.get(request_url)
+        if r.status_code == 200:
+            outcome = json.loads(r.text)
+            result.append(
+                [outcome["uid"], outcome["nick_name"], outcome["fansnum"], outcome["friendsnum"], outcome["create_at"],
+                 outcome["user_location"], outcome["sex"], outcome["age"], outcome["political"], outcome["domain"],
+                 outcome["event_count"], outcome["info_count"]])
+        else:
+            return "error"
+        self.write_excel_xlsx("基本信息", result)
+        return "success"
+
+    # 地域特征
+    def get_regional(self):
+        result = []
+        title = ["ip", "地址", "发布微博数", "发布敏感信息数"]
+        result.append(title)
+        request_url = self.ip +"/Userprofile/user_activity/?uid={}&n_type=4".format(self.uid)
+        r = requests.get(request_url)
+        if r.status_code == 200:
+            outcome = json.loads(r.text)
+            for item in outcome["day_result"]:
+                result.append([item["send_ip"], item["geo"], item["statusnum_s"], item["sensitivenum_s"]])
+        else:
+            return "error"
+        self.write_excel_xlsx("地域特征", result)
+        return "success"
+
+    # 活动特征
+    def get_characteristics(self):
+        result = []
+        title = ["日期", "发布原创微博数", "发布评论数", "转发微博数", "发布敏感信息数"]
+        result.append(title)
+        request_url = self.ip +"/Userprofile/user_behavior/?uid={}&n_type=%E6%97%A5".format(self.uid)
+        r = requests.get(request_url)
+        if r.status_code == 200:
+            outcome = json.loads(r.text)
+            for i in range(len(outcome["date"])):
+                result.append(
+                    [outcome["date"][i], outcome["originalnum"][i], outcome["commentnum"][i], outcome["retweetnum"][i],
+                     outcome["sensitivenum"][i]])
+        else:
+            return "error"
+        self.write_excel_xlsx("活动特征", result)
+        return "success"
+
+    # 偏好特征 ***********
+    def get_preference(self):
+        result = []
+        title = ["话题/词", "所属分析", "数量/概率"]
+        result.append(title)
+        # 话题分布接口
+        request_url = self.ip +"/Userprofile/user_topic/?uid={}".format(self.uid)
+        r = requests.get(request_url)
+        if r.status_code == 200:
+            outcome = json.loads(r.text)
+            for item in outcome:
+                result.append([item["name"], "话题分布", item["value"]])
+        else:
+            return "error"
+        # 敏感词和微话题接口
+        request_url = self.ip +"/Userprofile/user_keyword/?uid={}".format(self.uid)
+        r = requests.get(request_url)
+        if r.status_code == 200:
+            outcome = json.loads(r.text)
+            for item in outcome["sensitive_words"]:
+                result.append([item["name"], "敏感词", item["value"]])
+            for item in outcome["hastags"]:
+                result.append([item["name"], "微话题", item["value"]])
+        else:
+            return "error"
+        self.write_excel_xlsx("偏好特征", result)
+        return "success"
+
+    # 影响力特征
+    def get_influenced(self):
+        result = []
+        title = ["用户ID", "用户影响力", "用户重要度", "用户敏感度", "用户活跃度", "日期"]
+        result.append(title)
+        request_url = self.ip +"/Userprofile/user_influence/?uid={}&n_type=%E6%97%A5".format(self.uid)
+        r = requests.get(request_url)
+        if r.status_code == 200:
+            outcome = json.loads(r.text)
+            for i in range(len(outcome["date"])):
+                result.append(
+                    [self.uid, outcome["influence_num"][i], outcome["importance_num"][i], outcome["sensitity_num"][i],
+                     outcome["activity_num"][i], outcome["date"][i]])
+        else:
+            return "error"
+        self.write_excel_xlsx("影响力特征", result)
+        return "success"
+
+    # 社交特征
+    def get_opensocial(self):
+        result = []
+        title = ["转发/评论者ID", "转发/评论者昵称", "连边类别", "被转发/评论者ID", "被转发/评论者昵称", "统计数量", "日期"]
+        result.append(title)
+        outcome = UserSocialContact.objects.filter((Q(source=self.uid) | Q(target=self.uid))).order_by("-store_date").values()
+        for item in outcome:
+            message_type = "转发" if int(item["message_type"]) == 2 else "评论"
+            target_name = "" if item["target_name"] == None else item["target_name"]
+            source_name = "" if item["source_name"] == None else item["source_name"]
+            result.append([item["target"],target_name,message_type,item["source"],source_name,item["count"],str(item["store_date"])])
+        self.write_excel_xlsx("社交特征", result)
+        return "success"
+
+    # 情绪特征
+    def get_moody(self):
+        result = []
+        title = ["用户ID", "消极信息数", "中性信息数", "积极信息数", "日期"]
+        result.append(title)
+        request_url = self.ip +"/Userprofile/user_sentiment/?uid={}&n_type=%E6%97%A5".format(self.uid)
+        r = requests.get(request_url)
+        if r.status_code == 200:
+            outcome = json.loads(r.text)
+            for i in range(len(outcome["date"])):
+                result.append(
+                    [self.uid, outcome["negtive_num"][i], outcome["nuetral_num"][i], outcome["positive_num"][i],
+                     outcome["date"][i]])
+        else:
+            return "error"
+        self.write_excel_xlsx("情绪特征", result)
+        return "success"
+
+    # 关联敏感信息
+    def get_sensitive(self):
+        result = []
+        title = ["敏感信息ID", "敏感信息内容", "敏感信息发布地址", "敏感信息发布时间", "危害指数"]
+        result.append(title)
+        count_url = self.ip +"/Userprofile/related_info/?uid={}&limit=1&page_id=1".format(self.uid)
+        r_count = requests.get(count_url)
+        if r_count.status_code == 200:
+            count = json.loads(r_count.text)["count"]
+        else:
+            return "error"
+        request_url = self.ip +"/Userprofile/related_info/?uid={}&limit={}&page_id=1".format(self.uid,
+                                                                                                              count)
+        r = requests.get(request_url)
+        if r.status_code == 200:
+            outcome = json.loads(r.text)
+            for item in outcome["data"]:
+                result.append([item[3], item[0], item[2], item[1], item[4]])
+        else:
+            return "error"
+        self.write_excel_xlsx("关联敏感信息", result)
+        return "success"
+
+    # 关联渗透事件
+    def get_penetrations(self):
+        result = []
+        title = ["事件ID", "事件名称", "事件关键词", "开始日期", "结束日期"]
+        result.append(title)
+        count_url = self.ip +"/Userprofile/related_event/?uid={}&limit=1&page_id=1".format(self.uid)
+        r_count = requests.get(count_url)
+        if r_count.status_code == 200:
+            count = json.loads(r_count.text)["count"]
+        else:
+            return "error"
+        request_url = self.ip +"/Userprofile/related_event/?uid={}&limit={}&page_id=1".format(self.uid,
+                                                                                                               count)
+        r = requests.get(request_url)
+        if r.status_code == 200:
+            outcome = json.loads(r.text)
+            for item in outcome["data"]:
+                result.append([item[4], item[0], item[1], item[2], item[3]])
+        else:
+            return "error"
+        self.write_excel_xlsx("关联渗透事件", result)
+        return "success"
+
+    # 写入excel
+    def write_excel_xlsx(self, sheet_name, value):
+        index = len(value)
+        if self.count == 0:
+            sheet = self.workbook.active
+            sheet.title = sheet_name
+        else:
+            sheet = self.workbook.create_sheet(sheet_name)
+        for i in range(0, index):
+            for j in range(0, len(value[i])):
+                sheet.cell(row=i + 1, column=j + 1, value=str(value[i][j]))
+        self.count += 1
+
+    # 传输excel
+    def to_excel(self):
+        self.get_information()
+        self.get_regional()
+        self.get_characteristics()
+        self.get_preference()
+        self.get_influenced()
+        self.get_opensocial()
+        self.get_moody()
+        self.get_sensitive()
+        self.get_penetrations()
+        output = BytesIO()
+        self.workbook.save(output)
+        output.seek(0)
+        filename = urlquote(str(self.uid)+".xlsx")
+        response = HttpResponse(output.getvalue(), content_type='application/vnd.ms-excel')
+        response['Content-Disposition'] = 'attachment; filename=%s' % filename
+        return response
+
+class User_to_excel(APIView):
+    """用户导出excel"""
+    def get(self, request):
+        uid = request.GET.get('uid')
+        person = Person(uid)
+        result = person.to_excel()
+        return result
+ 
