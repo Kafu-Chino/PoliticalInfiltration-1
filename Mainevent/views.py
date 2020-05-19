@@ -16,7 +16,10 @@ from rest_framework.views import APIView
 from rest_framework.schemas import ManualSchema
 import re
 from django.db.models import Sum,Count
-
+from io import BytesIO
+import requests
+import openpyxl
+from django.utils.http import urlquote
 
 
 class Show_event(APIView):
@@ -1094,3 +1097,235 @@ class friends_num(APIView):
         # print(result)
         # print(type(result))
         return JsonResponse(result)
+
+class Event:
+    def __init__(self, event_id):
+        self.event_id = event_id
+        self.workbook = openpyxl.Workbook()
+        self.count = 0
+        self.ip = "http://219.224.135.12:9728"
+
+    # 基本信息
+    def get_information(self):
+        result = []
+        title = ["事件ID", "事件名称", "事件关键词", "事件监测状态", "事件开始日期", "事件结束日期", "事件相关敏感人物占事件相关总人物比例", "事件相关敏感信息占事件总微博比例",
+                 "事件总微博数", "事件参与总用户数"]
+        result.append(title)
+        request_url = self.ip +"/Mainevent/einfoshow/?eid={}".format(self.event_id)
+        r = requests.get(request_url)
+        if r.status_code == 200:
+            outcome = json.loads(r.text)
+            # outcome["monitor_status"]
+            result.append(
+                [self.event_id, outcome["event_name"], outcome["keywords_dict"], "test", outcome["begin_date"],
+                 outcome["end_date"], outcome["sensitive_figure_ratio"], outcome["sensitive_info_ratio"],
+                 outcome["weibo_count"], outcome["user_count"]])
+        else:
+            return "error"
+        self.write_excel_xlsx("基本信息", result)
+        return "success"
+
+    # 事件态势
+    def get_situation(self):
+        result = []
+        title = ["日期", "热度", "敏感指数", "负面指数"]
+        result.append(title)
+        request_url = self.ip +"/Mainevent/trend/?eid={}".format(self.event_id)
+        r = requests.get(request_url)
+        if r.status_code == 200:
+            outcome = json.loads(r.text)
+            for i in range(len(outcome["date"])):
+                result.append([outcome["date"][i], outcome["hot_index"][i], outcome["sensitive_index"][i],
+                               outcome["negative_index"][i]])
+        else:
+            return "error"
+        self.write_excel_xlsx("事件态势", result)
+        return "success"
+
+    # 地域分析(no?)
+    def get_spatial(self):
+        result = []
+        title = ["国内/国外", "全部信息/敏感信息", "城市", "统计数量"]
+        result.append(title)
+        # 国内全部信息
+        request_url = self.ip +"/Mainevent/geo_in/?eid={}".format(self.event_id)
+        r = requests.get(request_url)
+        if r.status_code == 200:
+            outcome = json.loads(r.text)
+            for k, v in outcome.items():
+                result.append(["国内", "全部信息", k, v])
+        else:
+            return "error"
+
+        # 国外全部信息
+        request_url = self.ip +"/Mainevent/geo_out/?eid={}".format(self.event_id)
+        r = requests.get(request_url)
+        if r.status_code == 200:
+            outcome = json.loads(r.text)
+            for k, v in outcome.items():
+                result.append(["国外", "全部信息", k, v])
+        else:
+            return "error"
+
+        # 国内敏感信息
+        request_url = self.ip +"/Mainevent/info_geo_in/?eid={}".format(self.event_id)
+        r = requests.get(request_url)
+        if r.status_code == 200:
+            outcome = json.loads(r.text)
+            for k, v in outcome.items():
+                result.append(["国内", "敏感信息", k, v])
+        else:
+            return "error"
+
+        # 国外敏感信息
+        request_url = self.ip +"/Mainevent/info_geo_out/?eid={}".format(self.event_id)
+        r = requests.get(request_url)
+        if r.status_code == 200:
+            outcome = json.loads(r.text)
+            for k, v in outcome.items():
+                result.append(["国外", "敏感信息", k, v])
+        else:
+            return "error"
+
+        self.write_excel_xlsx("地域分析", result)
+        return "success"
+
+    # 子事件分析
+    def get_childevents(self):
+        result = []
+        title = ["日期", "代表敏感信息发布者", "代表敏感信息内容", "危害指数"]
+        result.append(title)
+        request_url = self.ip +"/Mainevent/timeline/?eid={}".format(self.event_id)
+        r = requests.get(request_url)
+        if r.status_code == 200:
+            outcome = json.loads(r.text)
+            for item in outcome:
+                result.append([item["日期"], item["发博用户昵称"], item["微博内容"], item["危害指数"]])
+        else:
+            return "error"
+        self.write_excel_xlsx("子事件分析", result)
+        return "success"
+
+    # 主题分析
+    def get_toipcs(self):
+        result = []
+        title = ["主题", "主题词", "概率"]
+        result.append(title)
+        request_url = self.ip +"/Mainevent/event_topic/?eid={}".format(self.event_id)
+        r = requests.get(request_url)
+        if r.status_code == 200:
+            outcome = json.loads(r.text)
+            for item in outcome:
+                result.append([item["name"], item["name"], item["value"]])
+                for term in item["children"]:
+                    result.append([item["name"], term["name"], term["value"]])
+        else:
+            return "error"
+        self.write_excel_xlsx("主题分析", result)
+        return "success"
+
+    # 群体分析
+    def get_groups(self):
+        result = []
+        title = ["hashtag/敏感词", "所属分析", "统计数量"]
+        result.append(title)
+        request_url = self.ip +"/Mainevent/event_group/?e_id={}".format(self.event_id)
+        r = requests.get(request_url)
+        if r.status_code == 200:
+            outcome = json.loads(r.text)
+            for item in outcome["hashtag"]:
+                result.append([item["name"], "hashtag分析", item["value"]])
+            for k, v in outcome["global_senword"].items():
+                result.append([k, "通用敏感词分析", v])
+            for k, v in outcome["event_senword"].items():
+                result.append([k, "事件敏感词分析", v])
+        else:
+            return "error"
+        self.write_excel_xlsx("群体分析", result)
+        return "success"
+
+    # 关联敏感信息
+    def get_sensitive(self):
+        result = []
+        title = ["敏感信息ID", "敏感信息内容", "敏感信息发布地址", "敏感信息发布时间", "危害指数"]
+        result.append(title)
+        count_url = self.ip +"/Mainevent/related_info/?eid={}&limit=1&page_id=1".format(self.event_id)
+        r_count = requests.get(count_url)
+        if r_count.status_code == 200:
+            count = json.loads(r_count.text)["count"]
+        else:
+            return "error"
+        request_url = self.ip +"/Mainevent/related_info/?eid={}&limit={}&page_id=1".format(
+            self.event_id, count)
+        r = requests.get(request_url)
+        if r.status_code == 200:
+            outcome = json.loads(r.text)
+            for item in outcome["data"]:
+                result.append([item[3], item[0], item[2], item[1], item[4]])
+        else:
+            return "error"
+        self.write_excel_xlsx("关联敏感信息", result)
+        return "success"
+
+    # 关联敏感人物
+    def get_sensitive_person(self):
+        result = []
+        title = ["人物ID", "人物昵称", "人物参与事件数", "人物发布敏感信息数"]
+        result.append(title)
+        count_url = self.ip +"/Mainevent/related_figure/?eid={}&limit=1&page_id=1".format(
+            self.event_id)
+        r_count = requests.get(count_url)
+        if r_count.status_code == 200:
+            count = json.loads(r_count.text)["count"]
+        else:
+            return "error"
+        request_url = self.ip +"/Mainevent/related_figure/?eid={}&limit={}&page_id=1".format(
+            self.event_id, count)
+        r = requests.get(request_url)
+        if r.status_code == 200:
+            outcome = json.loads(r.text)
+            for item in outcome["data"]:
+                result.append([item[0], item[1], item[2], item[3]])
+        else:
+            return "error"
+        self.write_excel_xlsx("关联敏感人物", result)
+        return "success"
+
+    # 写入excel
+    def write_excel_xlsx(self, sheet_name, value):
+        index = len(value)
+        if self.count == 0:
+            sheet = self.workbook.active
+            sheet.title = sheet_name
+        else:
+            sheet = self.workbook.create_sheet(sheet_name)
+        for i in range(0, index):
+            for j in range(0, len(value[i])):
+                sheet.cell(row=i + 1, column=j + 1, value=str(value[i][j]))
+        self.count += 1
+
+    # 传输excel
+    def to_excel(self):
+        self.get_information()
+        self.get_situation()
+        self.get_spatial()
+        self.get_childevents()
+        self.get_toipcs()
+        self.get_groups()
+        self.get_sensitive()
+        self.get_sensitive_person()
+        output = BytesIO()
+        self.workbook.save(output)
+        output.seek(0)
+        filename = urlquote(str(self.event_id)+".xlsx")
+        response = HttpResponse(output.getvalue(), content_type='application/vnd.ms-excel')
+        response['Content-Disposition'] = 'attachment; filename=%s' % filename
+        return response
+
+class event_to_excel(APIView):
+    """事件导出excel"""
+    def get(self,request):
+        eid = request.GET.get('eid')
+        event = Event(eid)
+        result = event.to_excel()
+        return result
