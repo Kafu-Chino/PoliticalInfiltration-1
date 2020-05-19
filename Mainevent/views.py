@@ -113,7 +113,7 @@ class Show_event_info(APIView):
        输出{‘event_name(事件名称)’: ,’keywords_dict(事件关键词)’: ,’content(事件内容)’: , ‘begin_date(开始日期)’:  ,‘end_date(结束日期)’: },{},{}"""
     def get(self, request):
         eid = request.GET.get("eid")
-        result = Event.objects.filter(e_id =eid).values('event_name','keywords_dict','begin_date','end_date')
+        result = Event.objects.filter(e_id =eid).values('event_name','keywords_dict','begin_date','end_date','monitor_status')
         #item = Event.objects.filter(e_id =eid).values('event_name','keywords_dict','begin_date','end_date').first()
         
         #weibo_count = 0
@@ -163,6 +163,7 @@ class Show_event_info(APIView):
                     jre['weibo_count'] = weibo_count
                     jre['sensitive_figure_ratio'] = figure_rat
                     jre['sensitive_info_ratio']=info_rat
+                    jre['monitor_status'] = MONITOR_STATUS_DIC[item['monitor_status']]
                 else:
                     jre["event_name"]=item['event_name']
                     jre["keywords_dict"]=item['keywords_dict']
