@@ -1098,7 +1098,7 @@ class friends_num(APIView):
         # print(type(result))
         return JsonResponse(result)
 
-class Event:
+class ProcessEvent:
     def __init__(self, event_id):
         self.event_id = event_id
         self.workbook = openpyxl.Workbook()
@@ -1326,6 +1326,6 @@ class event_to_excel(APIView):
     """事件导出excel"""
     def get(self,request):
         eid = request.GET.get('eid')
-        event = Event(eid)
+        event = ProcessEvent(eid)
         result = event.to_excel()
         return result
