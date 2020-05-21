@@ -379,6 +379,36 @@ def get_event_data(e_index, start_date, end_date):
     return data
 
 
+# 事件语义计算时获取数据
+def get_semantic_data(e_index, end_date):
+    if end_date == None:
+        end_ts = time.time()
+        start_ts = end_ts - 86400 * 10
+        date = ts2date(end_ts)
+    else:
+        end_ts = date2ts(str(end_date)) + 86400
+        start_ts = end_ts - 86400 * 10
+        date = ts2date(end_ts-86400)
+
+    query_body = {
+        "query": {
+            "bool": {
+                "must": [
+                    {"range": {"timestamp": {"gte": start_ts, "lt": end_ts}}},
+                ]
+            }
+        }
+    }
+
+    result = elasticsearch.helpers.scan(ees, index=e_index, query=query_body)
+
+    data = []
+    for item in result:
+        item = item["_source"]
+        data.append(item)
+    return data, date
+
+
 # 初始化新事件参数
 def store_event_para(e_id, p_name):
     cursor = pi_cur()
