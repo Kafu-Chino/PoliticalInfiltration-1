@@ -8,7 +8,7 @@ from Cron.event_cal.event_analyze import event_analyze
 from Cron.event_cal.event_semantic import event_semantic
 from Cron.event_cal.event_hashtag_senwords import event_hashtag_senwords
 from Cron.event_cal.data_utils import get_event_data, save_event_data, sensitivity_store, \
-    event_sensitivity, store_event_para
+    event_sensitivity, store_event_para, get_semantic_data
 from Cron.event_cal.sensitive_word_filter import sensitive_word_filter
 from Cron.event_cal.sensitivity import sensitivity
 from Cron.event_cal.figure_add import figure_add
@@ -99,11 +99,6 @@ def event_cal_main(info, n, start_date, end_date):
         print(info_num)
         if info_num > max_num:
             max_num = info_num
-        # 事件语义分析
-        # t1 = time.time()
-        event_semantic(e_id, e_name, data_dict[date], date, WEIBO_NUM)
-        # t2 = time.time()
-        # print('语义',t2-t1)
         # 事件态势分析
         event_analyze(e_id, data_dict[date], date)
         # t3 = time.time()
@@ -113,17 +108,29 @@ def event_cal_main(info, n, start_date, end_date):
     event_hashtag_senwords(e_id, data_dict, n)
     # t4 = time.time()
     # print('特殊',t4-t3)
+    
+    data_dict, date = get_semantic_data(e_index, end_date)
+    # 事件语义分析
+    # t1 = time.time()
+    event_semantic(e_id, e_name, data_dict, date, WEIBO_NUM)
+    # t2 = time.time()
+    # print('语义',t2-t1)
+
     return max_num
 
 
 def main():
-    data_dict = get_event_data("event_muji", "2019-09-10", "2019-11-24")
-    # event_hashtag_senwords("xianggang_1582357500", data_dict, 1)
-    for date in data_dict:
-        print(date)
-        info_num = len(data_dict[date])
-        print(info_num)
-        event_semantic("event_muji", 'muji', data_dict[date],date,100000)
+    # data_dict = get_event_data("event_muji", "2019-09-10", "2019-11-24")
+    # # event_hashtag_senwords("xianggang_1582357500", data_dict, 1)
+    # for date in data_dict:
+    #     print(date)
+    #     info_num = len(data_dict[date])
+    #     print(info_num)
+    #     event_semantic("event_muji", 'muji', data_dict[date],date,100000)
+    data_dict, date = get_semantic_data("event_muji", "2019-11-24")
+    # 事件语义分析
+    print(len(data_dict))
+    event_semantic("event_muji", 'muji', data_dict, date, 100000)
 
 if __name__ == '__main__':
     main()
