@@ -1834,8 +1834,8 @@ class Person:
         result.append(title)
         outcome = UserActivity.objects.filter(uid=self.uid).order_by('-store_date').values()
         for item in outcome:
-            send_ip = "" if outcome["send_ip"] == None else outcome["send_ip"]
-            result.append(outcome["store_date"],send_ip,outcome["geo"],outcome["statusnum_s"],outcome["sensitivenum_s"])
+            send_ip = "0.0.0.0" if item["send_ip"] == None else item["send_ip"]
+            result.append([str(item["store_date"]),send_ip,item["geo"],item["statusnum"],item["sensitivenum"]])
         self.write_excel_xlsx("地域特征", result)
         return "success"
 
