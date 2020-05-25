@@ -1830,16 +1830,12 @@ class Person:
     # 地域特征
     def get_regional(self):
         result = []
-        title = ["ip", "地址", "发布微博数", "发布敏感信息数"]
+        title = ["日期","ip", "地址", "发布微博数", "发布敏感信息数"]
         result.append(title)
-        request_url = self.ip +"/Userprofile/user_activity/?uid={}&n_type=4".format(self.uid)
-        r = requests.get(request_url)
-        if r.status_code == 200:
-            outcome = json.loads(r.text)
-            for item in outcome["day_result"]:
-                result.append([item["send_ip"], item["geo"], item["statusnum_s"], item["sensitivenum_s"]])
-        else:
-            return "error"
+        outcome = UserActivity.objects.filter(uid=uid).order_by('-store_date').values()
+        for item in outcome:
+            send_ip = "" if outcome["send_ip"] == None else outcome["send_ip"]
+            result.append(outcome["store_date"],send_ip,outcome["geo"],outcome["statusnum_s"],outcome["sensitivenum_s"])
         self.write_excel_xlsx("地域特征", result)
         return "success"
 
