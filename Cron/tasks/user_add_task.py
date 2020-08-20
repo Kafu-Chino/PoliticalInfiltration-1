@@ -6,9 +6,9 @@ from Cron.profile_cal.data_utils import get_uid_list1
 
 #更新人物计算状态
 def update_cal_status(uid_list, computestatus):
-    uids = ''
+    uids = ""
     for uid in uid_list:
-        uids += uid + ','
+        uids += "'"+uid+ "'"+ ','
     cursor = pi_cur()
     sql = "UPDATE Figure SET computestatus = %s WHERE uid in (%s)"%(computestatus,uids[:-1])
     cursor.execute(sql)
@@ -27,4 +27,5 @@ def user_add_cal():
     print("新增人物计算完成。" )
 
 if __name__ == '__main__':
-    user_add_cal()
+    # user_add_cal()
+    update_cal_status(['v5','1'],2)
