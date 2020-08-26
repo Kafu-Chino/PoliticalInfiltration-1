@@ -37,4 +37,5 @@ urlpatterns = [
     # path('group_geo/',views.group_geo.as_view()),
     path('group_funs/',views.funs_num.as_view()),
     path('group_friends/',views.friends_num.as_view()),
+    path('event_to_excel/',views.event_to_excel.as_view()),
 ]
