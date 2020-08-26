@@ -40,7 +40,7 @@ def profile_cal_uidlist(uidlist,n):
         # start_date = datetime.datetime.strptime(str(datetime.datetime.today() - datetime.timedelta(days=20))[:10],
         #                                         "%Y-%m-%d")
 
-        end_date = '2019-11-28'
+        # end_date = '2019-11-28'
         # start_date = '2019-11-13'
         start_date = str(datetime.datetime.strptime(str(datetime.datetime.strptime(end_date,"%Y-%m-%d") - datetime.timedelta(days=20))[:10],
                                                 "%Y-%m-%d"))[:10]
@@ -130,6 +130,6 @@ def profile_cal_main(n,uidlist):
 
 
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
 #     profile_cal_main(0)
-    profile_cal_uidlist(['6871471089'],0)
+#     profile_cal_uidlist(['6871471089'],0)
