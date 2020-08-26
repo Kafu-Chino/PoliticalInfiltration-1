@@ -252,6 +252,8 @@ def save_event_data(e_id, n, SENTIMENT_POS, SENTIMENT_NEG):
         yesterday = today - oneday
         indexes = ['flow_text_' + str(yesterday)]
     for index in indexes:
+        if not ees.indices.exists(index=e_index):
+            create_event_index(e_index)
         messages = []
         data_dict = {}
         for keyword in key_words_list:
@@ -259,16 +261,13 @@ def save_event_data(e_id, n, SENTIMENT_POS, SENTIMENT_NEG):
                 for message in data_list:
                     messages.append(message)
                     data_dict[message['mid']]=message['text']
-        sentiment_dict = sentiment_polarities(data_dict, SENTIMENT_POS, SENTIMENT_NEG)
-        save = []
-        for message in messages:
-            message['sentiment_polarity'] = sentiment_dict[message['mid']]
-            message['source'] = '新浪'
-            save.append(message)
-        if ees.indices.exists(index=e_index):
-            event_es_save(save,e_index)
-        else:
-            create_event_index(e_index)
+        if len(data_dict):
+            sentiment_dict = sentiment_polarities(data_dict, SENTIMENT_POS, SENTIMENT_NEG)
+            save = []
+            for message in messages:
+                message['sentiment_polarity'] = sentiment_dict[message['mid']]
+                message['source'] = '新浪'
+                save.append(message)
             event_es_save(save, e_index)
 
 
